@@ -185,6 +185,8 @@ The version baked into the build (`make print-version`, and the FTP upload
 filename) is derived from git: an exact tag on `HEAD` gives `vX.Y.Z`, anything
 else on a release branch gives `vX.Y.Z-dev.<commits>+<hash>`.
 
+**Discord**: every run of `.github/workflows/build-release.yml` announces the version on the Discord server (Tinaut's 3DS Ports): a stable in #announcements, pinging the project's role, a beta in #beta-testing, with `docs/release-notes/<tag>.md` as the text (one more reason to write it before the tag). Don't post it by hand. It needs the repo secrets `DISCORD_WEBHOOK_RELEASE` and `DISCORD_WEBHOOK_BETA` (without them the step is skipped); a re-run of the workflow posts again.
+
 ## The console in the loop (for Claude)
 
 A debug build (`DEBUG_TOOLS=1`) running on the owner's console can be reached from this machine

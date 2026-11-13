@@ -443,16 +443,17 @@ void Platform3DS_PollKeysIntoGba(void) {
      *    accident; the on-screen menu has neither problem and needs no
      *    memorizing. See docs/3ds-debug-tools.md. */
 
-    /* 4. Suppress passthrough for ALL remappable buttons (A/B/X/Y/L/R/ZL/ZR/Start/Select).
-     *    D-Pad (bits 4-7) and Circle Pad are already handled above.
-     *    Only suppress when L+R debug modifier is NOT active. */
-    {
-        gbaKeys &= ~(1u << 0); /* KEY_A */
-        gbaKeys &= ~(1u << 1); /* KEY_B */
-        gbaKeys &= ~(1u << 2); /* KEY_SELECT */
-        gbaKeys &= ~(1u << 3); /* KEY_START */
-        gbaKeys &= ~(1u << 8); /* KEY_R */
-        gbaKeys &= ~(1u << 9); /* KEY_L */
+    /* 4. Outside the game (menus, pause and map, cutscenes) the mapping does not apply: A/B/L/R/
+     *    Start/Select reach the game as they are, so a remap never changes which button confirms
+     *    or cancels (issue #36), as in the Super Metroid port. While an item or save banner holds
+     *    Samus still they are added to the mapped ones (Port_Input_RemapMode, port_ppu_mzm.c). In
+     *    game the remappable buttons otherwise reach it only through ProcessButtonAction (step 5).
+     *    D-Pad (bits 4-7) and Circle Pad are already handled above. */
+    extern int Port_Input_RemapMode(void);
+    const int remapMode = Port_Input_RemapMode();
+    const bool remapActive = remapMode != 0;
+    if (remapMode != 1) {
+        gbaKeys |= (uint16_t)(held3ds & (KEY_A | KEY_B | KEY_SELECT | KEY_START | KEY_R | KEY_L));
     }
 
     /* 5. Process all 10 remappable buttons through ProcessButtonAction.
@@ -466,7 +467,7 @@ void Platform3DS_PollKeysIntoGba(void) {
     bool bombHeld = false;
     bool jumpHeld = false;
 
-    {
+    if (remapActive) {
         for (int i = 0; i < 10; ++i) {
             int action = Port_Config_GetButtonMapping(i);
             gbaKeys |= ProcessButtonAction(action, held3ds, down3ds, btnMasks[i], &quickMorphPulse, &hasDiagAim);
@@ -514,7 +515,9 @@ void Platform3DS_PollKeysIntoGba(void) {
         /* Hardcore can be turned on while a sequence is mid-flight; drop it
          * so the assist never touches gameplay that counts. */
         extern bool Port_RA_IsHardcore(void);
-        if (sQuickMorphGoalClass >= 0 && Port_RA_IsHardcore()) {
+        /* Likewise when the game leaves gameplay (pause, a banner): the Down pulses would land in
+         * a menu. */
+        if (sQuickMorphGoalClass >= 0 && (Port_RA_IsHardcore() || remapMode != 1)) {
             sQuickMorphGoalClass = -1;
         }
     }

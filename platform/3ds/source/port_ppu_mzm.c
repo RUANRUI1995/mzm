@@ -617,9 +617,25 @@ int Port_Samus_GetPoseClass(void) {
  * that can never happen it just bobs her crouch for the whole safety window.
  * Suitless Samus has no morph-ball graphics and the pose machine refuses the
  * transition (see the suitType guard in SamusCrouching), so the assist must
- * not start a morph sequence for her. */
+ * not start a morph sequence for her. Before the Morph Ball is picked up the
+ * same goes for everyone: Down only crouches, so the assist spammed crouch
+ * (issue #36). */
 int Port_Samus_CanMorph(void) {
-    return gEquipment.suitType != SUIT_SUITLESS;
+    return gEquipment.suitType != SUIT_SUITLESS && (gEquipment.suitMiscActivation & SMF_MORPH_BALL);
+}
+
+/* How the button mapping applies this frame (issue #36: a remap also changed which button confirms
+ * and cancels in the menus; the Super Metroid port maps gameplay only).
+ *   0 = the buttons as they are: title, file select, pause and map screens (GM_MAP_SCREEN),
+ *       cutscenes, game over, credits.
+ *   1 = the mapping: in game, door transitions and room loads included, so a held charge or jump
+ *       carries through a door.
+ *   2 = both: in game while Samus is held still (gPreventMovementTimer: the item and save banners,
+ *       which close or confirm on A/B). The physical buttons are added to the mapped ones, so A
+ *       and B do what the banner says while a held mapped button (a charged beam) still counts. */
+int Port_Input_RemapMode(void) {
+    if (gMainGameMode != GM_INGAME) return 0;
+    return gPreventMovementTimer != 0 ? 2 : 1;
 }
 
 /* Per-area, per-tank-type collected counts for the bottom-screen collectibles

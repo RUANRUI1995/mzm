@@ -1980,7 +1980,7 @@ void Port_BottomUI_HandleTouchDrag(int x, int y, bool isNewTap) {
             /* Remap modal main view: scrollable list of 10 buttons + C-Stick mode */
             const float viewY0 = 44.0f;
             const float viewY1 = 202.0f;
-            const float maxScroll = 180.0f; /* (13 items * 26px = 338px) - 158px */
+            const float maxScroll = 206.0f; /* (14 items * 26px = 364px) - 158px */
 
             if (isNewTap) {
                 /* Check Bottom Buttons (Y: 204 to 230): RESTABLECER (16..156) and CERRAR (164..304) */
@@ -2230,6 +2230,12 @@ void Port_BottomUI_TouchReleased(void) {
                     extern bool Port_AutoSpaceJump_Enabled(void);
                     extern void Port_AutoSpaceJump_SetEnabled(bool on);
                     Port_AutoSpaceJump_SetEnabled(!Port_AutoSpaceJump_Enabled());
+                    Port_Config_Save();
+                } else if (tapIdx == 13) {
+                    /* CHARGE PULLS DROPS on / off (port_charge_pull.c) */
+                    extern bool Port_ChargePull_Enabled(void);
+                    extern void Port_ChargePull_SetEnabled(bool on);
+                    Port_ChargePull_SetEnabled(!Port_ChargePull_Enabled());
                     Port_Config_Save();
                 }
             }
@@ -4012,7 +4018,7 @@ static void RenderRemapModal(int lang) {
     /* Viewable / scrollable region: Y 44 to 202 (158px) */
     const float viewY0 = 44.0f;
     const float viewY1 = 202.0f;
-    const float maxScroll = 180.0f; /* 13 items * 26px = 338px; 338 - 158 = 180px */
+    const float maxScroll = 206.0f; /* 14 items * 26px = 364px; 364 - 158 = 206px */
 
     /* 10 remappable buttons + 1 C-Stick row = 11 items, each 26px tall */
     static const char* const btnRowNames[7][10] = {
@@ -4080,15 +4086,18 @@ static void RenderRemapModal(int lang) {
             C2D_Color32(255, 215, 0, 255), viewY0, viewY1);
     }
 
-    /* Items 12 and 13: AUTO BOMB JUMP (port_auto_bomb.c) and AUTO SPACE JUMP
-     * (port_auto_space_jump.c). Off while RetroAchievements hardcore is on, like the other assists. */
+    /* Items 12 to 14: AUTO BOMB JUMP (port_auto_bomb.c), AUTO SPACE JUMP (port_auto_space_jump.c)
+     * and CHARGE PULLS DROPS (port_charge_pull.c). Off while RetroAchievements hardcore is on, like
+     * the other assists. */
     {
         extern bool Port_AutoBomb_Enabled(void);
         extern bool Port_AutoSpaceJump_Enabled(void);
-        const bool values[2] = { Port_AutoBomb_Enabled(), Port_AutoSpaceJump_Enabled() };
-        const char* const names[2][2] = { { "AUTO BOMB JUMP:", "AUTOSALTO BOMBAS:" },
-                                          { "AUTO SPACE JUMP:", "AUTO SALTO ESPACIAL:" } };
-        for (int i = 0; i < 2; ++i) {
+        extern bool Port_ChargePull_Enabled(void);
+        const bool values[3] = { Port_AutoBomb_Enabled(), Port_AutoSpaceJump_Enabled(), Port_ChargePull_Enabled() };
+        const char* const names[3][2] = { { "AUTO BOMB JUMP:", "AUTOSALTO BOMBAS:" },
+                                          { "AUTO SPACE JUMP:", "AUTO SALTO ESPACIAL:" },
+                                          { "CHARGE PULLS DROPS:", "CARGA ATRAE DROPS:" } };
+        for (int i = 0; i < 3; ++i) {
             const float rowY = contentY + (float)(11 + i) * 26.0f;
             if (rowY + 24.0f <= viewY0 || rowY >= viewY1) continue;
             float rY0 = (rowY < viewY0) ? viewY0 : rowY;

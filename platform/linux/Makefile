@@ -60,6 +60,7 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_gba_symbols.c \
 	$(ROOT)/port/port_rom.c \
 	$(ROOT)/port/port_gba_mem.c \
+	$(ROOT)/port/port_sram_legacy.c \
 	$(ROOT)/port/port_bios.c \
 	$(ROOT)/port/port_audio_stubs.c \
 	$(ROOT)/port/port_debug_log.c \

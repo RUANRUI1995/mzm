@@ -809,6 +809,20 @@ void SramWrite_ToEwram(void)
     pFile->environmentalEffects[2] = gSamusEnvironmentalEffects[2];
     pFile->environmentalEffects[3] = gSamusEnvironmentalEffects[3];
     pFile->environmentalEffects[4] = gSamusEnvironmentalEffects[4];
+#ifdef MZM_3DS
+    {
+        // mzm.sav is a GBA save (issue #37): no 3DS address in it. pOamFrame points into this
+        // build's memory, and a GBA reading it would draw from it, so the effects (splashes,
+        // bubbles: gone in a frame anyway) are saved as off and without a frame. The port never
+        // reads the pointer back (SamusEnvEffectsDropFramePointers).
+        u32 i;
+        for (i = 0; i < ARRAY_SIZE(pFile->environmentalEffects); i++)
+        {
+            pFile->environmentalEffects[i].type = ENV_EFFECT_NONE;
+            pFile->environmentalEffects[i].pOamFrame = NULL;
+        }
+    }
+#endif
     pFile->preventMovementTimer = gPreventMovementTimer;
     pFile->disableDrawingSamusAndScrolling = gDisableDrawingSamusAndScrolling;
 

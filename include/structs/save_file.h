@@ -57,7 +57,11 @@ struct SaveMusicInfo {
     u16 unk_2;
     u8 unk_4;
     u8 priority;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct SaveWorldData {
     u32 visitedMinimapTiles[MAX_AMOUNT_OF_AREAS][32];
@@ -183,7 +187,11 @@ struct SaveValue {
     u8 endText[SRAM_TEXT_SIZE];
 
     u8 padding_27[24];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct SaveTimeAttack {
     u8 magicNumber;
@@ -199,7 +207,11 @@ struct SaveTimeAttack {
     u8 endText[SRAM_TEXT_SIZE];
 
     u8 padding_68[152];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct SaveBootDebug {
     u8 zeroSaveText[8];
@@ -207,7 +219,11 @@ struct SaveBootDebug {
     u8 debugMode;
     u8 sectionIndex;
     u8 unk_E[2];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct Sram {
     struct SaveFileScreenOptions fileScreenOptions_fileA;
@@ -239,6 +255,11 @@ struct Sram {
 #if !defined(PORT_NATIVE)
 // Make sure that the size of the sram struct doesn't exceed the size of the flash sram
 STATIC_ASSERT(sizeof(struct Sram) <= SRAM_SIZE, SramStructSize);
+#endif
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+// The save has the GBA's layout (port_gba_struct_layout.h): mzm.sav is the GBA's save file.
+STATIC_ASSERT(!PORT_GBA_SAVE_LAYOUT || sizeof(struct SaveFile) == 0x1220, PortSaveFileIsGbaSize);
+STATIC_ASSERT(!PORT_GBA_SAVE_LAYOUT || sizeof(struct Sram) == 0x7F90, PortSramIsGbaSize);
 #endif
 
 extern u8 gSramOperationStage;

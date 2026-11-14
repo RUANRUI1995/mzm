@@ -66,7 +66,11 @@ struct Camera {
     u16 yPosition;
     s8 xVelocity;
     s8 yVelocity;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct LockScreen {
     LockScreenType lock;

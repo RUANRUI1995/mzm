@@ -30,7 +30,11 @@ struct Equipment {
     boolu8 lowHealth;
     SuitType suitType;
     boolu8 grabbedByMetroid;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 
 struct WeaponInfo {
@@ -41,7 +45,11 @@ struct WeaponInfo {
     u8 cooldown;
     u8 chargeCounter;
     u8 beamReleasePaletteTimer;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct SamusData {
     SamusPose pose;
@@ -65,7 +73,11 @@ struct SamusData {
     u16 currentSlope;
     u8 animationDurationCounter;
     u8 currentAnimationFrame;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct SamusPhysics {
     const u16* pBodyOam;
@@ -128,7 +140,11 @@ struct HazardDamage {
     u8 damageTimer;
     u16 knockbackTimer;
     u8 paletteTimer;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 struct EnvironmentalEffect {
     EnvEffect type;

@@ -11,7 +11,11 @@ struct GameCompletion {
     s8 completedGame;
     u8 introPlayed;
     u8 language;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 extern struct GameCompletion gGameCompletion;
 

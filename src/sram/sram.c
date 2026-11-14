@@ -206,6 +206,15 @@ void Port_LoadSram(void)
             Port_DebugLog("Port_LoadSram: converted a save from before issue #37 (kept as mzm.sav.legacy)");
 #endif
         }
+        /* The loaded ROM's version text (the game erases a save with another region's): the
+         * port's older saves always said USA, a GBA save says its cartridge's region. */
+        if (Port_SramAdoptRegion(gSramMem, sizeof(gSramMem)))
+        {
+            sSramDirty = TRUE;
+#ifdef MZM_3DS
+            Port_DebugLog("Port_LoadSram: the save's version text set to the ROM's region");
+#endif
+        }
         return;
     }
 }

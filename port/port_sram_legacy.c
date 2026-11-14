@@ -1,8 +1,11 @@
 #include "port_sram_legacy.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "region.h"
+#include "constants/game_region.h"
 #include "structs/save_file.h"
 
 #include "port_sram_legacy_map.inc"
@@ -133,4 +136,44 @@ boolu8 Port_SramLegacy_ConvertInPlace(u8* sram, u32 size, boolu8 strict)
     Port_SramLegacy_Convert(copy, sram, size);
     free(copy);
     return TRUE;
+}
+
+static const u8 sVersionTexts[3][20] = {
+    { 'Z','e','r','o','M','i','s','s','i','o','n','J','P','N','v','e','r','0','0','5' },
+    { 'Z','e','r','o','M','i','s','s','i','o','n','E','U','R','v','e','r','0','0','5' },
+    { 'Z','e','r','o','M','i','s','s','i','o','n','U','S','A','v','e','r','0','0','5' },
+};
+
+boolu8 Port_SramAdoptRegion(u8* sram, u32 size)
+{
+    static const u32 sBlocks[] = {
+        offsetof(struct Sram, fileScreenOptions_fileA),
+        offsetof(struct Sram, fileScreenOptions_fileB),
+        offsetof(struct Sram, fileScreenOptions_fileC),
+    };
+    const u32 textAt = offsetof(struct SaveFileScreenOptions, ZeroMissionVer_Text);
+    const u32 regionAt = offsetof(struct SaveFileScreenOptions, region);
+    const u8 region = REGION_IS_EU() ? GAME_REGION_EUR : REGION_IS_JP() ? GAME_REGION_JPN : GAME_REGION_USA;
+    const u8* const own = sVersionTexts[region];
+    boolu8 changed = FALSE;
+    u32 i, k;
+
+    if (size < sizeof(struct Sram))
+        return FALSE;
+    for (i = 0; i < ARRAY_SIZE(sBlocks); i++)
+    {
+        u8* block = sram + sBlocks[i];
+        boolu8 known = FALSE;
+        if (!Valid32(block, sizeof(struct SaveFileScreenOptions), 0) || memcmp(block + textAt, own, 20) == 0)
+            continue;
+        for (k = 0; k < ARRAY_SIZE(sVersionTexts); k++)
+            known |= memcmp(block + textAt, sVersionTexts[k], 20) == 0;
+        if (!known)
+            continue;
+        memcpy(block + textAt, own, 20);
+        block[regionAt] = region;
+        Seal32(block, sizeof(struct SaveFileScreenOptions), 0);
+        changed = TRUE;
+    }
+    return changed;
 }

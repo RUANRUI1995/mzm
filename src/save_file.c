@@ -25,6 +25,15 @@
 #include "constants/samus.h"
 #include "constants/demo.h"
 #include "constants/game_region.h"
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+// One binary runs any region's ROM: the save's version text and region byte are the loaded ROM's.
+// They were always the USA ones (no REGION_* at compile time), so a GBA save from an EUR or JPN
+// cartridge read as foreign and was erased (issue #37); Port_SramAdoptRegion fixes the old saves.
+#undef SAVE_FILE_GAME_VER_TEXT
+#define SAVE_FILE_GAME_VER_TEXT (REGION_IS_EU() ? sEurVer_Text : REGION_IS_JP() ? sJpnVer_Text : sUsaVer_Text)
+#undef GAME_REGION
+#define GAME_REGION (REGION_IS_EU() ? GAME_REGION_EUR : REGION_IS_JP() ? GAME_REGION_JPN : GAME_REGION_USA)
+#endif
 
 #include "structs/audio.h"
 #include "structs/bg_clip.h"

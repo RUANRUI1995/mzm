@@ -1648,6 +1648,9 @@ static void PalFadeBeginFrame(bool allowed) {
  * scissor space at draw time. */
 static bool sWindowActive;
 static int sWinLeft, sWinTop, sWinRight, sWinBottom;
+/* The window is clipped with the GPU scissor in the draw loop (only Samus's close-up sets it;
+ * see where sWindowActive is computed). */
+static bool sForceWinScissor;
 static WindowVis sLayerWinVis[5]; /* index 0-3 = BG0-3, 4 = OBJ, same layer-id convention as BldIsFirstTarget */
 
 /* Power-bomb explosion circular flash (issue #28).
@@ -4443,26 +4446,14 @@ static void ComputeSceneWideView(uint16_t dispcnt) {
  * black out the game or the HUD. */
 static void DrawWideRoomMasks(float baseX, float baseY, float scaleX, float scaleY) {
     const WideView* v = &sWideView;
-    /* Samus's close-up with its generated picture (sScenePicOnTop): the margins are black (the
-     * room's layers hold junk there) with the picture over them, as opaque as the game's own
-     * picture: the close-up fades in and out by BLDALPHA's EVA (InGameCutsceneSamusCloseUp,
-     * stages 1-2 and 10-11), so the picture comes and goes with it. Its middle is transparent
-     * (the alpha test drops it), where the game's own picture shows. */
+    /* Samus's close-up with its generated picture (sScenePicOnTop): the margins hold the room's
+     * clean layers only (sForceWinScissor) and the picture goes over them as opaque as the game's
+     * own picture: the close-up fades in and out over the room by BLDALPHA's EVA
+     * (InGameCutsceneSamusCloseUp, stages 1-2 and 10-11), and the picture with it. Its middle is
+     * transparent (the alpha test drops it), where the game's own picture shows. */
     if (sScenePicOnTop && sScenePicTex) {
         const PortScenePictureDef* pic = sScenePic;
         C2D_Flush();
-        PlatformGpu3DS_ResetSolidTexEnv();
-        C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ZERO, GPU_ONE, GPU_ZERO);
-        {
-            const u32 black = C2D_Color32(0, 0, 0, 255);
-            const float fx0 = baseX + (float)(-v->shiftX) * scaleX, fx1 = baseX + (float)(240 - v->shiftX) * scaleX;
-            const float fy0 = baseY + (float)(-v->shiftY) * scaleY, fy1 = baseY + (float)(160 - v->shiftY) * scaleY;
-            if (fx0 > 0.0f) C2D_DrawRectSolid(0.0f, 0.0f, 0.6f, fx0, 240.0f, black);
-            if (fx1 < 400.0f) C2D_DrawRectSolid(fx1, 0.0f, 0.6f, 400.0f - fx1, 240.0f, black);
-            if (fy0 > 0.0f) C2D_DrawRectSolid(0.0f, 0.0f, 0.6f, 400.0f, fy0, black);
-            if (fy1 < 240.0f) C2D_DrawRectSolid(0.0f, fy1, 0.6f, 400.0f, 240.0f - fy1, black);
-            C2D_Flush();
-        }
         /* The first target's share; 16 when no blend is running. */
         const int eva = (sBldEffect == 1 && BldIsFirstTarget(sIoBldcnt, 0)) ? sBldEva : 16;
         const Tex3DS_SubTexture sub = {
@@ -4511,18 +4502,6 @@ static void DrawWideRoomMasks(float baseX, float baseY, float scaleX, float scal
     if (top > -v->shiftY) top = -v->shiftY;
     if (right < 240 - v->shiftX) right = 240 - v->shiftX;
     if (bottom < 160 - v->shiftY) bottom = 160 - v->shiftY;
-    /* Samus's close-up (issue #35): its picture is 240x160, and its graphics are loaded over the
-     * tiles the room's BG3 uses, so everything the margins would show is junk (copies of the face,
-     * stripes of tiles). Only the GBA frame until the scene gets an extended picture. */
-    {
-        extern int PortPpuMzm_WideCloseUpActive(void);
-        if (!sWideScene && PortPpuMzm_WideCloseUpActive()) {
-            left = -v->shiftX;
-            right = 240 - v->shiftX;
-            top = -v->shiftY;
-            bottom = 160 - v->shiftY;
-        }
-    }
 
     const u32 black = C2D_Color32(0, 0, 0, 255);
     const float x0 = baseX + (float)left * scaleX;
@@ -4685,6 +4664,27 @@ void Port_GpuRenderer_CollectFrame(void) {
             sWinBottom = bottom;
             for (int l = 0; l < 4; ++l) sLayerWinVis[l] = ComputeLayerWinVis(insideMask, outsideMask, l);
             sLayerWinVis[4] = ComputeLayerWinVis(insideMask, outsideMask, 4);
+        }
+    }
+
+    /* Samus's close-up (issue #35): the game's WIN1 covers the whole GBA frame, so it is not a
+     * clip there, but past the frame BG0 (its map wraps) and BG3 (its tiles are overwritten by
+     * the close-up's graphics) only hold junk, and the sprites have no business there either.
+     * The WIDE margins keep the room's clean layers, BG1 and BG2, for the close-up's picture to
+     * fade over (DrawWideRoomMasks), the way the game's picture fades over the room inside the
+     * frame. Clipped for real by the GPU scissor in the draw loop (sForceWinScissor). */
+    sForceWinScissor = false;
+    if (sWideOn && !sWideScene && !sWindowActive) {
+        extern int PortPpuMzm_WideCloseUpActive(void);
+        if (PortPpuMzm_WideCloseUpActive()) {
+            sWindowActive = true;
+            sForceWinScissor = true;
+            sWinLeft = 0; sWinTop = 0; sWinRight = 240; sWinBottom = 160;
+            sLayerWinVis[0] = WIN_VIS_INSIDE_ONLY;
+            sLayerWinVis[1] = WIN_VIS_ALWAYS;
+            sLayerWinVis[2] = WIN_VIS_ALWAYS;
+            sLayerWinVis[3] = WIN_VIS_INSIDE_ONLY;
+            sLayerWinVis[4] = WIN_VIS_INSIDE_ONLY;
         }
     }
 
@@ -5384,6 +5384,21 @@ void Port_GpuRenderer_DrawFrame(void) {
 #define FLUSH_ITEMS() do { if (batched) BatchFlush(); else C2D_Flush(); } while (0)
         for (int sp = 0; sp < scissorPasses; ++sp) {
             bool insidePass = (sp == 0);
+            if (sForceWinScissor) {
+                /* The window rect on the screen, then in the top screen's render target, which is
+                 * 240x400 and turned a quarter (x = 240 - screen y, y = 400 - screen x). */
+                FLUSH_ITEMS();
+                int sx0 = (int)(worldBaseX + (float)sWinLeft * scaleX + 0.5f);
+                int sx1 = (int)(worldBaseX + (float)sWinRight * scaleX + 0.5f);
+                int sy0 = (int)(worldBaseY + (float)sWinTop * scaleY + 0.5f);
+                int sy1 = (int)(worldBaseY + (float)sWinBottom * scaleY + 0.5f);
+                if (sx0 < 0) sx0 = 0;
+                if (sy0 < 0) sy0 = 0;
+                if (sx1 > 400) sx1 = 400;
+                if (sy1 > 240) sy1 = 240;
+                C3D_SetScissor(insidePass ? GPU_SCISSOR_NORMAL : GPU_SCISSOR_INVERT, (u32)(240 - sy1),
+                               (u32)(400 - sx1), (u32)(240 - sy0), (u32)(400 - sx0));
+            }
             for (int oi = 0; oi < sDrawOrderCount; ++oi) {
                 const DrawItem* item = &sDrawItems[sDrawOrder[oi]];
                 if (!ItemPassesWindow(sWindowActive, item->winVis, insidePass)) continue;
@@ -5464,6 +5479,10 @@ void Port_GpuRenderer_DrawFrame(void) {
             }
         }
         if (batched) BatchEnd();
+        if (sForceWinScissor) {
+            C2D_Flush();
+            C3D_SetScissor(GPU_SCISSOR_DISABLE, 0, 0, 0, 0);
+        }
         /* Device pixels the quads covered, summed over every eye: separates
          * "cost is per quad" from "cost is per pixel", which the quad count
          * alone cannot. A replayed eye covers what the first one did. */
@@ -5472,7 +5491,8 @@ void Port_GpuRenderer_DrawFrame(void) {
             eyePixels = replayPixels;
         } else {
             replayEnd = sBatchUsed;
-            replayOk = batched && !batchOverflowed;
+            /* A replay would skip the scissor changes between the window's passes. */
+            replayOk = batched && !batchOverflowed && !sForceWinScissor;
             replayPixels = eyePixels;
         }
         if (sBatchUsed < replayEnd) sBatchUsed = replayEnd;

@@ -35,6 +35,25 @@ from gba_dump import Dump, backdrop, bg_frame, render_bg, render_sprites  # noqa
 # dumps: captures to take the picture from; final: the one the composite shows.
 # frame_only: take from each dump only what its frame shows (streamed scenes).
 SCENES = {
+    'closeup-landing': dict(
+        name="Samus's close-up when she lands on Zebes (in-game cutscene, Brinstar's first room)",
+        bg=0, dumps=['closeup/1'], final='closeup/1',
+        picture=(0, 0, 240, 160), canvas=(-80, -40, 320, 200),
+        about="A close-up of Samus in her Power Suit, filling the screen: the round red and orange "
+              "helmet with its dark green visor, her face seen through it (eyes closed, calm), and her "
+              "big yellow shoulder pads cut by the left and right edges. Behind her, a dark jungle of "
+              "green alien plants. The canvas is the 400x240 screen with the picture in the middle.",
+        sides=[
+            "Left and right: her yellow shoulder pads and the red of her suit, which the original "
+            "cuts at its edges, continue outwards naturally (same shapes, colours and shading), and "
+            "past them more of the dark green jungle behind her. Do not add another helmet or face.",
+            "Above: more of the dark jungle with green plants, darker towards the top edge.",
+            "Below: her suit (chest and shoulders) continues down to the bottom edge of the canvas, "
+            "in the same reds, oranges and yellows, a bit darker as it goes down.",
+            "Same pixel-art look as the original: hard 1-pixel edges, the same limited colours, no "
+            "soft gradients or glow.",
+        ],
+        over="nothing (the whole picture is background)"),
     'title': dict(
         name="Metroid: Zero Mission title screen",
         bg=3, dumps=['title/01', 'title/02', 'title/03'], final='title/03', frame_only=True,

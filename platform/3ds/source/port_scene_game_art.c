@@ -15,7 +15,7 @@ extern uint8_t* sNonGameplayRamPointer;
 
 extern int16_t gSubGameMode1; /* include/structs/game_state.h */
 
-enum { GM_INTRO = 1, GM_TITLE = 2 }; /* include/constants/game_state.h */
+enum { GM_INTRO = 1, GM_TITLE = 2, GM_INGAME = 4 }; /* include/constants/game_state.h */
 
 /* No picture matches this key. */
 enum { SCENE_NOT_READY = -2 };
@@ -28,6 +28,12 @@ int PortScenePic_SceneKey(int gameMode) {
      * has not run yet (sub mode 0): memory and VRAM are still the previous
      * scene's, and the picture would be built from them and kept. */
     if (gameMode == GM_TITLE && gSubGameMode1 == 0) return SCENE_NOT_READY;
+    /* In game, 1 while Samus's close-up is on screen (the cutscene when she lands, issue #35):
+     * its picture is the only one that belongs to a room. */
+    if (gameMode == GM_INGAME) {
+        extern int PortPpuMzm_WideCloseUpActive(void);
+        return PortPpuMzm_WideCloseUpActive() ? 1 : 0;
+    }
     return 0;
 }
 

@@ -4443,10 +4443,28 @@ static void ComputeSceneWideView(uint16_t dispcnt) {
  * black out the game or the HUD. */
 static void DrawWideRoomMasks(float baseX, float baseY, float scaleX, float scaleY) {
     const WideView* v = &sWideView;
-    /* Samus's close-up with its generated picture (sScenePicOnTop): the picture over the margins
-     * instead of black. Its middle is transparent, where the game's own picture shows. */
+    /* Samus's close-up with its generated picture (sScenePicOnTop): the margins are black (the
+     * room's layers hold junk there) with the picture over them, as opaque as the game's own
+     * picture: the close-up fades in and out by BLDALPHA's EVA (InGameCutsceneSamusCloseUp,
+     * stages 1-2 and 10-11), so the picture comes and goes with it. Its middle is transparent
+     * (the alpha test drops it), where the game's own picture shows. */
     if (sScenePicOnTop && sScenePicTex) {
         const PortScenePictureDef* pic = sScenePic;
+        C2D_Flush();
+        PlatformGpu3DS_ResetSolidTexEnv();
+        C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ZERO, GPU_ONE, GPU_ZERO);
+        {
+            const u32 black = C2D_Color32(0, 0, 0, 255);
+            const float fx0 = baseX + (float)(-v->shiftX) * scaleX, fx1 = baseX + (float)(240 - v->shiftX) * scaleX;
+            const float fy0 = baseY + (float)(-v->shiftY) * scaleY, fy1 = baseY + (float)(160 - v->shiftY) * scaleY;
+            if (fx0 > 0.0f) C2D_DrawRectSolid(0.0f, 0.0f, 0.6f, fx0, 240.0f, black);
+            if (fx1 < 400.0f) C2D_DrawRectSolid(fx1, 0.0f, 0.6f, 400.0f - fx1, 240.0f, black);
+            if (fy0 > 0.0f) C2D_DrawRectSolid(0.0f, 0.0f, 0.6f, 400.0f, fy0, black);
+            if (fy1 < 240.0f) C2D_DrawRectSolid(0.0f, fy1, 0.6f, 400.0f, 240.0f - fy1, black);
+            C2D_Flush();
+        }
+        /* The first target's share; 16 when no blend is running. */
+        const int eva = (sBldEffect == 1 && BldIsFirstTarget(sIoBldcnt, 0)) ? sBldEva : 16;
         const Tex3DS_SubTexture sub = {
             .width = (u16)pic->width,
             .height = (u16)pic->height,
@@ -4463,12 +4481,19 @@ static void DrawWideRoomMasks(float baseX, float baseY, float scaleX, float scal
             .depth = 0.0f,
             .angle = 0.0f,
         };
-        C2D_Flush();
         ConfigureAtlasTextureEnv();
-        C2D_DrawImage(img, &prm, NULL);
-        /* As for the picture behind the scene: the batch binds the atlas behind citro2d's back. */
-        C3D_TexBind(0, sScenePicTex);
-        C2D_Flush();
+        if (eva < 16) {
+            C3D_BlendingColor(C2D_Color32(0, 0, 0, (u32)(eva * 255 / 16)));
+            C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_CONSTANT_ALPHA, GPU_ONE_MINUS_CONSTANT_ALPHA,
+                           GPU_CONSTANT_ALPHA, GPU_ONE_MINUS_CONSTANT_ALPHA);
+        }
+        if (eva > 0) {
+            C2D_DrawImage(img, &prm, NULL);
+            /* As for the picture behind the scene: the batch binds the atlas behind citro2d's back. */
+            C3D_TexBind(0, sScenePicTex);
+            C2D_Flush();
+        }
+        C3D_AlphaBlend(GPU_BLEND_ADD, GPU_BLEND_ADD, GPU_ONE, GPU_ZERO, GPU_ONE, GPU_ZERO);
         return;
     }
     /* The tile quads before this are still queued with the atlas texenv. A

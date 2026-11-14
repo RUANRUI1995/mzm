@@ -25,4 +25,12 @@ void Port_SramLegacy_Convert(const u8* legacy, u8* out, u32 outSize);
  * `strict`, for gSramMem, which holds nothing else). Returns TRUE when it converted. */
 boolu8 Port_SramLegacy_ConvertInPlace(u8* sram, u32 size, boolu8 strict);
 
+/* The file screen options (fileScreenOptions_fileA/B/C) carry the game's version text, and the
+ * game erases a save whose text is not its own region's. Every save the port wrote before
+ * issue #37 says USA, whatever ROM it ran, and a GBA save from another region's cartridge says
+ * that region: when a valid block holds one of the three texts but not the loaded ROM's, it gets
+ * the ROM's (and its region byte) and a new checksum. Call once the ROM is loaded (gRomRegion).
+ * Returns TRUE when it changed something. */
+boolu8 Port_SramAdoptRegion(u8* sram, u32 size);
+
 #endif

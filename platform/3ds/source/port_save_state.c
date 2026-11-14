@@ -695,6 +695,10 @@ static void Ss4Load(FILE* f, const SsHeader* h, uint32_t id) {
         Port_SramLegacy_ConvertInPlace(gSramMem, (uint32_t)sizeof(gSramMem), FALSE);
         Port_SramLegacy_ConvertInPlace(&gEwram[0x38000], 0x8000u, TRUE);
     }
+    /* The save in a state may carry another region's version text (all the port's older states
+     * say USA), which the game would take for a foreign save and erase. */
+    Port_SramAdoptRegion(gSramMem, (uint32_t)sizeof(gSramMem));
+    Port_SramAdoptRegion(&gEwram[0x38000], 0x8000u);
 
     const uint32_t nVarsApply = SsGetU32(&c);
     for (uint32_t n = 0; n < nVarsApply; ++n) {

@@ -22,6 +22,8 @@
 #include "structs/game_state.h"
 #include "constants/cutscene.h"       /* CUTSCENE_DATA */
 #include "structs/cutscene.h"
+#include "constants/in_game_cutscene.h" /* IGC_CLOSE_UP */
+#include "structs/in_game_cutscene.h"   /* gInGameCutscene */
 #include "structs/tourian_escape.h"   /* TOURIAN_ESCAPE_DATA */
 #include "data/shortcut_pointers.h"   /* sNonGameplayRamPointer */
 #include "structs/connection.h"
@@ -257,6 +259,8 @@ void Port_Config_Save(void) {
         fprintf(file, "auto_bomb_jump=%u\n", Port_AutoBomb_Enabled() ? 1u : 0u);
         extern bool Port_AutoSpaceJump_Enabled(void);
         fprintf(file, "auto_space_jump=%u\n", Port_AutoSpaceJump_Enabled() ? 1u : 0u);
+        extern bool Port_ChargePull_Enabled(void);
+        fprintf(file, "charge_pull=%u\n", Port_ChargePull_Enabled() ? 1u : 0u);
     }
     fprintf(file, "bottom_tab=%d\n", (int)Port_BottomUI_GetTab());
     fprintf(file, "bottom_zoom=%d\n", Port_BottomUI_GetZoom());
@@ -338,6 +342,9 @@ void Port_Config_Load(void) {
         } else if (strcmp(key, "auto_space_jump") == 0) {
             extern void Port_AutoSpaceJump_SetEnabled(bool on);
             Port_AutoSpaceJump_SetEnabled(val != 0);
+        } else if (strcmp(key, "charge_pull") == 0) {
+            extern void Port_ChargePull_SetEnabled(bool on);
+            Port_ChargePull_SetEnabled(val != 0);
         } else if (strcmp(key, "update_beta") == 0) {
             extern void Port_Updater_SetBeta(bool);
             Port_Updater_SetBeta(val != 0);
@@ -617,9 +624,25 @@ int Port_Samus_GetPoseClass(void) {
  * that can never happen it just bobs her crouch for the whole safety window.
  * Suitless Samus has no morph-ball graphics and the pose machine refuses the
  * transition (see the suitType guard in SamusCrouching), so the assist must
- * not start a morph sequence for her. */
+ * not start a morph sequence for her. Before the Morph Ball is picked up the
+ * same goes for everyone: Down only crouches, so the assist spammed crouch
+ * (issue #36). */
 int Port_Samus_CanMorph(void) {
-    return gEquipment.suitType != SUIT_SUITLESS;
+    return gEquipment.suitType != SUIT_SUITLESS && (gEquipment.suitMiscActivation & SMF_MORPH_BALL);
+}
+
+/* How the button mapping applies this frame (issue #36: a remap also changed which button confirms
+ * and cancels in the menus; the Super Metroid port maps gameplay only).
+ *   0 = the buttons as they are: title, file select, pause and map screens (GM_MAP_SCREEN),
+ *       cutscenes, game over, credits.
+ *   1 = the mapping: in game, door transitions and room loads included, so a held charge or jump
+ *       carries through a door.
+ *   2 = both: in game while Samus is held still (gPreventMovementTimer: the item and save banners,
+ *       which close or confirm on A/B). The physical buttons are added to the mapped ones, so A
+ *       and B do what the banner says while a held mapped button (a charged beam) still counts. */
+int Port_Input_RemapMode(void) {
+    if (gMainGameMode != GM_INGAME) return 0;
+    return gPreventMovementTimer != 0 ? 2 : 1;
 }
 
 /* Per-area, per-tank-type collected counts for the bottom-screen collectibles
@@ -2312,6 +2335,17 @@ int PortPpuMzm_WideLayerDivisor(int bg, int vertical) {
         default:
             return 1;
     }
+}
+
+/* Whether Samus's close-up (the in-game cutscene when she lands, issue #35) is on screen: from the
+ * stage that loads its picture through stage 12, which puts the room's graphics back
+ * (InGameCutsceneSamusCloseUp); until then the room's layers hold junk past the GBA frame. Not
+ * the room's bg0Prop: the cutscene leaves it at BG_PROP_CLOSE_UP for as long as Samus stays in
+ * that room. */
+int PortPpuMzm_WideCloseUpActive(void) {
+    /* A running cutscene's number carries IGC_STARTED_FLAG. */
+    return (gInGameCutscene.cutsceneNumber & IGC_NO_STARTED_FLAG) == IGC_CLOSE_UP && gInGameCutscene.stage >= 1 &&
+           gInGameCutscene.stage <= 12;
 }
 
 #ifdef PORT_DEBUG_TOOLS

@@ -18,6 +18,11 @@ long as the rules below hold. Format 5 is format 4 with the game's clock added t
 otherwise the same); formats 4, 2 and 3 are still read, and load only
 when the build's layout fingerprint matches, as before.
 
+Format 6 is format 5 written by a build whose save has the GBA's layout (issue #37,
+`port/port_gba_struct_layout.h`). The file is the same; on loading a format 4 or 5 state the save
+it carries, in the port's old layout, is converted (`Port_SramLegacy_ConvertInPlace`): gSramMem,
+and the game's working copy at EWRAM 0x2038000 when its files check out in the old layout.
+
 What a state holds:
 
 | Part | How |

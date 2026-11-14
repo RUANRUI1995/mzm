@@ -16,6 +16,16 @@ static const char sSramVersion[] = "SRAM_V113";
 #endif
 
 #define SAVE_FILE_PATH "mzm.sav"
+/* mzm.sav is the GBA's save file, byte for byte (issue #37, port_gba_struct_layout.h): the 32 KB
+ * of SRAM an emulator or a cartridge has, so either can be copied in or out as it is. A 64-bit
+ * host cannot have that layout and keeps writing all of gSramMem. */
+#if PORT_GBA_SAVE_LAYOUT
+#define SAVE_FILE_BYTES SRAM_SIZE
+#else
+#define SAVE_FILE_BYTES sizeof(gSramMem)
+#endif
+#include <stdlib.h>
+#include "port_sram_legacy.h"
 
 /* Writes to SD are far too slow to run once per SramWrite* call (a single
  * in-game save fans out into dozens of them via unk_fbc / SramSaveFile's
@@ -79,7 +89,7 @@ static void* SaveThreadMain(void* arg)
         sQueuedBuffer = -1;
         pthread_mutex_unlock(&sSaveMutex);
 
-        if (SramWriteAtomic(sSramSnapshot[sWritingBuffer], sizeof(sSramSnapshot[0])))
+        if (SramWriteAtomic(sSramSnapshot[sWritingBuffer], SAVE_FILE_BYTES))
             Port_DebugLog("Port_SaveSram: wrote mzm.sav");
         else
         {
@@ -106,24 +116,74 @@ static void SaveThreadStart(void)
 }
 #endif
 
-/* A whole file only: a save cut short by a power loss is smaller than gSramMem. */
+/* What ReadSramFile found. */
+#define SRAM_FILE_NONE 0
+#define SRAM_FILE_GBA 1      /* the GBA's layout: ours, an emulator's or a cartridge's */
+#define SRAM_FILE_LEGACY 2   /* the port's save from before issue #37, converted */
+
+/* The old file is kept, once, as mzm.sav.legacy before the converted save replaces it. */
+static void KeepLegacyCopy(const u8* data, u32 size)
+{
+    FILE* f = fopen(SAVE_FILE_PATH ".legacy", "rb");
+    if (f)
+    {
+        fclose(f);
+        return;
+    }
+    f = fopen(SAVE_FILE_PATH ".legacy", "wb");
+    if (!f)
+        return;
+    if (fwrite(data, 1, size, f) != size)
+    {
+        fclose(f);
+        remove(SAVE_FILE_PATH ".legacy");
+        return;
+    }
+    fclose(f);
+}
+
+/* A whole file only: a save cut short by a power loss has neither size. 32 KB is a GBA save
+ * (SAVE_FILE_BYTES); 64 KB is what the port wrote before issue #37 (all of gSramMem, in its old
+ * layout), unless more of its files pass the checksum read as the GBA's (a 64 KB dump). */
 static int ReadSramFile(const char* path)
 {
     long size;
+    u8* data;
+    int kind;
     FILE* f = fopen(path, "rb");
     if (!f)
-        return FALSE;
+        return SRAM_FILE_NONE;
     size = -1;
     if (fseek(f, 0, SEEK_END) == 0)
         size = ftell(f);
-    if (size != (long)sizeof(gSramMem) || fseek(f, 0, SEEK_SET) != 0
-        || fread(gSramMem, 1, sizeof(gSramMem), f) != sizeof(gSramMem))
+    if ((size != SAVE_FILE_BYTES && size != (long)sizeof(gSramMem)) || fseek(f, 0, SEEK_SET) != 0)
     {
         fclose(f);
-        return FALSE;
+        return SRAM_FILE_NONE;
+    }
+    data = (u8*)calloc(1, sizeof(gSramMem));
+    if (!data || fread(data, 1, (size_t)size, f) != (size_t)size)
+    {
+        free(data);
+        fclose(f);
+        return SRAM_FILE_NONE;
     }
     fclose(f);
-    return TRUE;
+
+    kind = SRAM_FILE_GBA;
+    if (PORT_GBA_SAVE_LAYOUT && size == (long)sizeof(gSramMem)
+        && Port_SramLegacy_ValidFiles(data, (u32)size, TRUE) >= Port_SramLegacy_ValidFiles(data, (u32)size, FALSE))
+        kind = SRAM_FILE_LEGACY;
+
+    if (kind == SRAM_FILE_LEGACY)
+    {
+        Port_SramLegacy_Convert(data, gSramMem, sizeof(gSramMem));
+        KeepLegacyCopy(data, (u32)size);
+    }
+    else
+        memcpy(gSramMem, data, sizeof(gSramMem));
+    free(data);
+    return kind;
 }
 
 void Port_LoadSram(void)
@@ -131,11 +191,32 @@ void Port_LoadSram(void)
     /* mzm.sav first; if it is missing or incomplete, a complete .tmp (the
      * crash came between the two renames of SramWriteAtomic), then the save
      * before it (.bak). None of them: a blank file, as a first run. */
-    if (ReadSramFile(SAVE_FILE_PATH))
+    static const char* const sPaths[] = { SAVE_FILE_PATH, SAVE_FILE_PATH ".tmp", SAVE_FILE_PATH ".bak" };
+    u32 i;
+    for (i = 0; i < ARRAY_SIZE(sPaths); i++)
+    {
+        const int kind = ReadSramFile(sPaths[i]);
+        if (kind == SRAM_FILE_NONE)
+            continue;
+        if (kind == SRAM_FILE_LEGACY)
+        {
+            /* Written again in the GBA's layout at the next flush. */
+            sSramDirty = TRUE;
+#ifdef MZM_3DS
+            Port_DebugLog("Port_LoadSram: converted a save from before issue #37 (kept as mzm.sav.legacy)");
+#endif
+        }
+        /* The loaded ROM's version text (the game erases a save with another region's): the
+         * port's older saves always said USA, a GBA save says its cartridge's region. */
+        if (Port_SramAdoptRegion(gSramMem, sizeof(gSramMem)))
+        {
+            sSramDirty = TRUE;
+#ifdef MZM_3DS
+            Port_DebugLog("Port_LoadSram: the save's version text set to the ROM's region");
+#endif
+        }
         return;
-    if (ReadSramFile(SAVE_FILE_PATH ".tmp"))
-        return;
-    ReadSramFile(SAVE_FILE_PATH ".bak");
+    }
 }
 
 /* Atomic save write: the data lands in a temp file first and only replaces
@@ -167,7 +248,7 @@ static u8 SramWriteAtomic(const u8* data, u32 size)
 
 void Port_SaveSram(void)
 {
-    u8 ok = SramWriteAtomic(gSramMem, sizeof(gSramMem));
+    u8 ok = SramWriteAtomic(gSramMem, SAVE_FILE_BYTES);
 #ifdef MZM_3DS
     if (!ok)
         sWriteFailed = TRUE;

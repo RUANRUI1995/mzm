@@ -3,6 +3,9 @@
 
 // Include this here to make sure it's basically included everywhere
 #include "config.h"
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#include "port_gba_struct_layout.h"
+#endif
 
 #define TRUE 1
 #define FALSE 0

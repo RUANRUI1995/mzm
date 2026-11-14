@@ -30,7 +30,11 @@ struct TimeAttackRecord {
     struct InGameTimer igt;
     u8 password100[20];
     struct InGameTimer igt100;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+} PORT_GBA_STRUCT_ALIGN; // the GBA save layout (port_gba_struct_layout.h)
+#else
 };
+#endif
 
 extern struct TimeAttackData gTimeAttackData;
 extern struct TimeAttackRecord gTimeAttackRecord;

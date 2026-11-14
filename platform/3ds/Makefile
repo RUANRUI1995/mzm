@@ -68,6 +68,7 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_gba_symbols.c \
 	$(ROOT)/port/port_rom.c \
 	$(ROOT)/port/port_gba_mem.c \
+	$(ROOT)/port/port_sram_legacy.c \
 	$(ROOT)/port/port_bios.c \
 	$(ROOT)/port/port_gba_timing.c \
 	$(ROOT)/port/port_debug_log.c \
@@ -106,6 +107,7 @@ SRCS_3DS := \
 	$(CURDIR)/source/port_save_state.c \
 	$(CURDIR)/source/port_auto_bomb.c \
 	$(CURDIR)/source/port_auto_space_jump.c \
+	$(CURDIR)/source/port_charge_pull.c \
 	$(CURDIR)/source/port_stereo_depth.c \
 	$(CURDIR)/source/port_cutscene_depth.c \
 	$(CURDIR)/source/port_layer_fixes.c \

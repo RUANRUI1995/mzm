@@ -38,7 +38,9 @@ OUTPUT_C = os.path.join(ROOT, 'platform', '3ds', 'source', 'port_scene_pictures_
 # Game mode (include/constants/game_state.h) and scene key (PortScenePic_SceneKey: the intro's
 # stage, src/intro.c sIntroStageFunctionsPointer) each scene plays in.
 GAME_MODES = {'title': (2, 0), 'file-select': (3, 0), 'intro-space': (1, 1), 'intro-cockpit': (1, 2), 'intro-zebes': (1, 4),
-              'intro-motherbrain': (1, 6)}
+              'intro-motherbrain': (1, 6),
+              # In game: key 1 while Samus's close-up shows (PortPpuMzm_WideCloseUpActive).
+              'closeup-landing': (4, 1)}
 
 
 def pow2(n):

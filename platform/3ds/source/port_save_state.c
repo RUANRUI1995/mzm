@@ -22,6 +22,7 @@
 #include "structs/in_game_timer.h"   /* gInGameTimer */     /* struct MusicInfo: the few fields kept across a load */
 #include "constants/game_state.h" /* GM_INGAME, SUB_GAME_MODE_PLAYING */
 #include "port_paths.h"
+#include "port_sram_legacy.h"   /* saves from before issue #37 */
 
 /* Decomp globals used only for the "am I in gameplay" gate and the slot
  * label -- extern'd rather than pulling in the big struct headers. */
@@ -55,6 +56,7 @@ extern char __ss_bss_start[],  __ss_bss_end[];
 #define SS_VERSION  3          /* build-bound format (host pointers kept as they are) */
 #define SS_VERSION_V4 4        /* build-independent format, see Ss4Save */
 #define SS_VERSION_V5 5        /* format 4 with the play time in the header */
+#define SS_VERSION_V6 6        /* format 5 with the save (SRAM) in the GBA's layout (issue #37) */
 #define SS4_MEM_REGIONS 8      /* EWRAM, IWRAM, IO, BGPAL, OBJPAL, OAM, VRAM, SRAM */
 #define SS4_END_MARK 0x21444E45u   /* "END!" */
 #define SS_REGIONS  10
@@ -159,9 +161,10 @@ static uint32_t SsReadHeader(FILE* f, SsHeader* h) {
         h->savedAt = 0;
         return SS_VERSION_V2;
     }
-    if (h->version != SS_VERSION && h->version != SS_VERSION_V4 && h->version != SS_VERSION_V5)
+    if (h->version != SS_VERSION && h->version != SS_VERSION_V4 && h->version != SS_VERSION_V5 &&
+        h->version != SS_VERSION_V6)
         return h->version ? h->version : 0;
-    const size_t full = h->version == SS_VERSION_V5 ? sizeof(*h) : SS_HEADER_V4_SIZE;
+    const size_t full = h->version >= SS_VERSION_V5 ? sizeof(*h) : SS_HEADER_V4_SIZE;
     if (fread((char*)h + SS_HEADER_V2_SIZE, full - SS_HEADER_V2_SIZE, 1, f) != 1) return 0;
     return h->version;
 }
@@ -282,7 +285,7 @@ static uint32_t SsNextId(void) {
 static uint32_t SsRomIdentity(void);
 
 static bool SsHeaderLoadable(const SsHeader* h, uint32_t version) {
-    if (version == SS_VERSION_V4 || version == SS_VERSION_V5) {
+    if (version == SS_VERSION_V4 || version == SS_VERSION_V5 || version == SS_VERSION_V6) {
         /* Format 4 only has to belong to this ROM, and the memory regions have
          * to be the size this build has. */
         if (h->buildFingerprint != SsRomIdentity() || h->regionCount != SS4_MEM_REGIONS) return false;
@@ -685,6 +688,17 @@ static void Ss4Load(FILE* f, const SsHeader* h, uint32_t id) {
     c = (SsCursor){ buf, buf + bodySize, false };
     for (int i = 0; i < SS4_MEM_REGIONS; ++i)
         memcpy(mem[i].ptr, SsTake(&c, mem[i].size), mem[i].size);
+    if (h->version < SS_VERSION_V6) {
+        /* A state from before issue #37 holds the save in the port's old layout: in gSramMem, and
+         * in the game's working copy at EWRAM 0x2038000 (sSramEwramPointer), which is only
+         * touched when its files read as the old layout (that EWRAM can hold other things). */
+        Port_SramLegacy_ConvertInPlace(gSramMem, (uint32_t)sizeof(gSramMem), FALSE);
+        Port_SramLegacy_ConvertInPlace(&gEwram[0x38000], 0x8000u, TRUE);
+    }
+    /* The save in a state may carry another region's version text (all the port's older states
+     * say USA), which the game would take for a foreign save and erase. */
+    Port_SramAdoptRegion(gSramMem, (uint32_t)sizeof(gSramMem));
+    Port_SramAdoptRegion(&gEwram[0x38000], 0x8000u);
 
     const uint32_t nVarsApply = SsGetU32(&c);
     for (uint32_t n = 0; n < nVarsApply; ++n) {
@@ -759,7 +773,7 @@ static void SsDoSave(uint32_t id, bool isNew) {
     SsHeader h;
     memset(&h, 0, sizeof(h));
     h.magic = SS_MAGIC;
-    h.version = v4 ? SS_VERSION_V5 : SS_VERSION;
+    h.version = v4 ? SS_VERSION_V6 : SS_VERSION;
     h.regionCount = (uint32_t)n;
     for (int i = 0; i < n; ++i) h.regionSize[i] = r[i].size;
     h.area = gCurrentArea;
@@ -831,7 +845,7 @@ static void SsDoLoad(uint32_t id) {
 
     SsHeader h;
     const uint32_t version = SsReadHeader(f, &h);
-    if (version == SS_VERSION_V4 || version == SS_VERSION_V5) {
+    if (version == SS_VERSION_V4 || version == SS_VERSION_V5 || version == SS_VERSION_V6) {
         if (!SsHeaderLoadable(&h, version)) { fclose(f); SsSetMsg("ESTADO DE OTRA ROM"); return; }
         Ss4Load(f, &h, id);   /* closes f */
         return;

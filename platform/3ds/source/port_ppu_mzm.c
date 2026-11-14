@@ -22,6 +22,8 @@
 #include "structs/game_state.h"
 #include "constants/cutscene.h"       /* CUTSCENE_DATA */
 #include "structs/cutscene.h"
+#include "constants/in_game_cutscene.h" /* IGC_CLOSE_UP */
+#include "structs/in_game_cutscene.h"   /* gInGameCutscene */
 #include "structs/tourian_escape.h"   /* TOURIAN_ESCAPE_DATA */
 #include "data/shortcut_pointers.h"   /* sNonGameplayRamPointer */
 #include "structs/connection.h"
@@ -2333,6 +2335,16 @@ int PortPpuMzm_WideLayerDivisor(int bg, int vertical) {
         default:
             return 1;
     }
+}
+
+/* Whether Samus's close-up (the in-game cutscene when she lands, issue #35) is on screen: from the
+ * stage that loads its picture to stage 12, which puts the room's graphics back
+ * (InGameCutsceneSamusCloseUp). Not the room's bg0Prop: the cutscene leaves it at
+ * BG_PROP_CLOSE_UP for as long as Samus stays in that room. */
+int PortPpuMzm_WideCloseUpActive(void) {
+    /* A running cutscene's number carries IGC_STARTED_FLAG. */
+    return (gInGameCutscene.cutsceneNumber & IGC_NO_STARTED_FLAG) == IGC_CLOSE_UP && gInGameCutscene.stage >= 1 &&
+           gInGameCutscene.stage < 12;
 }
 
 #ifdef PORT_DEBUG_TOOLS

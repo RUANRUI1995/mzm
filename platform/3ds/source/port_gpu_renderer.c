@@ -4455,6 +4455,18 @@ static void DrawWideRoomMasks(float baseX, float baseY, float scaleX, float scal
     if (top > -v->shiftY) top = -v->shiftY;
     if (right < 240 - v->shiftX) right = 240 - v->shiftX;
     if (bottom < 160 - v->shiftY) bottom = 160 - v->shiftY;
+    /* Samus's close-up (issue #35): its picture is 240x160, and its graphics are loaded over the
+     * tiles the room's BG3 uses, so everything the margins would show is junk (copies of the face,
+     * stripes of tiles). Only the GBA frame until the scene gets an extended picture. */
+    {
+        extern int PortPpuMzm_WideCloseUpActive(void);
+        if (!sWideScene && PortPpuMzm_WideCloseUpActive()) {
+            left = -v->shiftX;
+            right = 240 - v->shiftX;
+            top = -v->shiftY;
+            bottom = 160 - v->shiftY;
+        }
+    }
 
     const u32 black = C2D_Color32(0, 0, 0, 255);
     const float x0 = baseX + (float)left * scaleX;

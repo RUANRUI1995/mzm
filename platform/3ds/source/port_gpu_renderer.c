@@ -2229,6 +2229,9 @@ static uint32_t sSceneFrame;
 static const PortScenePictureDef* sScenePic;
 static C3D_Tex* sScenePicTex;
 static int sScenePicX, sScenePicY;
+/* The picture is drawn over everything, in place of the room masks, instead of behind: Samus's
+ * close-up (issue #35), whose room layers hold junk in the margins (DrawWideRoomMasks). */
+static bool sScenePicOnTop;
 static int sExtL, sExtR, sExtT, sExtB;
 
 /* WIDE view geometry for the frame -- see ComputeWideView. */
@@ -4440,6 +4443,34 @@ static void ComputeSceneWideView(uint16_t dispcnt) {
  * black out the game or the HUD. */
 static void DrawWideRoomMasks(float baseX, float baseY, float scaleX, float scaleY) {
     const WideView* v = &sWideView;
+    /* Samus's close-up with its generated picture (sScenePicOnTop): the picture over the margins
+     * instead of black. Its middle is transparent, where the game's own picture shows. */
+    if (sScenePicOnTop && sScenePicTex) {
+        const PortScenePictureDef* pic = sScenePic;
+        const Tex3DS_SubTexture sub = {
+            .width = (u16)pic->width,
+            .height = (u16)pic->height,
+            .left = 0.0f,
+            .top = 1.0f,
+            .right = (float)pic->width / (float)pic->texWidth,
+            .bottom = 1.0f - (float)pic->height / (float)pic->texHeight,
+        };
+        const C2D_Image img = { .tex = sScenePicTex, .subtex = &sub };
+        const C2D_DrawParams prm = {
+            .pos = { baseX + (float)(sScenePicX - v->shiftX) * scaleX, baseY + (float)(sScenePicY - v->shiftY) * scaleY,
+                     (float)pic->width * scaleX, (float)pic->height * scaleY },
+            .center = { 0.0f, 0.0f },
+            .depth = 0.0f,
+            .angle = 0.0f,
+        };
+        C2D_Flush();
+        ConfigureAtlasTextureEnv();
+        C2D_DrawImage(img, &prm, NULL);
+        /* As for the picture behind the scene: the batch binds the atlas behind citro2d's back. */
+        C3D_TexBind(0, sScenePicTex);
+        C2D_Flush();
+        return;
+    }
     /* The tile quads before this are still queued with the atlas texenv. A
      * solid rectangle drawn on top of that samples the atlas instead of being
      * flat black -- the repeating stray-tile pattern seen in the border of
@@ -4693,9 +4724,26 @@ void Port_GpuRenderer_CollectFrame(void) {
     sWideMarginY = sWideOn ? PortWide_MarginY() : 0;
     PortWide_SetFrameDrawn(sWideOn);
     sScenePic = NULL;
+    sScenePicOnTop = false;
     if (!sWideOn) sWideView = (WideView){ 0 };
     else if (sWideScene) ComputeSceneWideView(dispcnt);
-    else ComputeWideView();
+    else {
+        ComputeWideView();
+        /* Samus's close-up: its generated picture (WIDE + AI) fills the margins over the room's
+         * layers. Canvas in BG0 px; the frame's top-left is BG0's scroll. */
+        extern int PortPpuMzm_WideCloseUpActive(void);
+        extern s16 gMainGameMode;
+        if (PortPpuMzm_WideCloseUpActive()) {
+            sScenePic = PortScenePic_Find(gMainGameMode, 0);
+            if (sScenePic) {
+                const int ox = (int)(gIoMem[0x10] | (gIoMem[0x11] << 8)) & 0x1FF;
+                const int oy = (int)(gIoMem[0x12] | (gIoMem[0x13] << 8)) & 0x1FF;
+                sScenePicX = sScenePic->canvasX - ox;
+                sScenePicY = sScenePic->canvasY - oy;
+                sScenePicOnTop = true;
+            }
+        }
+    }
     /* The scene's picture, painted with this frame's palette (it fades with
      * the game's); released as soon as no scene shows it. */
     sScenePicTex = sScenePic ? PortScenePic_Texture(sScenePic, (const uint16_t*)(PortScenePic_UsesObjPalette(sScenePic) ? gObjPltt : gBgPltt))
@@ -5231,7 +5279,7 @@ void Port_GpuRenderer_DrawFrame(void) {
 
         /* WIDE scene picture: behind everything, on its BG's plane and with
          * that BG's brighten / darken. The BG's own tiles draw over it. */
-        if (sScenePicTex) {
+        if (sScenePicTex && !sScenePicOnTop) {
             const PortScenePictureDef* pic = sScenePic;
             const int bg = pic->bg;
             /* The fuzz is made of the game's own sprites: the copy on the sides has to sit on the

@@ -153,6 +153,30 @@ void Port_GbaCopy(void* dst, const void* src, u32 len, u32 unit);
 void Port_GbaFill(void* dst, u32 value, u32 len, u32 unit);
 /* The value of the unit at src as the GBA sees it (CpuSet's fill source). */
 u32 Port_GbaReadUnit(const void* src, u32 unit);
+/* The u32 that, stored natively into halfword memory (VRAM, palette, OAM,
+ * EWRAM u16 arrays), puts lo at the lower address and hi above it, as
+ * `lo | hi << 16` does on the GBA. */
+#if PORT_HOST_BIG_ENDIAN
+#define PORT_HALVES32(lo, hi) (((u32)(u16)(lo) << 16) | (u16)(hi))
+#else
+#define PORT_HALVES32(lo, hi) ((u32)(u16)(lo) | ((u32)(u16)(hi) << 16))
+#endif
+
+/* Tile data in VRAM and EWRAM is stored as GBA halfwords by value. Code that
+ * works on it as u32 words (4bpp rows, src/text.c) sees each word's halves
+ * swapped on a big-endian host; this swaps them (its own inverse, and it
+ * commutes with |= and &=). A no-op on little-endian hosts. */
+static inline void Port_SwapWordHalves(u32* words, u32 count) {
+#if PORT_HOST_BIG_ENDIAN
+    u32 i;
+    for (i = 0; i < count; i++)
+        words[i] = (words[i] << 16) | (words[i] >> 16);
+#else
+    (void)words;
+    (void)count;
+#endif
+}
+
 #if PORT_HOST_BIG_ENDIAN
 /* Whether a resolved host pointer is in memory that holds GBA units by value
  * (everything but the I/O registers and the original ROM bytes). */

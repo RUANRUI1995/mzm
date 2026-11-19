@@ -2959,8 +2959,6 @@ static const PortRomScalar kOps[] = {
     { 40, 4 },
     { 48, 4 },
     { 58, 2 },
-    { 0, 2 },
-    { 2, 2 },
     { 2, 2 },
     { 4, 2 },
     { 2, 2 },
@@ -3589,14 +3587,11 @@ static const PortRomScalar kOps[] = {
     { 10, 2 },
     { 4, 2 },
     { 6, 2 },
-    { 2, 2 },
     { 0, 2 },
     { 2, 2 },
-    { 10, 2 },
     { 14, 2 },
     { 0, 2 },
     { 2, 2 },
-    { 10, 2 },
     { 14, 2 },
     { 16, 2 },
     { 18, 2 },
@@ -3707,40 +3702,38 @@ static const PortRomType kTypes[] = {
     { 20, 2942, 4 },
     { 60, 2946, 9 },
     { 8, 2955, 2 },
-    { 6, 2957, 2 },
-    { 8, 2959, 1 },
-    { 8, 2960, 1 },
-    { 20, 2961, 6 },
-    { 8, 2967, 3 },
-    { 6, 2970, 1 },
-    { 4, 2971, 1 },
-    { 8, 2972, 1 },
-    { 8, 2973, 4 },
-    { 4, 2977, 1 },
-    { 24, 2978, 4 },
-    { 8, 2982, 1 },
-    { 8, 2983, 3 },
-    { 204, 2986, 102 },
-    { 126, 3088, 63 },
-    { 120, 3151, 60 },
-    { 180, 3211, 90 },
-    { 234, 3301, 117 },
-    { 640, 3418, 159 },
-    { 16, 3577, 4 },
-    { 16, 3581, 2 },
-    { 8, 3583, 2 },
-    { 6, 3585, 1 },
-    { 16, 3586, 4 },
-    { 32, 3590, 10 },
-    { 14, 3600, 5 },
-    { 64, 3605, 32 },
-    { 16, 3637, 3 },
-    { 12, 3640, 3 },
-    { 16, 3643, 8 },
-    { 20, 3651, 7 },
-    { 20, 3658, 5 },
-    { 24, 3663, 5 },
-    { 8, 3668, 3 },
+    { 8, 2957, 1 },
+    { 8, 2958, 1 },
+    { 20, 2959, 6 },
+    { 8, 2965, 3 },
+    { 8, 2968, 1 },
+    { 4, 2969, 1 },
+    { 8, 2970, 1 },
+    { 8, 2971, 4 },
+    { 4, 2975, 1 },
+    { 24, 2976, 4 },
+    { 8, 2980, 1 },
+    { 8, 2981, 3 },
+    { 204, 2984, 102 },
+    { 126, 3086, 63 },
+    { 120, 3149, 60 },
+    { 180, 3209, 90 },
+    { 234, 3299, 117 },
+    { 640, 3416, 159 },
+    { 16, 3575, 4 },
+    { 16, 3579, 2 },
+    { 8, 3581, 2 },
+    { 16, 3583, 3 },
+    { 32, 3586, 9 },
+    { 16, 3595, 5 },
+    { 64, 3600, 32 },
+    { 16, 3632, 3 },
+    { 12, 3635, 3 },
+    { 16, 3638, 8 },
+    { 20, 3646, 7 },
+    { 20, 3653, 5 },
+    { 24, 3658, 5 },
+    { 8, 3663, 3 },
 };
 
 static const PortRomObject kObjects[] = {
@@ -3756,7 +3749,7 @@ static const PortRomObject kObjects[] = {
     { 0x0808db82, 1, 0 }, /* sAudio_8cef6 */
     { 0x0808db84, 30, 1 }, /* sMusicCommandFunctionPointers */
     { 0x0808fee0, 9, 2 }, /* sMusicTrackDataRom */
-    { 0x0808ff4c, 708, 62 }, /* sSoundDataEntries */
+    { 0x0808ff4c, 708, 60 }, /* sSoundDataEntries */
     { 0x08232d72, 1, 0 }, /* sArmCannonOam_Empty */
     { 0x08232d74, 1, 3 }, /* sArmCannonOffset_Empty */
     { 0x08234778, 4, 0 }, /* sSamusArmCannonOam_Suit_Left_Forward_Running_Frame0 */
@@ -6953,9 +6946,7 @@ static const PortRomObject kObjects[] = {
     { 0x082b34cc, 4, 0 }, /* sUnusedSpritesOam_Idle_Frame1 */
     { 0x082b34d4, 3, 17 }, /* sUnusedSpritesOam_Idle */
     { 0x082b34ec, 2, 17 }, /* sUnusedSpritesOam_Unused */
-    { 0x082b34fc, 6, 1 }, /* sUnusedSpritesGfx */
     { 0x082b3514, 16, 0 }, /* sUnusedSpritesPal */
-    { 0x082b3534, 168, 1 }, /* sMorphBallGfx */
     { 0x082b37d4, 16, 0 }, /* sMorphBallPal */
     { 0x082b37f4, 4, 0 }, /* sMorphBallOam_Idle_Frame0 */
     { 0x082b37fc, 4, 0 }, /* sMorphBallOam_Idle_Frame1 */
@@ -6967,7 +6958,6 @@ static const PortRomObject kObjects[] = {
     { 0x082b382c, 4, 0 }, /* sMorphBallOutsideOam_Idle_Frame4 */
     { 0x082b3834, 5, 17 }, /* sMorphBallOam_Idle */
     { 0x082b385c, 6, 17 }, /* sMorphBallOutsideOam_Idle */
-    { 0x082b388c, 279, 1 }, /* sPowerGripGfx */
     { 0x082b3ce8, 32, 0 }, /* sPowerGripPal */
     { 0x082b3d28, 4, 0 }, /* sPowerGripOam_Idle_Frame0 */
     { 0x082b3d30, 4, 0 }, /* sPowerGripOam_Idle_Frame1 */
@@ -6980,7 +6970,6 @@ static const PortRomObject kObjects[] = {
     { 0x082b3d98, 5, 17 }, /* sPowerGripOam_Idle */
     { 0x082b3dc0, 15, 17 }, /* sPowerGripGlowOam_Idle */
     { 0x082b3e38, 66, 0 }, /* sChargeBeamIdleYMovement */
-    { 0x082b3ebc, 243, 1 }, /* sChargeBeamGfx */
     { 0x082b4288, 16, 0 }, /* sChargeBeamPal */
     { 0x082b42a8, 4, 0 }, /* sChargeBeamOam_Visible_Frame0 */
     { 0x082b42b0, 4, 0 }, /* sChargeBeamOam_Visible_Frame1 */
@@ -7016,7 +7005,6 @@ static const PortRomObject kObjects[] = {
     { 0x082b47d8, 2, 17 }, /* sChozoStatueMultiSpriteData_Standing */
     { 0x082b47e8, 11, 17 }, /* sChozoStatueMultiSpriteData_Sitting */
     { 0x082b4840, 2, 17 }, /* sChozoStatueMultiSpriteData_Seated */
-    { 0x082b4854, 1335, 1 }, /* sChozoStatueLongBeamGfx */
     { 0x082b5d30, 80, 0 }, /* sChozoStatueLongBeamPal */
     { 0x082b5dd0, 16, 0 }, /* sChozoStatuePartOam_LegStanding_Frame0 */
     { 0x082b5df0, 16, 0 }, /* sChozoStatuePartOam_LegSitting_Frame0 */
@@ -7084,19 +7072,12 @@ static const PortRomObject kObjects[] = {
     { 0x082b653c, 5, 17 }, /* sChozoBallOam_NormalRevealed */
     { 0x082b6564, 41, 17 }, /* sChozoStatueRefillOam */
     { 0x082b66ac, 41, 17 }, /* sChozoStatuePartOam_GlowIdle */
-    { 0x082b67f4, 1335, 1 }, /* sChozoStatueIceBeamGfx */
     { 0x082b7cd0, 80, 0 }, /* sChozoStatueIceBeamPal */
-    { 0x082b7d70, 1335, 1 }, /* sChozoStatueWaveBeamGfx */
     { 0x082b924c, 80, 0 }, /* sChozoStatueWaveBeamPal */
-    { 0x082b92ec, 1339, 1 }, /* sChozoStatueBombsGfx */
     { 0x082ba7d8, 80, 0 }, /* sChozoStatueBombsPal */
-    { 0x082ba878, 1342, 1 }, /* sChozoStatueSpeedboosterGfx */
     { 0x082bbd70, 80, 0 }, /* sChozoStatueSpeedboosterPal */
-    { 0x082bbe10, 1372, 1 }, /* sChozoStatueHighJumpGfx */
     { 0x082bd380, 80, 0 }, /* sChozoStatueHighJumpPal */
-    { 0x082bd420, 1378, 1 }, /* sChozoStatueScrewAttackGfx */
     { 0x082be9a8, 80, 0 }, /* sChozoStatueScrewAttackPal */
-    { 0x082bea48, 1348, 1 }, /* sChozoStatueVariaGfx */
     { 0x082bff58, 80, 0 }, /* sChozoStatueVariaPal */
     { 0x082bfff8, 1, 18 }, /* sUnknownItemChozoStatueMultiSpriteData_Standing_Frame0 */
     { 0x082c0016, 1, 18 }, /* sUnknownItemChozoStatueMultiSpriteData_Sitting_Frame0 */
@@ -7112,7 +7093,6 @@ static const PortRomObject kObjects[] = {
     { 0x082c0144, 2, 17 }, /* sUnknownItemChozoStatueMultiSpriteData_Standing */
     { 0x082c0154, 11, 17 }, /* sUnknownItemChozoStatueMultiSpriteData_Sitting */
     { 0x082c01ac, 2, 17 }, /* sUnknownItemChozoStatueMultiSpriteData_Seated */
-    { 0x082c01c0, 1353, 1 }, /* sChozoStatueSpaceJumpGfx */
     { 0x082c16e4, 80, 0 }, /* sChozoStatueSpaceJumpPal */
     { 0x082c1784, 16, 0 }, /* sUnknownItemChozoStatuePartOam_LegStanding_Frame0 */
     { 0x082c17a4, 16, 0 }, /* sUnknownItemChozoStatuePartOam_LegSitting_Frame0 */
@@ -7180,11 +7160,8 @@ static const PortRomObject kObjects[] = {
     { 0x082c1fc4, 5, 17 }, /* sChozoBallOam_UnknownRevealed */
     { 0x082c1fec, 41, 17 }, /* sUnknownItemChozoStatueRefillOam */
     { 0x082c2134, 41, 17 }, /* sUnknownItemChozoStatuePartOam_GlowIdle */
-    { 0x082c227c, 1357, 1 }, /* sChozoStatueGravitySuitGfx */
     { 0x082c37b0, 80, 0 }, /* sChozoStatueGravitySuitPal */
-    { 0x082c3850, 1356, 1 }, /* sChozoStatuePlasmaBeamGfx */
     { 0x082c4d80, 80, 0 }, /* sChozoStatuePlasmaBeamPal */
-    { 0x082c4e20, 379, 1 }, /* sZoomerGfx */
     { 0x082c540c, 32, 0 }, /* sZoomerPal */
     { 0x082c544c, 13, 0 }, /* sZoomerOam_Falling_Frame0 */
     { 0x082c5466, 13, 0 }, /* sZoomerOam_Falling_Frame1 */
@@ -7225,7 +7202,6 @@ static const PortRomObject kObjects[] = {
     { 0x082c57ec, 5, 17 }, /* sZoomerOam_WalkingOnRightSlope */
     { 0x082c5814, 16, 0 }, /* sZeelaEyesFallingFromUpSpeed */
     { 0x082c5834, 12, 0 }, /* sZeelaEyesFallingFromBottomSpeed */
-    { 0x082c584c, 578, 1 }, /* sZeelaGfx */
     { 0x082c6154, 32, 0 }, /* sZeelaPal */
     { 0x082c6194, 7, 0 }, /* sZeelaOam_OnGround_Frame0 */
     { 0x082c61a2, 10, 0 }, /* sZeelaOam_OnGround_Frame1 */
@@ -7318,7 +7294,6 @@ static const PortRomObject kObjects[] = {
     { 0x082c6f74, 7, 17 }, /* sKraidMultiSpriteData_MovingRightFeetToLeft */
     { 0x082c6fac, 2, 17 }, /* sKraidMultiSpriteData_Dying1 */
     { 0x082c6fbc, 2, 17 }, /* sKraidMultiSpriteData_Dying2 */
-    { 0x082c6fcc, 2725, 1 }, /* sKraidGfx */
     { 0x082c9a60, 128, 0 }, /* sKraidPal */
     { 0x082c9b60, 31, 0 }, /* sKraidOam_MouthClosed_Frame0 */
     { 0x082c9b9e, 31, 0 }, /* sKraidOam_MouthClosed_Frame1 */
@@ -7491,7 +7466,6 @@ static const PortRomObject kObjects[] = {
     { 0x082cbf28, 2, 17 }, /* sKraidOam_2cb29c */
     { 0x082cbf38, 2, 17 }, /* sKraidOam_2cb2ac */
     { 0x082cbf48, 9, 17 }, /* sKraidSpikeOam */
-    { 0x082cbf90, 139, 1 }, /* sMessageBannerGfx */
     { 0x082cc1bc, 32, 0 }, /* sMessageBannerPal */
     { 0x082cc1fc, 4, 0 }, /* sSaveYesNoCursorOam_Idle_Frame0 */
     { 0x082cc204, 4, 0 }, /* sSaveYesNoCursorOam_Idle_Frame1 */
@@ -7518,9 +7492,7 @@ static const PortRomObject kObjects[] = {
     { 0x082cc758, 9, 17 }, /* sMessageBannerOam_OneLineSpawn */
     { 0x082cc7a0, 9, 17 }, /* sMessageBannerOam_OneLineRemoving */
     { 0x082cc7e8, 2, 17 }, /* sMessageBannerOam_OneLineStatic */
-    { 0x082cc7f8, 141, 1 }, /* sRipperBrownGfx */
     { 0x082cca2c, 16, 0 }, /* sRipperBrownPal */
-    { 0x082cca4c, 141, 1 }, /* sRipperPurpleGfx */
     { 0x082ccc80, 16, 0 }, /* sRipperPurplePal */
     { 0x082ccca0, 4, 0 }, /* sRipperOam_Moving_Frame0 */
     { 0x082ccca8, 7, 0 }, /* sRipperOam_Moving_Frame1 */
@@ -7530,7 +7502,6 @@ static const PortRomObject kObjects[] = {
     { 0x082cccd4, 5, 17 }, /* sRipperOam_Moving */
     { 0x082cccfc, 3, 17 }, /* sRipperOam_TurningAround */
     { 0x082ccd14, 3, 17 }, /* sRipperOam_TurningAroundPart2 */
-    { 0x082ccd2c, 212, 1 }, /* sRipper2Gfx */
     { 0x082cd07c, 16, 0 }, /* sRipper2Pal */
     { 0x082cd09c, 7, 0 }, /* sRipper2Oam_Moving_Frame0 */
     { 0x082cd0aa, 7, 0 }, /* sRipper2Oam_Moving_Frame1 */
@@ -7540,9 +7511,7 @@ static const PortRomObject kObjects[] = {
     { 0x082cd0e4, 5, 17 }, /* sRipper2Oam_Moving */
     { 0x082cd10c, 3, 17 }, /* sRipper2Oam_TurningAround */
     { 0x082cd124, 3, 17 }, /* sRipper2Oam_TurningAroundPart2 */
-    { 0x082cd13c, 162, 1 }, /* sZebPinkGfx */
     { 0x082cd3c4, 16, 0 }, /* sZebPinkPal */
-    { 0x082cd3e4, 162, 1 }, /* sZebBlueGfx */
     { 0x082cd66c, 16, 0 }, /* sZebBluePal */
     { 0x082cd68c, 7, 0 }, /* sZebOam_Idle_Frame0 */
     { 0x082cd69a, 7, 0 }, /* sZebOam_Idle_Frame1 */
@@ -7550,9 +7519,7 @@ static const PortRomObject kObjects[] = {
     { 0x082cd6b8, 5, 17 }, /* sZebOam_Idle */
     { 0x082cd6e0, 5, 17 }, /* sZebOam_Moving */
     { 0x082cd708, 8, 0 }, /* sSkreeFallingSpeed */
-    { 0x082cd718, 264, 1 }, /* sSkreeGreenGfx */
     { 0x082cdb38, 16, 0 }, /* sSkreeGreenPal */
-    { 0x082cdb58, 264, 1 }, /* sSkreeBlueGfx */
     { 0x082cdf78, 16, 0 }, /* sSkreeBluePal */
     { 0x082cdf98, 13, 0 }, /* sSkreeOam_Idle_Frame0 */
     { 0x082cdfb2, 7, 0 }, /* sSkreeOam_Idle_Frame1 */
@@ -7584,9 +7551,7 @@ static const PortRomObject kObjects[] = {
     { 0x082ce270, 4, 17 }, /* sSkreeExplosionOam_GoingUp */
     { 0x082ce290, 65, 0 }, /* sReoIdleYMovement */
     { 0x082ce312, 81, 0 }, /* sReoIdleXMovement */
-    { 0x082ce3b4, 277, 1 }, /* sReoGreenWingsGfx */
     { 0x082ce808, 16, 0 }, /* sReoGreenWingsPal */
-    { 0x082ce828, 277, 1 }, /* sReoPurpleWingsGfx */
     { 0x082cec7c, 16, 0 }, /* sReoPurpleWingsPal */
     { 0x082cec9c, 10, 0 }, /* sReoOam_Idle_Frame0 */
     { 0x082cecb0, 13, 0 }, /* sReoOam_Idle_Frame1 */
@@ -7614,7 +7579,6 @@ static const PortRomObject kObjects[] = {
     { 0x082cef78, 21, 17 }, /* sReoOam_Unused2 */
     { 0x082cf020, 9, 17 }, /* sReoOam_Unused3 */
     { 0x082cf068, 5, 17 }, /* sReoOam_Moving_Unused */
-    { 0x082cf090, 264, 1 }, /* sZiplineGfx */
     { 0x082cf4b0, 16, 0 }, /* sZiplinePal */
     { 0x082cf4d0, 7, 0 }, /* sZiplineOam_OffIdle_Frame0 */
     { 0x082cf4de, 7, 0 }, /* sZiplineOam_OffGrabbingSamus_Frame1 */
@@ -7642,7 +7606,6 @@ static const PortRomObject kObjects[] = {
     { 0x082cf6b4, 2, 17 }, /* sZiplineButtonOam_OffIdle */
     { 0x082cf6c4, 7, 17 }, /* sZiplineButtonOam_OnIdle */
     { 0x082cf6fc, 7, 17 }, /* sZiplineButtonOam_Active */
-    { 0x082cf734, 851, 1 }, /* sSovaGfx */
     { 0x082d0480, 48, 0 }, /* sSovaPal */
     { 0x082d04e0, 7, 0 }, /* sSovaOam_OnGround_Frame0 */
     { 0x082d04ee, 7, 0 }, /* sSovaOam_OnGround_Frame1 */
@@ -7703,7 +7666,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d09b4, 4, 17 }, /* sSovaOam_TurningEdgeLeft */
     { 0x082d09d4, 4, 17 }, /* sSovaOam_TurningCornerLeft */
     { 0x082d09f4, 7, 17 }, /* sSovaOam_Falling */
-    { 0x082d0a2c, 221, 1 }, /* sMultiviolaGfx */
     { 0x082d0da0, 16, 0 }, /* sMultiviolaPal */
     { 0x082d0dc0, 22, 0 }, /* sMultiviolaOam_Moving_Frame0 */
     { 0x082d0dec, 22, 0 }, /* sMultiviolaOam_Moving_Frame1 */
@@ -7730,9 +7692,7 @@ static const PortRomObject kObjects[] = {
     { 0x082d1158, 22, 0 }, /* sMultiviolaOam_Moving_Frame22 */
     { 0x082d1184, 19, 0 }, /* sMultiviolaOam_Moving_Frame23 */
     { 0x082d11ac, 57, 17 }, /* sMultiviolaOam_Moving */
-    { 0x082d1374, 321, 1 }, /* sGerutaRedGfx */
     { 0x082d1878, 16, 0 }, /* sGerutaRedPal */
-    { 0x082d1898, 308, 1 }, /* sGerutaGreenGfx */
     { 0x082d1d68, 16, 0 }, /* sGerutaGreenPal */
     { 0x082d1d88, 16, 0 }, /* sGerutaOam_Idle_Frame0 */
     { 0x082d1da8, 16, 0 }, /* sGerutaOam_Idle_Frame1 */
@@ -7763,7 +7723,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d2154, 3, 17 }, /* sGerutaOam_BouncingOnCeiling */
     { 0x082d216c, 65, 0 }, /* sSqueeptRisingMovement */
     { 0x082d21ee, 16, 0 }, /* sSqueeptFallingMovement */
-    { 0x082d2210, 263, 1 }, /* sSqueeptGfx */
     { 0x082d262c, 16, 0 }, /* sSqueeptPal */
     { 0x082d264c, 25, 0 }, /* sSqueeptOam_GoingUp_Frame0 */
     { 0x082d267e, 22, 0 }, /* sSqueeptOam_GoingUp_Frame2 */
@@ -7782,7 +7741,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d2824, 6, 17 }, /* sSqueeptOam_TurningAround_Unused */
     { 0x082d2854, 3, 17 }, /* sSqueeptOam_GoingDown */
     { 0x082d286c, 8, 17 }, /* sSqueeptOam_GoingUp */
-    { 0x082d28ac, 680, 1 }, /* sMapStationGfx */
     { 0x082d334c, 64, 0 }, /* sMapStationPal */
     { 0x082d33cc, 76, 0 }, /* sMapStationOam_Inactive_Frame19 */
     { 0x082d3464, 76, 0 }, /* sMapStationOam_Inactive_Frame18 */
@@ -7832,7 +7790,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d4534, 7, 17 }, /* sMapStationPartOam_FrontScreenIdle */
     { 0x082d456c, 7, 17 }, /* sMapStationPartOam_FrontScreenDownloading */
     { 0x082d45a4, 6, 17 }, /* sMapStationPartOam_FrontScreenDownloaded */
-    { 0x082d45d4, 603, 1 }, /* sSavePlatformGfx */
     { 0x082d4f40, 64, 0 }, /* sSavePlatformPal */
     { 0x082d4fc0, 28, 0 }, /* sSavePlatformOam_Idle_Frame0 */
     { 0x082d4ff8, 28, 0 }, /* sSavePlatformOam_Idle_Frame1 */
@@ -7907,7 +7864,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d5d78, 9, 17 }, /* sSavePlatformPartOam_Ray */
     { 0x082d5dc0, 40, 0 }, /* sDragonFireballYMovement */
     { 0x082d5e10, 40, 0 }, /* sDragonFireballOamRotation */
-    { 0x082d5e60, 512, 1 }, /* sDragonGfx */
     { 0x082d6660, 32, 0 }, /* sDragonPal */
     { 0x082d66a0, 7, 0 }, /* sDragonOam_Spitting_Frame0 */
     { 0x082d66ae, 7, 0 }, /* sDragonOam_Spitting_Frame1 */
@@ -7934,7 +7890,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d6804, 5, 17 }, /* sDragonFireballOam_Exploding */
     { 0x082d682c, 33, 0 }, /* sDeoremSegmentXVelocity */
     { 0x082d686e, 40, 0 }, /* sDeoremThornYVelocity */
-    { 0x082d68c0, 1569, 1 }, /* sDeoremGfx */
     { 0x082d8144, 80, 0 }, /* sDeoremPal */
     { 0x082d81e4, 4, 0 }, /* sDeoremSegmentOam_Middle_Frame0 */
     { 0x082d81ec, 4, 0 }, /* sDeoremSegmentOam_Middle_Frame1 */
@@ -7982,7 +7937,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d8738, 5, 17 }, /* sDeoremOam_Dying */
     { 0x082d8760, 10, 0 }, /* sDessgeegaHighJumpYVelocity */
     { 0x082d8774, 10, 0 }, /* sDessgeegaLowJumpYVelocity */
-    { 0x082d8788, 270, 1 }, /* sDessgeegaGfx */
     { 0x082d8bc0, 16, 0 }, /* sDessgeegaPal */
     { 0x082d8be0, 31, 0 }, /* sDessGeegaOam_Idle_Frame0 */
     { 0x082d8c1e, 31, 0 }, /* sDessGeegaOam_Idle_Frame1 */
@@ -8002,7 +7956,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d8ff0, 4, 17 }, /* sDessGeegaOam_JumpWarning */
     { 0x082d9010, 3, 17 }, /* sDessGeegaOam_Jumping */
     { 0x082d9028, 5, 17 }, /* sDessGeegaOam_Landing */
-    { 0x082d9050, 289, 1 }, /* sWaverGfx */
     { 0x082d94d4, 16, 0 }, /* sWaverPal */
     { 0x082d94f4, 7, 0 }, /* sWaverOam_Frame0 */
     { 0x082d9502, 4, 0 }, /* sWaverOam_Frame1 */
@@ -8013,7 +7966,6 @@ static const PortRomObject kObjects[] = {
     { 0x082d9538, 7, 17 }, /* sWaverOam */
     { 0x082d9570, 65, 0 }, /* sMellowIdleYVelocity */
     { 0x082d95f2, 81, 0 }, /* sMellowIdleXVelocity */
-    { 0x082d9694, 1799, 1 }, /* sHiveGfx */
     { 0x082db2b0, 96, 0 }, /* sHivePal */
     { 0x082db370, 4, 0 }, /* sMellowOam_Idle_Frame0 */
     { 0x082db378, 4, 0 }, /* sMellowOam_Idle_Frame1 */
@@ -8091,7 +8043,6 @@ static const PortRomObject kObjects[] = {
     { 0x082dbe14, 9, 17 }, /* sImagoLarvaMultiSpriteData_Dying */
     { 0x082dbe5c, 10, 17 }, /* sImagoLarvaMultiSpriteData_Warning */
     { 0x082dbeac, 5, 17 }, /* sImagoLarvaMultiSpriteData_TakingDamage */
-    { 0x082dbed8, 1195, 1 }, /* sImagoLarvaGfx */
     { 0x082dd184, 80, 0 }, /* sImagoLarvaPal */
     { 0x082dd224, 82, 0 }, /* sImagoLarvaPartOam_ShellAttacking_Frame0 */
     { 0x082dd2c8, 82, 0 }, /* sImagoLarvaPartOam_ShellAttacking_Frame1 */
@@ -8159,7 +8110,6 @@ static const PortRomObject kObjects[] = {
     { 0x082de41c, 3, 17 }, /* sImagoLarvaPartOam_ClawsWarningSecondPart */
     { 0x082de434, 10, 17 }, /* sImagoLarvaOam_Warning */
     { 0x082de484, 5, 17 }, /* sImagoLarvaPartOam_ShellTakingDamage */
-    { 0x082de4ac, 303, 1 }, /* sMorphBallLauncherGfx */
     { 0x082de968, 16, 0 }, /* sMorphBallLauncherPal */
     { 0x082de988, 37, 0 }, /* sMorphBallLauncherOam_Idle_Frame0 */
     { 0x082de9d2, 46, 0 }, /* sMorphBallLauncherOam_Idle_Frame1 */
@@ -8196,7 +8146,6 @@ static const PortRomObject kObjects[] = {
     { 0x082df0cc, 10, 17 }, /* sImagoCocoonMultiSpriteData_Dying */
     { 0x082df11c, 36, 0 }, /* sImagoCocoon_ArrayUnused1 */
     { 0x082df164, 48, 0 }, /* sImagoCocoon_ArrayUnused2 */
-    { 0x082df1c4, 1758, 1 }, /* sImagoCocoonGfx */
     { 0x082e0d3c, 96, 0 }, /* sImagoCocoonPal */
     { 0x082e0dfc, 4, 0 }, /* sImagoCocoonOam_Idle_Frame0 */
     { 0x082e0e04, 7, 0 }, /* sImagoCocoonOam_Idle_Frame1 */
@@ -8290,7 +8239,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e18ec, 10, 17 }, /* sWingedRipperOam_Moving */
     { 0x082e193c, 10, 17 }, /* sWingedRipperOam_TurningAround */
     { 0x082e198c, 9, 17 }, /* sDefeatedImagoCocoonOam */
-    { 0x082e19d4, 136, 1 }, /* sElevatorPadGfx */
     { 0x082e1bf4, 16, 0 }, /* sElevatorPadPal */
     { 0x082e1c14, 4, 0 }, /* sElevatorPadOam_Moving_Frame0 */
     { 0x082e1c1c, 4, 0 }, /* sElevatorPadOam_Moving_Frame1 */
@@ -8306,7 +8254,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e1cd2, 10, 0 }, /* sSpacePirateJumpingVelocity */
     { 0x082e1ce6, 11, 0 }, /* sSpacePirate_2e105a */
     { 0x082e1cfc, 12, 0 }, /* sSpacePirate_2e1070 */
-    { 0x082e1d14, 810, 1 }, /* sSpacePirateGfx */
     { 0x082e29bc, 48, 0 }, /* sSpacePiratePal */
     { 0x082e2a1c, 43, 0 }, /* sSpacePirateOam_Crouched_Frame0 */
     { 0x082e2a72, 43, 0 }, /* sSpacePirateOam_Crouched_Frame1 */
@@ -8468,7 +8415,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e5594, 8, 17 }, /* sSpacePirateLaserOam_Exploding */
     { 0x082e55d4, 5, 17 }, /* sSpacePirateOam_LookingAtCamera_Unused */
     { 0x082e55fc, 9, 17 }, /* sSpacePirateCarryingPowerBombOam */
-    { 0x082e5644, 1124, 1 }, /* sZiplineGeneratorGfx */
     { 0x082e67d4, 64, 0 }, /* sZiplineGeneratorPal */
     { 0x082e6854, 31, 0 }, /* sZiplineGeneratorPartOam_ConductorDeactivated_Frame0 */
     { 0x082e6892, 52, 0 }, /* sZiplineGeneratorPartOam_ConductorActivating_Frame1 */
@@ -8508,9 +8454,7 @@ static const PortRomObject kObjects[] = {
     { 0x082e6cb4, 7, 17 }, /* sZiplineGeneratorPartOam_MorphSymbolActivating */
     { 0x082e6cec, 9, 17 }, /* sZiplineGeneratorPartOam_MorphSymbolActivated */
     { 0x082e6d34, 12, 17 }, /* sZiplineGeneratorPartOam_ElectricityActivating */
-    { 0x082e6d94, 168, 1 }, /* sGametBlueGfx */
     { 0x082e7034, 16, 0 }, /* sGametBluePal */
-    { 0x082e7054, 168, 1 }, /* sGametRedGfx */
     { 0x082e72f4, 16, 0 }, /* sGametRedPal */
     { 0x082e7314, 10, 0 }, /* sGametOam_Idle_Frame0 */
     { 0x082e7328, 10, 0 }, /* sGametOam_Idle_Frame1 */
@@ -8520,7 +8464,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e7378, 10, 0 }, /* sGametOam_Moving_Frame0 */
     { 0x082e738c, 5, 17 }, /* sGametOam_Idle */
     { 0x082e73b4, 5, 17 }, /* sGametOam_Moving */
-    { 0x082e73dc, 122, 1 }, /* sSecurityGateGfx */
     { 0x082e75c4, 16, 0 }, /* sSecurityGatePal */
     { 0x082e75e4, 4, 0 }, /* sSecurityGateOam_Opened_Frame0 */
     { 0x082e75ec, 4, 0 }, /* sSecurityGateOam_Closing_Frame0 */
@@ -8547,9 +8490,7 @@ static const PortRomObject kObjects[] = {
     { 0x082e7794, 18, 17 }, /* sSecurityGateOam_Closing */
     { 0x082e7824, 4, 17 }, /* sSecurityGateOam_Closed */
     { 0x082e7844, 18, 17 }, /* sSecurityGateOam_Opening */
-    { 0x082e78d4, 124, 1 }, /* sZebboGreenGfx */
     { 0x082e7ac4, 16, 0 }, /* sZebboGreenPal */
-    { 0x082e7ae4, 124, 1 }, /* sZebboYellowGfx */
     { 0x082e7cd4, 16, 0 }, /* sZebboYellowPal */
     { 0x082e7cf4, 4, 0 }, /* sZebboOam_Idle_Frame0 */
     { 0x082e7cfc, 4, 0 }, /* sZebboOam_Idle_Frame1 */
@@ -8559,7 +8500,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e7d1c, 4, 0 }, /* sZebboOam_Moving_Frame2 */
     { 0x082e7d24, 5, 17 }, /* sZebboOam_Idle */
     { 0x082e7d4c, 5, 17 }, /* sZebboOam_Moving */
-    { 0x082e7d74, 376, 1 }, /* sWorkerRobotGfx */
     { 0x082e8354, 32, 0 }, /* sWorkerRobotPal */
     { 0x082e8394, 19, 0 }, /* sWorkerRobotOam_Walking_Frame2 */
     { 0x082e83ba, 19, 0 }, /* sWorkerRobotOam_Walking_Frame3 */
@@ -8589,7 +8529,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e8868, 3, 17 }, /* sWorkerRobotOam_GoingToSleep */
     { 0x082e8880, 3, 17 }, /* sWorkerRobotOam_TurningAround */
     { 0x082e8898, 9, 17 }, /* sWorkerRobotOam_WakingUp */
-    { 0x082e88e0, 309, 1 }, /* sParasiteGfx */
     { 0x082e8db4, 16, 0 }, /* sParasitePal */
     { 0x082e8dd4, 4, 0 }, /* sParasiteOam_Idle_Frame0 */
     { 0x082e8ddc, 4, 0 }, /* sParasiteOam_Idle_Frame1 */
@@ -8660,7 +8599,6 @@ static const PortRomObject kObjects[] = {
     { 0x082e91b4, 9, 17 }, /* sParasiteOam_Expelled */
     { 0x082e91fc, 5, 17 }, /* sParasiteOam_Dying_Unused */
     { 0x082e9224, 11, 17 }, /* sParasiteOam_Dying */
-    { 0x082e927c, 179, 1 }, /* sPistonGfx */
     { 0x082e9548, 16, 0 }, /* sPistonPal */
     { 0x082e9568, 34, 0 }, /* sPistonOam_Idle_Frame0 */
     { 0x082e95ac, 37, 0 }, /* sPistonOam_Idle_Frame1 */
@@ -8743,7 +8681,6 @@ static const PortRomObject kObjects[] = {
     { 0x082ea738, 4, 17 }, /* sRidleyTailMultiSpriteData_BackToIdle */
     { 0x082ea758, 81, 0 }, /* sRidleySpawningSpittingFireballsYOffsets */
     { 0x082ea7fa, 65, 0 }, /* sRidleyIdleYOffsets */
-    { 0x082ea87c, 2211, 1 }, /* sRidleyGfx */
     { 0x082ecb08, 128, 0 }, /* sRidleyPal */
     { 0x082ecc08, 49, 0 }, /* sRidleyOam_Idle_Frame0 */
     { 0x082ecc6a, 49, 0 }, /* sRidleyOam_Idle_Frame1 */
@@ -8834,7 +8771,6 @@ static const PortRomObject kObjects[] = {
     { 0x082ed7dc, 2, 17 }, /* sRidleyFireballOam_Big */
     { 0x082ed7ec, 65, 0 }, /* sMetroidSpawningYMovement */
     { 0x082ed86e, 81, 0 }, /* sMetroidSpawningXMovement */
-    { 0x082ed910, 793, 1 }, /* sMetroidGfx */
     { 0x082ee574, 80, 0 }, /* sMetroidPal */
     { 0x082ee614, 80, 0 }, /* sMetroidPal_SamusGrabbed */
     { 0x082ee6b4, 7, 0 }, /* sMetroidShellOam_Idle_Frame0 */
@@ -8859,9 +8795,7 @@ static const PortRomObject kObjects[] = {
     { 0x082ee8ac, 17, 17 }, /* sMetroidOam_Moving */
     { 0x082ee934, 15, 17 }, /* sMetroidOam_SamusGrabbed */
     { 0x082ee9ac, 3, 17 }, /* sMetroidOam_Spawning */
-    { 0x082ee9c4, 242, 1 }, /* sRinkaOrangeGfx */
     { 0x082eed8c, 16, 0 }, /* sRinkaOrangePal */
-    { 0x082eedac, 242, 1 }, /* sRinkaGreenGfx */
     { 0x082ef174, 16, 0 }, /* sRinkaGreenPal */
     { 0x082ef194, 4, 0 }, /* sRinkaOrangeOam_Moving_Frame0 */
     { 0x082ef19c, 4, 0 }, /* sRinkaOrangeOam_Moving_Frame1 */
@@ -8886,7 +8820,6 @@ static const PortRomObject kObjects[] = {
     { 0x082ef2fc, 16, 17 }, /* sRinkaGreenOam_Spawning */
     { 0x082ef37c, 5, 17 }, /* sRinkaGreenOam_Moving */
     { 0x082ef3a4, 44, 0 }, /* sPolypProjectileYVelocity */
-    { 0x082ef3fc, 241, 1 }, /* sPolypGfx */
     { 0x082ef7c0, 16, 0 }, /* sPolypPal */
     { 0x082ef7e0, 13, 0 }, /* sPolypOam_Idle_Frame0 */
     { 0x082ef7fa, 13, 0 }, /* sPolypOam_Idle_Frame1 */
@@ -8916,9 +8849,7 @@ static const PortRomObject kObjects[] = {
     { 0x082ef9b0, 5, 17 }, /* sPolypProjectileOam_Right */
     { 0x082ef9d8, 5, 17 }, /* sPolypProjectileOam_Left */
     { 0x082efa00, 5, 17 }, /* sPolypProjectileOam_Exploding */
-    { 0x082efa28, 302, 1 }, /* sViolaBlueGfx */
     { 0x082efee0, 16, 0 }, /* sViolaBluePal */
-    { 0x082eff00, 305, 1 }, /* sViolaOrangeGfx */
     { 0x082f03c4, 16, 0 }, /* sViolaOrangePal */
     { 0x082f03e4, 4, 0 }, /* sViolaOam_Moving_Frame0 */
     { 0x082f03ec, 4, 0 }, /* sViolaOam_Moving_Frame1 */
@@ -8960,7 +8891,6 @@ static const PortRomObject kObjects[] = {
     { 0x082f058c, 17, 17 }, /* sViolaOam_MovingOffsetUp */
     { 0x082f0614, 17, 17 }, /* sViolaOam_MovingOffsetRight */
     { 0x082f069c, 17, 17 }, /* sViolaOam_MovingOffsetDown */
-    { 0x082f0724, 104, 1 }, /* sSecurityLaserGfx */
     { 0x082f08c4, 16, 0 }, /* sSecurityLaserPal */
     { 0x082f08e4, 10, 0 }, /* sSecurityLaserOam_VerticalSmall_Frame0 */
     { 0x082f08f8, 10, 0 }, /* sSecurityLaserOam_VerticalSmall_Frame1 */
@@ -9131,7 +9061,6 @@ static const PortRomObject kObjects[] = {
     { 0x082f1b2c, 7, 17 }, /* sSecurityLaserOam_HorizontalLargeDisappearing_Unused */
     { 0x082f1b64, 7, 17 }, /* sSecurityLaserOam_HorizontalVeryLargeDisappearing_Unused */
     { 0x082f1b9c, 65, 0 }, /* sHoltzIdleYVelocity */
-    { 0x082f1c20, 200, 1 }, /* sHoltzGfx */
     { 0x082f1f40, 16, 0 }, /* sHoltzPal */
     { 0x082f1f60, 13, 0 }, /* sHoltzOam_Idle_Frame0 */
     { 0x082f1f7a, 13, 0 }, /* sHoltzOam_Idle_Frame1 */
@@ -9157,19 +9086,9 @@ static const PortRomObject kObjects[] = {
     { 0x082f2208, 4, 17 }, /* sHoltzOam_IdleAware */
     { 0x082f2228, 8, 17 }, /* sHoltzOam_GoingUp */
     { 0x082f2268, 10, 17 }, /* sHoltzOam_BonkingOnCeiling */
-    { 0x082f22b8, 364, 1 }, /* sGekitaiMachineGfx */
     { 0x082f2868, 80, 0 }, /* sGekitaiMachinePal */
     { 0x082f2908, 96, 0 }, /* sGekitaiMachine_array_2f1c7c */
     { 0x082f29c8, 82, 0 }, /* sGekitaiMachine_array_2f1d3c */
-    { 0x082f2a6c, 1951, 1 }, /* sRuinsTestGfx */
-    { 0x082f48e8, 96, 1 }, /* sRuinsTestGfx_SamusReflectionTurningRightTop */
-    { 0x082f4a68, 64, 1 }, /* sRuinsTestGfx_SamusReflectionTurningRightBottom */
-    { 0x082f4b68, 96, 1 }, /* sRuinsTestGfx_SamusReflectionTurningLeftTop */
-    { 0x082f4ce8, 64, 1 }, /* sRuinsTestGfx_SamusReflectionTurningLeftBottom */
-    { 0x082f4de8, 96, 1 }, /* sRuinsTestGfx_SamusReflectionFullSuitTop */
-    { 0x082f4f68, 64, 1 }, /* sRuinsTestGfx_SamusReflectionFullSuitBottom */
-    { 0x082f5068, 96, 1 }, /* sRuinsTestGfx_SamusReflectionSuitlessTop */
-    { 0x082f51e8, 64, 1 }, /* sRuinsTestGfx_SamusReflectionSuitlessBottom */
     { 0x082f52e8, 128, 0 }, /* sRuinsTestPal */
     { 0x082f53e8, 8, 0 }, /* sRuinsTestPal_SymbolShot_Frame1 */
     { 0x082f53f8, 8, 0 }, /* sRuinsTestPal_SymbolShot_Frame2 */
@@ -9307,7 +9226,6 @@ static const PortRomObject kObjects[] = {
     { 0x082f7094, 6, 0 }, /* sMellaGoingDownYMovement */
     { 0x082f70a0, 7, 0 }, /* sMellaGoingUpYMovement */
     { 0x082f70ae, 7, 0 }, /* sMellaMovingXMovement */
-    { 0x082f70bc, 162, 1 }, /* sMellaGfx */
     { 0x082f7344, 16, 0 }, /* sMellaPal */
     { 0x082f7364, 4, 0 }, /* sMellaOam_Idle_Frame0 */
     { 0x082f736c, 4, 0 }, /* sMellaOam_Idle_Frame1 */
@@ -9327,7 +9245,6 @@ static const PortRomObject kObjects[] = {
     { 0x082f7440, 9, 17 }, /* sMellowOam_Moving */
     { 0x082f7488, 65, 0 }, /* sAtomicIdleYMovement */
     { 0x082f750a, 81, 0 }, /* sAtomicIdleXMovement */
-    { 0x082f75ac, 752, 1 }, /* sAtomicGfx */
     { 0x082f816c, 64, 0 }, /* sAtomicPal */
     { 0x082f81ec, 13, 0 }, /* sAtomicOam_Idle_Frame0 */
     { 0x082f8206, 10, 0 }, /* sAtomicOam_Idle_Frame1 */
@@ -9405,7 +9322,6 @@ static const PortRomObject kObjects[] = {
     { 0x082f883c, 8, 17 }, /* sAtomicElectricityOam_ExplodingNonDiagonal */
     { 0x082f887c, 8, 17 }, /* sAtomicElectricityOam_ExplodingDiagonal */
     { 0x082f88bc, 12, 17 }, /* sAtomicElectricityOam_Charging */
-    { 0x082f891c, 65, 1 }, /* sAreaBannerGfx */
     { 0x082f8a20, 16, 0 }, /* sAreaBannerPal */
     { 0x082f8a40, 16, 0 }, /* sAreaBannerLocationTextPal */
     { 0x082f8a60, 7, 0 }, /* sAreaBannerOam_SpawnMiddle_Frame0 */
@@ -9437,7 +9353,6 @@ static const PortRomObject kObjects[] = {
     { 0x082f9000, 1, 23 }, /* sMotherBrainMultiSpriteData_Part2 */
     { 0x082f9018, 1, 23 }, /* sMotherBrainMultiSpriteData_Part3 */
     { 0x082f9030, 7, 17 }, /* sMotherBrainMultiSpriteData */
-    { 0x082f9090, 1871, 1 }, /* sMotherBrainGfx */
     { 0x082fadcc, 96, 0 }, /* sMotherBrainPal */
     { 0x082fae8c, 58, 0 }, /* sMotherBrainOam_Idle_Frame0 */
     { 0x082faf00, 58, 0 }, /* sMotherBrainOam_Idle_Frame1 */
@@ -9485,7 +9400,6 @@ static const PortRomObject kObjects[] = {
     { 0x082fb7f4, 20, 0 }, /* sAcidWormSpitMiddleYVelocity */
     { 0x082fb81c, 33, 0 }, /* sAcidWormSwingingMovement */
     { 0x082fb85e, 45, 0 }, /* sAcidWormHeadRandomXVelocity */
-    { 0x082fb8b8, 1000, 1 }, /* sAcidWormGfx */
     { 0x082fc858, 64, 0 }, /* sAcidWormPal */
     { 0x082fc8d8, 52, 0 }, /* sAcidWormPartOam_Unused2_Frame0 */
     { 0x082fc940, 52, 0 }, /* sAcidWormPartOam_Unused2_Frame1 */
@@ -9531,7 +9445,6 @@ static const PortRomObject kObjects[] = {
     { 0x082fd014, 24, 17 }, /* sAcidWormOam_SpawnOnTop */
     { 0x082fd0d4, 10, 0 }, /* sSidehopperHighJumpVelocity */
     { 0x082fd0e8, 10, 0 }, /* sSidehopperLowJumpVelocity */
-    { 0x082fd0fc, 303, 1 }, /* sSidehopperGfx */
     { 0x082fd5b8, 16, 0 }, /* sSidehopperPal */
     { 0x082fd5d8, 19, 0 }, /* sSidehopperOam_Idle_Frame0 */
     { 0x082fd5fe, 19, 0 }, /* sSidehopperOam_Idle_Frame1 */
@@ -9553,7 +9466,6 @@ static const PortRomObject kObjects[] = {
     { 0x082fd8b4, 6, 17 }, /* sSidehopperOam_JumpWarning */
     { 0x082fd8e4, 4, 17 }, /* sSidehopperOam_Jumping */
     { 0x082fd904, 7, 17 }, /* sSidehopperOam_Landing */
-    { 0x082fd93c, 270, 1 }, /* sGeronNorfairGfx */
     { 0x082fdd74, 16, 0 }, /* sGeronNorfairPal */
     { 0x082fdd94, 43, 0 }, /* sGeronNorfairOam_Idle_Frame0 */
     { 0x082fddea, 43, 0 }, /* sGeronNorfairOam_Idle_Frame1 */
@@ -9567,9 +9479,7 @@ static const PortRomObject kObjects[] = {
     { 0x082fe0a0, 43, 0 }, /* sGeronNorfairOam_Idle_Frame8 */
     { 0x082fe0f6, 43, 0 }, /* sGeronNorfairOam_Idle_Frame9 */
     { 0x082fe14c, 11, 17 }, /* sGeronNorfairOam_Idle */
-    { 0x082fe1a4, 153, 1 }, /* sGeegaGfx */
     { 0x082fe408, 16, 0 }, /* sGeegaPal */
-    { 0x082fe428, 153, 1 }, /* sGeegaWhiteGfx */
     { 0x082fe68c, 16, 0 }, /* sGeegaWhitePal */
     { 0x082fe6ac, 4, 0 }, /* sGeegaOam_Idle_Frame0 */
     { 0x082fe6b4, 4, 0 }, /* sGeegaOam_Idle_Frame1 */
@@ -9579,7 +9489,6 @@ static const PortRomObject kObjects[] = {
     { 0x082fe6d4, 4, 0 }, /* sGeegaOam_Moving_Frame6 */
     { 0x082fe6dc, 5, 17 }, /* sGeegaOam_Idle */
     { 0x082fe704, 9, 17 }, /* sGeegaOam_Moving */
-    { 0x082fe74c, 476, 1 }, /* sRinkaZebetiteAndCannonGfx */
     { 0x082feebc, 32, 0 }, /* sRinkaZebetiteAndCannonPal */
     { 0x082feefc, 7, 0 }, /* sRinkaMotherBrainOam_Moving_Frame0 */
     { 0x082fef0a, 7, 0 }, /* sRinkaMotherBrainOam_Moving_Frame1 */
@@ -9673,7 +9582,6 @@ static const PortRomObject kObjects[] = {
     { 0x082ff858, 3, 17 }, /* sCannonBulletOam_DownRight */
     { 0x082ff870, 3, 17 }, /* sCannonBulletOam_Right */
     { 0x082ff888, 5, 17 }, /* sMotherBrainBlockOam */
-    { 0x082ff8b0, 592, 1 }, /* sImagoLarvaRightSideGfx */
     { 0x083001f0, 32, 0 }, /* sImagoLarvaRightSidePal */
     { 0x08300230, 37, 0 }, /* sImagoLarvaRightSideOam_Frame0 */
     { 0x0830027a, 37, 0 }, /* sImagoLarvaRightSideOam_Frame1 */
@@ -9693,7 +9601,6 @@ static const PortRomObject kObjects[] = {
     { 0x083006fc, 1, 12 }, /* sTangleVineGerutaMultiSpriteData_Idle_Frame2 */
     { 0x0830070e, 1, 12 }, /* sTangleVineGerutaMultiSpriteData_Idle_Frame3 */
     { 0x08300720, 5, 17 }, /* sTangleVineGerutaMultiSpriteData_Idle */
-    { 0x08300748, 1298, 1 }, /* sTangleVineGfx */
     { 0x08301b90, 80, 0 }, /* sTangleVinePal */
     { 0x08301c30, 13, 0 }, /* sTangleVineTallOam_OnGround_Frame3 */
     { 0x08301c4a, 13, 0 }, /* sTangleVineTallOam_OnGround_Frame2 */
@@ -9795,7 +9702,6 @@ static const PortRomObject kObjects[] = {
     { 0x08302684, 2, 17 }, /* sImagoMultiSpriteData_Dying */
     { 0x08302694, 10, 0 }, /* sImagoDamagedStingerFallingYVelocity */
     { 0x083026a8, 49, 0 }, /* sImagoAttackingXVelocity */
-    { 0x0830271c, 1503, 1 }, /* sImagoGfx */
     { 0x08303e98, 96, 0 }, /* sImagoPal */
     { 0x08303f58, 55, 0 }, /* sImagoPartOam_BodyIdle_Frame0 */
     { 0x08303fc6, 55, 0 }, /* sImagoPartOam_BodyIdle_Frame1 */
@@ -9877,7 +9783,6 @@ static const PortRomObject kObjects[] = {
     { 0x08304ca8, 3, 17 }, /* sCrocomireMultiSpriteData_Screaming */
     { 0x08304cc0, 2, 17 }, /* sCrocomireMultiSpriteData_Dying */
     { 0x08304cd0, 2, 17 }, /* sCrocomireMultiSpriteData_Angry */
-    { 0x08304ce0, 1954, 1 }, /* sCrocomireGfx */
     { 0x08306b68, 128, 0 }, /* sCrocomirePal */
     { 0x08306c68, 22, 0 }, /* sCrocomireOam_Screaming_Frame1 */
     { 0x08306c94, 22, 0 }, /* sCrocomireOam_Screaming_Frame2 */
@@ -9955,7 +9860,6 @@ static const PortRomObject kObjects[] = {
     { 0x08307ce4, 6, 17 }, /* sCrocomirePartOam_307058 */
     { 0x08307d14, 6, 17 }, /* sCrocomirePartOam_307088 */
     { 0x08307d44, 6, 17 }, /* sCrocomirePartOam_3070b8 */
-    { 0x08307d74, 177, 1 }, /* sSearchlightEyeGfx */
     { 0x08308038, 16, 0 }, /* sSearchlightEyePal */
     { 0x08308058, 10, 0 }, /* sSearchlightEyeOam_Idle_Frame0 */
     { 0x0830806c, 10, 0 }, /* sSearchlightEyeOam_Idle_Frame1 */
@@ -9976,7 +9880,6 @@ static const PortRomObject kObjects[] = {
     { 0x08308290, 2, 17 }, /* sSearchlightEyeBeamOam_Unused */
     { 0x083082a0, 9, 17 }, /* sSearchlightEyeProjectileOam_Moving */
     { 0x083082e8, 4, 17 }, /* sSearchlightEyeOam_Shooting */
-    { 0x08308308, 711, 1 }, /* sGeronGfx */
     { 0x08308e24, 48, 0 }, /* sGeronPal */
     { 0x08308e84, 40, 0 }, /* sGeronOam_Idle_Frame0 */
     { 0x08308ed4, 43, 0 }, /* sGeronOam_Idle_Frame1 */
@@ -10033,7 +9936,6 @@ static const PortRomObject kObjects[] = {
     { 0x08309fd4, 37, 17 }, /* sGeronOam_Shaking */
     { 0x0830a0fc, 153, 0 }, /* sGunshipTakingOffYVelocity */
     { 0x0830a22e, 22, 0 }, /* sGunshipFlyingYVelocity */
-    { 0x0830a25c, 1027, 1 }, /* sGunshipGfx */
     { 0x0830b268, 48, 0 }, /* sGunshipPal */
     { 0x0830b2c8, 128, 0 }, /* sGunshipFlashingPal */
     { 0x0830b3c8, 52, 0 }, /* sGunshipOam_Idle_Frame0 */
@@ -10090,7 +9992,6 @@ static const PortRomObject kObjects[] = {
     { 0x0830be2c, 7, 17 }, /* sGunshipOam_Flying */
     { 0x0830be64, 4, 17 }, /* sGunshipPartOam_FlamesHorizontal */
     { 0x0830be84, 4, 17 }, /* sGunshipPartOam_FlamesVertical */
-    { 0x0830bea4, 514, 1 }, /* sGlassTubeGfx */
     { 0x0830c6ac, 80, 0 }, /* sGlassTubePal */
     { 0x0830c74c, 37, 0 }, /* sGlassTubeOam_Intact_Frame0 */
     { 0x0830c796, 49, 0 }, /* sGlassTubeOam_Cracking_Frame1 */
@@ -10126,7 +10027,6 @@ static const PortRomObject kObjects[] = {
     { 0x0830e1f8, 12, 17 }, /* sGlassTubeOam_Cracking */
     { 0x0830e258, 19, 17 }, /* sGlassTubeOam_Breaking */
     { 0x0830e2f0, 2, 17 }, /* sGlassTubeOam_Broken */
-    { 0x0830e300, 552, 1 }, /* sSavePlatformChozodiaGfx */
     { 0x0830eba0, 64, 0 }, /* sSavePlatformChozodiaPal */
     { 0x0830ec20, 61, 0 }, /* sSavePlatformChozodiaOam_Idle_Frame0 */
     { 0x0830ec9a, 61, 0 }, /* sSavePlatformChozodiaOam_Idle_Frame1 */
@@ -10213,7 +10113,6 @@ static const PortRomObject kObjects[] = {
     { 0x08310180, 9, 17 }, /* sSavePlatformChozodiaPartOam_RefillLight */
     { 0x083101c8, 8, 0 }, /* sBaristuteFallingYVelocity */
     { 0x083101d8, 10, 0 }, /* sBaristuteJumpingYVelocity */
-    { 0x083101ec, 596, 1 }, /* sBaristuteGfx */
     { 0x08310b3c, 80, 0 }, /* sBaristutePal */
     { 0x08310bdc, 49, 0 }, /* sBaristuteOam_Idle_Frame0 */
     { 0x08310c3e, 52, 0 }, /* sBaristuteOam_Walking_Frame1 */
@@ -10235,7 +10134,6 @@ static const PortRomObject kObjects[] = {
     { 0x08311180, 7, 17 }, /* sBaristuteOam_WalkingFast */
     { 0x083111b8, 7, 17 }, /* sBaristuteOam_WalkingVeryFast */
     { 0x083111f0, 7, 17 }, /* sBaristuteOam_WalkingExtremelyFast */
-    { 0x08311228, 1122, 1 }, /* sElevatorStatuesGfx */
     { 0x083123b0, 64, 0 }, /* sElevatorStatuesPal */
     { 0x08312430, 64, 0 }, /* sKraidElevatorStatueOam_Idle_Frame0 */
     { 0x083124b0, 52, 0 }, /* sKraidElevatorStatueOam_Falling_Frame0 */
@@ -10307,7 +10205,6 @@ static const PortRomObject kObjects[] = {
     { 0x08313714, 12, 17 }, /* sElevatorStatueDebrisOam_Ridley */
     { 0x08313774, 2, 17 }, /* sRidleyElevatorStatueOam_Fallen */
     { 0x08313784, 20, 17 }, /* sElevatorStatueDebrisOam_Dust */
-    { 0x08313824, 671, 1 }, /* sRisingChozoPillarGfx */
     { 0x083142a0, 64, 0 }, /* sRisingChozoPillarPal */
     { 0x08314320, 7, 0 }, /* sRisingChozoPillarPlatformOam_Slot0Spawning_Frame0 */
     { 0x0831432e, 7, 0 }, /* sRisingChozoPillarPlatformOam_Slot0Spawning_Frame1 */
@@ -10373,7 +10270,6 @@ static const PortRomObject kObjects[] = {
     { 0x083147c8, 28, 17 }, /* sRisingChozoPillarPlatformOam_ShadowSpawning */
     { 0x083148a8, 2, 17 }, /* sRisingChozoPillarPlatformOam_ShadowSpawned */
     { 0x083148b8, 4, 17 }, /* sRisingChozoPillarPlatformShadowOam */
-    { 0x083148d8, 285, 1 }, /* sSkulteraGfx */
     { 0x08314d4c, 16, 0 }, /* sSkulteraPal */
     { 0x08314d6c, 19, 0 }, /* sSkulteraOam_Idle_Frame0 */
     { 0x08314d92, 19, 0 }, /* sSkulteraOam_Idle_Frame1 */
@@ -10390,7 +10286,6 @@ static const PortRomObject kObjects[] = {
     { 0x08314ef8, 5, 17 }, /* sSkulteraOam_Idle */
     { 0x08314f20, 9, 17 }, /* sSkulteraOam_TurningAround */
     { 0x08314f68, 5, 17 }, /* sSkulteraOam_ChasingSamus */
-    { 0x08314f90, 2388, 1 }, /* sBossStatuesGfx */
     { 0x083174e0, 128, 0 }, /* sBossStatuesPal */
     { 0x083175e0, 16, 0 }, /* sKraidStatueOam_Idle_Frame0 */
     { 0x08317600, 22, 0 }, /* sKraidStatueOam_Activating_Frame0 */
@@ -10448,7 +10343,6 @@ static const PortRomObject kObjects[] = {
     { 0x08318124, 7, 17 }, /* sRidleyStatueOam_Activated */
     { 0x0831815c, 43, 17 }, /* sRidleyStatueOam_Opening */
     { 0x083182b4, 2, 17 }, /* sRidleyStatueOam_Opened */
-    { 0x083182c4, 172, 1 }, /* sSearchlightGfx */
     { 0x08318574, 16, 0 }, /* sSearchlightPal */
     { 0x08318594, 25, 0 }, /* sSearchlightOam_Moving_Frame0 */
     { 0x083185c6, 25, 0 }, /* sSearchlightOam_Moving_Frame1 */
@@ -10456,7 +10350,6 @@ static const PortRomObject kObjects[] = {
     { 0x0831862a, 25, 0 }, /* sSearchlightOam_Moving_Frame3 */
     { 0x0831865c, 7, 17 }, /* sSearchlightOam_Moving */
     { 0x08318694, 5, 17 }, /* sSearchlightOam_Unused */
-    { 0x083186bc, 585, 1 }, /* sGadoraGfx */
     { 0x08318fe0, 32, 0 }, /* sGadoraPal */
     { 0x08319020, 22, 0 }, /* sGadoraOam_EyeClosed_Frame2 */
     { 0x0831904c, 22, 0 }, /* sGadoraOam_EyeClosed_Frame0 */
@@ -10490,7 +10383,6 @@ static const PortRomObject kObjects[] = {
     { 0x083194d0, 5, 17 }, /* sGadoraOam_Death */
     { 0x083194f8, 7, 17 }, /* sGadoraOam_EyeOpened */
     { 0x08319530, 5, 17 }, /* sGadoraOam_BeforeClosing */
-    { 0x08319558, 195, 1 }, /* sSteamGfx */
     { 0x08319864, 16, 0 }, /* sSteamPal */
     { 0x08319884, 4, 0 }, /* sSteamOam_HorizontalLarge_Frame0 */
     { 0x0831988c, 7, 0 }, /* sSteamOam_HorizontalLarge_Frame1 */
@@ -10549,11 +10441,8 @@ static const PortRomObject kObjects[] = {
     { 0x08319ef8, 10, 17 }, /* sSteamOam_VerticalSmall */
     { 0x08319f48, 12, 17 }, /* sSteamDiagonalOam_Large */
     { 0x08319fa8, 10, 17 }, /* sSteamDiagonalOam_Small */
-    { 0x08319ff8, 306, 1 }, /* sPlasmaBeamBlockGfx */
     { 0x0831a4c0, 16, 0 }, /* sPlasmaBeamBlockPal */
-    { 0x0831a4e0, 303, 1 }, /* sGravityBlockGfx */
     { 0x0831a99c, 16, 0 }, /* sGravityBlockPal */
-    { 0x0831a9bc, 297, 1 }, /* sSpaceJumpBlockGfx */
     { 0x0831ae60, 16, 0 }, /* sSpaceJumpBlockPal */
     { 0x0831ae80, 7, 0 }, /* sUnknownItemBlockOam_Idle_Frame0 */
     { 0x0831ae8e, 25, 0 }, /* sUnknownItemBlockOam_Activated_Frame1 */
@@ -10577,7 +10466,6 @@ static const PortRomObject kObjects[] = {
     { 0x0831b1bc, 3, 17 }, /* sUnknownItemBlockLightOam_Idle */
     { 0x0831b1d4, 65, 0 }, /* sEscapeShipHoveringYMovement */
     { 0x0831b256, 57, 0 }, /* sEscapeShipHoveringXMovement */
-    { 0x0831b2c8, 919, 1 }, /* sEscapeShipGfx */
     { 0x0831c124, 64, 0 }, /* sEscapeShipPal */
     { 0x0831c1a4, 48, 0 }, /* sEscapeShipFlashingPal */
     { 0x0831c204, 34, 0 }, /* sEscapeShipOam_Idle_Frame0 */
@@ -10632,14 +10520,12 @@ static const PortRomObject kObjects[] = {
     { 0x0831d0ec, 4, 17 }, /* sEscapeShipPartOam_Flames */
     { 0x0831d10c, 2, 17 }, /* sEscapeShipPartOam_Tail */
     { 0x0831d11c, 26, 17 }, /* sEscapeShipPartOam_TailMoving */
-    { 0x0831d1ec, 115, 1 }, /* sFakePowerBombGfx */
     { 0x0831d3b8, 16, 0 }, /* sFakePowerBombPal */
     { 0x0831d3d8, 4, 0 }, /* sFakePowerBombOam_Idle_Frame0 */
     { 0x0831d3e0, 4, 0 }, /* sFakePowerBombOam_Idle_Frame1 */
     { 0x0831d3e8, 4, 0 }, /* sFakePowerBombOam_Idle_Frame2 */
     { 0x0831d3f0, 4, 0 }, /* sFakePowerBombOam_Idle_Frame3 */
     { 0x0831d3f8, 5, 17 }, /* sFakePowerBombOam_Idle */
-    { 0x0831d420, 219, 1 }, /* sFallingChozoPillarGfx */
     { 0x0831d78c, 16, 0 }, /* sFallingChozoPillarPal */
     { 0x0831d7ac, 25, 0 }, /* sFallingChozoPillarOam_Falling_Frame0 */
     { 0x0831d7e0, 2, 17 }, /* sFallingChozoPillarOam_Falling */
@@ -10853,9 +10739,6 @@ static const PortRomObject kObjects[] = {
     { 0x083208c8, 7, 17 }, /* sMechaRidleyMultiSpriteData_CrawlingBackwardsLow */
     { 0x08320900, 7, 17 }, /* sMechaRidleyMultiSpriteData_CrawlingBackwardsMiddle */
     { 0x08320938, 7, 17 }, /* sMechaRidleyMultiSpriteData_CrawlingBackwardsHigh */
-    { 0x08320980, 2525, 1 }, /* sMechaRidleyGfx */
-    { 0x083230f4, 1024, 1 }, /* sMechaRidleyWeaponsGfx */
-    { 0x083240f4, 336, 1 }, /* sMechaRidleyDestroyedGfx */
     { 0x08324634, 129, 0 }, /* sMechaRidleyPal */
     { 0x08324736, 12, 0 }, /* sMechaRidley_8323aaa_Pal */
     { 0x0832474e, 64, 0 }, /* sMechaRidleyGreenGlowPal */
@@ -11511,7 +11394,6 @@ static const PortRomObject kObjects[] = {
     { 0x0832c674, 2, 17 }, /* sParticleEscapeOam_Unused */
     { 0x0832c684, 2, 17 }, /* sParticleSamusReflectionOam_Unused */
     { 0x0832c694, 96, 0 }, /* sCommonSpritesPal */
-    { 0x0832c754, 3584, 1 }, /* sCommonSpritesGfx */
     { 0x0833a734, 4, 0 }, /* sParticleShootingBeamHorizontalOam_Frame0 */
     { 0x0833a73c, 10, 0 }, /* sParticleShootingBeamHorizontalOam_Frame1 */
     { 0x0833a750, 4, 0 }, /* sParticleShootingBeamHorizontalOam_Frame2 */
@@ -12003,32 +11885,31 @@ static const PortRomObject kObjects[] = {
     { 0x08346260, 5, 27 }, /* sTest2RoomEntries */
     { 0x0834638c, 5, 27 }, /* sTest3RoomEntries */
     { 0x083464b8, 1, 27 }, /* sTestRoomEntries */
-    { 0x083464f4, 1, 28 }, /* sHatchData_Empty */
     { 0x083464fc, 1, 3 }, /* sCoordsX_Empty */
-    { 0x08346500, 1, 29 }, /* sLockScreen_Empty */
-    { 0x08346508, 1, 30 }, /* sBackgroundEffect_Empty */
-    { 0x08346510, 1, 31 }, /* sBrokenBlock_Empty */
-    { 0x0834651c, 1, 32 }, /* sPowerBomb_Empty */
-    { 0x08346534, 1, 33 }, /* sBg0Movement_Empty */
-    { 0x0834653c, 1, 34 }, /* sBg3Movement_Empty */
+    { 0x08346500, 1, 28 }, /* sLockScreen_Empty */
+    { 0x08346508, 1, 29 }, /* sBackgroundEffect_Empty */
+    { 0x08346510, 1, 30 }, /* sBrokenBlock_Empty */
+    { 0x0834651c, 1, 31 }, /* sPowerBomb_Empty */
+    { 0x08346534, 1, 32 }, /* sBg0Movement_Empty */
+    { 0x0834653c, 1, 33 }, /* sBg3Movement_Empty */
     { 0x08346544, 1, 4 }, /* sUnusedStruct_3005504_Empty */
-    { 0x08346554, 1, 35 }, /* sLastElevatorUsed_Empty */
-    { 0x08346558, 1, 36 }, /* sBldalphaData_Empty */
-    { 0x08346560, 1, 36 }, /* sBldyData_Empty */
-    { 0x08346568, 1, 34 }, /* sDefaultTransparency_Empty */
+    { 0x08346554, 1, 34 }, /* sLastElevatorUsed_Empty */
+    { 0x08346558, 1, 35 }, /* sBldalphaData_Empty */
+    { 0x08346560, 1, 35 }, /* sBldyData_Empty */
+    { 0x08346568, 1, 33 }, /* sDefaultTransparency_Empty */
     { 0x08346570, 16, 0 }, /* sMovementClipdataValues */
     { 0x08346590, 1, 11 }, /* sHazardsDefinitions */
     { 0x083465b0, 4, 0 }, /* sHazardClipdataValues */
-    { 0x08346614, 3, 37 }, /* sScrollVelocityCaps */
+    { 0x08346614, 3, 36 }, /* sScrollVelocityCaps */
     { 0x0834665c, 16, 0 }, /* sClipdataAffectingActionDamageTypes */
     { 0x0834673c, 22, 0 }, /* sBlockWeaknesses */
     { 0x08346768, 22, 0 }, /* sReformingBlocksTilemapValue */
-    { 0x083468b4, 8, 38 }, /* sBombChainReverseData */
-    { 0x083468d4, 12, 34 }, /* sTankBehaviors */
+    { 0x083468b4, 8, 37 }, /* sBombChainReverseData */
+    { 0x083468d4, 12, 33 }, /* sTankBehaviors */
     { 0x08346934, 1, 11 }, /* sHatchBehaviors */
     { 0x08346954, 11, 0 }, /* sBldalphaValuesForClipdata */
     { 0x08346982, 5, 0 }, /* sMotherBrainGlassBreakingBaseTilemapValues */
-    { 0x0834698c, 25, 39 }, /* sColorFadingData */
+    { 0x0834698c, 25, 38 }, /* sColorFadingData */
     { 0x08346c5c, 5, 17 }, /* sColorFadingColorInfo */
     { 0x08346d38, 18, 0 }, /* sHaze_PowerBomb_Values0 */
     { 0x08346d5c, 22, 0 }, /* sHaze_PowerBomb_Values5 */
@@ -12188,20 +12069,20 @@ static const PortRomObject kObjects[] = {
     { 0x0835f7fc, 638, 0 }, /* sHaze_PowerBomb_Values159 */
     { 0x0835fcf8, 642, 0 }, /* sHaze_PowerBomb_Values160 */
     { 0x083601fc, 161, 1 }, /* sHaze_PowerBomb_WindowValuesPointers */
-    { 0x083605d0, 1, 35 }, /* sHazeLoop_Empty */
-    { 0x083605d4, 38, 40 }, /* sAnimatedGraphicsEntries */
-    { 0x08360888, 18, 40 }, /* sAnimatedPaletteEntries */
-    { 0x08360918, 9, 41 }, /* sBackgroundEffectColorData */
-    { 0x08360960, 1, 42 }, /* sBackgroundEffectBehavior_Lightning */
+    { 0x083605d0, 1, 34 }, /* sHazeLoop_Empty */
+    { 0x083605d4, 38, 39 }, /* sAnimatedGraphicsEntries */
+    { 0x08360888, 18, 39 }, /* sAnimatedPaletteEntries */
+    { 0x08360918, 9, 40 }, /* sBackgroundEffectColorData */
+    { 0x08360960, 1, 41 }, /* sBackgroundEffectBehavior_Lightning */
     { 0x08360a2c, 1, 19 }, /* sBackgroundEffectBehavior_QuickFlash */
-    { 0x08360a74, 1, 43 }, /* sBackgroundEffectBehavior_SlightYellow */
-    { 0x08360af2, 1, 44 }, /* sBackgroundEffectBehavior_HeavyYellow */
-    { 0x08360b6a, 1, 45 }, /* sBackgroundEffectBehavior_ExitZebes */
-    { 0x08360c1e, 1, 45 }, /* sBackgroundEffectBehavior_IntroText */
-    { 0x08360cd2, 1, 46 }, /* sBackgroundEffectBehavior_AllBlackWhite */
+    { 0x08360a74, 1, 42 }, /* sBackgroundEffectBehavior_SlightYellow */
+    { 0x08360af2, 1, 43 }, /* sBackgroundEffectBehavior_HeavyYellow */
+    { 0x08360b6a, 1, 44 }, /* sBackgroundEffectBehavior_ExitZebes */
+    { 0x08360c1e, 1, 44 }, /* sBackgroundEffectBehavior_IntroText */
+    { 0x08360cd2, 1, 45 }, /* sBackgroundEffectBehavior_AllBlackWhite */
     { 0x08360f54, 8, 0 }, /* sHatchesTilemapValues */
     { 0x08360f64, 8, 0 }, /* sNumberOfHatchLockEventsPerArea */
-    { 0x08360f74, 32, 40 }, /* sInGameCutsceneData */
+    { 0x08360f74, 32, 39 }, /* sInGameCutsceneData */
     { 0x08361074, 104, 0 }, /* sDemo0_Inputs */
     { 0x08361144, 104, 0 }, /* sDemo0_Durations */
     { 0x08361214, 88, 0 }, /* sDemo1_Inputs */
@@ -12234,40 +12115,35 @@ static const PortRomObject kObjects[] = {
     { 0x08361ec4, 24, 0 }, /* sDemo14_Durations */
     { 0x08361ef4, 96, 0 }, /* sDemo15_Inputs */
     { 0x08361fb4, 96, 0 }, /* sDemo15_Durations */
-    { 0x08362074, 1, 47 }, /* sDemo0_Ram */
-    { 0x083622f4, 1, 47 }, /* sDemo1_Ram */
-    { 0x08362574, 1, 47 }, /* sDemo2_Ram */
-    { 0x083627f4, 1, 47 }, /* sDemo3_Ram */
-    { 0x08362a74, 1, 47 }, /* sDemo4_Ram */
-    { 0x08362cf4, 1, 47 }, /* sDemo5_Ram */
-    { 0x08362f74, 1, 47 }, /* sDemo6_Ram */
-    { 0x083631f4, 1, 47 }, /* sDemo7_Ram */
-    { 0x08363474, 1, 47 }, /* sDemo8_Ram */
-    { 0x083636f4, 1, 47 }, /* sDemo9_Ram */
-    { 0x08363974, 1, 47 }, /* sDemo10_Ram */
-    { 0x08363bf4, 1, 47 }, /* sDemo11_Ram */
-    { 0x08363e74, 1, 47 }, /* sDemo12_Ram */
-    { 0x083640f4, 1, 47 }, /* sDemo13_Ram */
-    { 0x08364374, 1, 47 }, /* sDemo14_Ram */
-    { 0x083645f4, 1, 47 }, /* sDemo15_Ram */
-    { 0x08364874, 16, 48 }, /* sDemoEntries */
-    { 0x08364984, 949, 1 }, /* sTileset_0_Bg_Gfx */
+    { 0x08362074, 1, 46 }, /* sDemo0_Ram */
+    { 0x083622f4, 1, 46 }, /* sDemo1_Ram */
+    { 0x08362574, 1, 46 }, /* sDemo2_Ram */
+    { 0x083627f4, 1, 46 }, /* sDemo3_Ram */
+    { 0x08362a74, 1, 46 }, /* sDemo4_Ram */
+    { 0x08362cf4, 1, 46 }, /* sDemo5_Ram */
+    { 0x08362f74, 1, 46 }, /* sDemo6_Ram */
+    { 0x083631f4, 1, 46 }, /* sDemo7_Ram */
+    { 0x08363474, 1, 46 }, /* sDemo8_Ram */
+    { 0x083636f4, 1, 46 }, /* sDemo9_Ram */
+    { 0x08363974, 1, 46 }, /* sDemo10_Ram */
+    { 0x08363bf4, 1, 46 }, /* sDemo11_Ram */
+    { 0x08363e74, 1, 46 }, /* sDemo12_Ram */
+    { 0x083640f4, 1, 46 }, /* sDemo13_Ram */
+    { 0x08364374, 1, 46 }, /* sDemo14_Ram */
+    { 0x083645f4, 1, 46 }, /* sDemo15_Ram */
+    { 0x08364874, 16, 47 }, /* sDemoEntries */
     { 0x08365fbc, 208, 0 }, /* sClipdataBehaviorTypes_Tilemap */
     { 0x0836622c, 832, 0 }, /* sCommonTilemap */
     { 0x0836694c, 160, 0 }, /* sClipdataBehaviorTypes_Test */
-    { 0x08366a8c, 445, 1 }, /* sTileset_0_Gfx */
+    { 0x08367180, 705, 0 }, /* sTileset_0_Tilemap */
     { 0x08367702, 224, 0 }, /* sTileset_0_Pal */
     { 0x083685b0, 96, 0 }, /* sSamusCloseUpPal */
-    { 0x08368670, 2319, 1 }, /* sSamusCloseUpGfx */
-    { 0x0836aaac, 80, 1 }, /* sSamusCloseUpEyesGfx_1 */
-    { 0x0836abec, 80, 1 }, /* sSamusCloseUpEyesGfx_2 */
-    { 0x0836ad2c, 1376, 1 }, /* sSamusCloseUpEyesGfx_3 */
     { 0x0836c2ac, 385, 1 }, /* sSamusCloseUpBackgroundMap */
     { 0x0836c8b0, 98, 1 }, /* sSamusCloseUpEyesTiletable */
-    { 0x0836ca38, 15, 49 }, /* sCutsceneData */
-    { 0x0836cb30, 4, 50 }, /* sKraidRisingPagesData */
-    { 0x0836cb50, 1, 38 }, /* sKraidRisingScreenShakeData */
-    { 0x0836cb54, 1, 51 }, /* sKraidRisingScrollingInfo */
+    { 0x0836ca38, 15, 48 }, /* sCutsceneData */
+    { 0x0836cb30, 4, 49 }, /* sKraidRisingPagesData */
+    { 0x0836cb50, 1, 37 }, /* sKraidRisingScreenShakeData */
+    { 0x0836cb54, 1, 29 }, /* sKraidRisingScrollingInfo */
     { 0x0836cb5c, 5, 17 }, /* sKraidRisingCutsceneOam */
     { 0x0836cb84, 4, 0 }, /* sKraidRisingOam_Samus_Frame0 */
     { 0x0836cb8c, 4, 0 }, /* sKraidRisingOam_Samus_Frame1 */
@@ -12292,24 +12168,19 @@ static const PortRomObject kObjects[] = {
     { 0x0836cd44, 16, 0 }, /* sKraidRisingParticlesPal */
     { 0x0836cd64, 16, 0 }, /* sKraidRisingSamusVariaPal */
     { 0x0836cd84, 112, 0 }, /* sKraidRisingRisingPal */
-    { 0x0836ce64, 3087, 1 }, /* sKraidRisingKraidCloseUpGfx */
-    { 0x0836fea0, 753, 1 }, /* sKraidRisingOamGfx */
-    { 0x08370a64, 1609, 1 }, /* sKraidRisingKraidRisingGfx */
-    { 0x08372388, 1327, 1 }, /* sKraidRisingCaveBackgroundGfx */
     { 0x08373844, 368, 1 }, /* sKraidRisingKraidCloseUpEyesClosedTileTable */
     { 0x08373e04, 368, 1 }, /* sKraidRisingKraidCloseUpEyesBarelyOpenedTileTable */
     { 0x083743c4, 368, 1 }, /* sKraidRisingKraidCloseUpEyesALittleOpenedTileTable */
     { 0x08374984, 368, 1 }, /* sKraidRisingKraidCloseUpEyesOpenedTileTable */
     { 0x08374f44, 295, 1 }, /* sKraidRisingKraidRisingTileTable */
     { 0x083753e0, 370, 1 }, /* sKraidRisingCaveBackgroundTileTable */
-    { 0x083759a8, 1, 50 }, /* sStoryTextCutscenePagesData */
-    { 0x083759b0, 645, 1 }, /* sStoryTextCutsceneGfx_Unused */
+    { 0x083759a8, 1, 49 }, /* sStoryTextCutscenePagesData */
     { 0x083763c4, 16, 0 }, /* sStoryTextCutscenePal */
     { 0x083763e4, 347, 1 }, /* sStoryTextCutsceneTileTable */
     { 0x08376950, 37, 0 }, /* sTourianEscapeOam_375d10_Frame0 */
     { 0x0837699c, 2, 17 }, /* sTourianEscapeOam_375d10 */
-    { 0x083769ac, 5, 50 }, /* sMotherBrainCloseUpPageData */
-    { 0x083769d4, 1, 38 }, /* sMotherBrainCloseUpScreenShakeInfo */
+    { 0x083769ac, 5, 49 }, /* sMotherBrainCloseUpPageData */
+    { 0x083769d4, 1, 37 }, /* sMotherBrainCloseUpScreenShakeInfo */
     { 0x083769d8, 7, 17 }, /* sMotherBrainCloseUpCutsceneOam */
     { 0x08376a10, 4, 0 }, /* sMotherBrainCloseUpOam_EyeOpening_Frame0 */
     { 0x08376a18, 4, 0 }, /* sMotherBrainCloseUpOam_EyeOpening_Frame1 */
@@ -12340,20 +12211,14 @@ static const PortRomObject kObjects[] = {
     { 0x08376f10, 80, 0 }, /* sMotherBrainCloseUpSamusVariaPal */
     { 0x08376fb0, 32, 0 }, /* sMotherBrainCloseUpEyePal */
     { 0x08376ff0, 32, 0 }, /* sMotherBrainCloseUpBigEyePal */
-    { 0x08377030, 2722, 1 }, /* sMotherBrainCloseUpMotherBrainGfx */
-    { 0x08379ab8, 2422, 1 }, /* sMotherBrainCloseUpBackgroundGfx */
-    { 0x0837c090, 2999, 1 }, /* sMotherBrainCloseUpSamusGfx */
-    { 0x0837ef6c, 1134, 1 }, /* sMotherBrainCloseUpEyeGfx */
-    { 0x08380124, 2309, 1 }, /* sMotherBrainCloseUpBigEyeGfx */
     { 0x08382538, 369, 1 }, /* sMotherBrainCloseUpMotherBrainTileTable */
     { 0x08382afc, 369, 1 }, /* sMotherBrainCloseUpBackgroundTileTable */
     { 0x083830c0, 368, 1 }, /* sMotherBrainCloseUpSamusTileTable */
     { 0x08383680, 67, 1 }, /* sMotherBrainCloseUpGlassTileTable */
-    { 0x0838378c, 3944, 1 }, /* sMotherBrainCloseUpTankViewGfx */
     { 0x0838752c, 368, 1 }, /* sMotherBrainCloseUpTankViewTileTable */
     { 0x08387aec, 128, 0 }, /* sMotherBrainCloseUpTankViewPal */
-    { 0x08387bec, 2, 51 }, /* sRidleyInSpaceScrollingInfo */
-    { 0x08387bfc, 6, 50 }, /* sRidleyInSpacePageData */
+    { 0x08387bec, 2, 29 }, /* sRidleyInSpaceScrollingInfo */
+    { 0x08387bfc, 6, 49 }, /* sRidleyInSpacePageData */
     { 0x08387c3c, 2, 17 }, /* sRidleyInSpaceOam_LeftBlueShip */
     { 0x08387c4c, 2, 17 }, /* sRidleyInSpaceOam_RightBlueShip */
     { 0x08387c5c, 2, 17 }, /* sRidleyInSpaceOam_MotherShip */
@@ -12363,13 +12228,6 @@ static const PortRomObject kObjects[] = {
     { 0x08387c9c, 2, 17 }, /* sRidleyInSpaceOam_387010 */
     { 0x08387cac, 2, 17 }, /* sRidleyInSpaceOam_ViewOfShipParticleSecond */
     { 0x08387cbc, 11, 17 }, /* sRidleyInSpaceCutsceneOam */
-    { 0x08387d14, 1565, 1 }, /* sRidleyInSpaceShipsGfx */
-    { 0x08389588, 3848, 1 }, /* sRidleyInSpaceRidleySittingGfx */
-    { 0x0838d1a8, 4391, 1 }, /* sRidleyInSpaceShipInteriorGfx */
-    { 0x08391644, 1961, 1 }, /* sRidleyInSpaceRidleySuspiciousGfx */
-    { 0x083934e8, 4235, 1 }, /* sRidleyInSpaceShipInterior2Gfx */
-    { 0x08397714, 1497, 1 }, /* sRidleyInSpaceMotherShipLeavingGfx */
-    { 0x08398e78, 5470, 1 }, /* sRidleyInSpaceSpaceBackgroundGfx */
     { 0x0839e3f0, 4, 0 }, /* sRidleyInSpaceOam_LeftBlueShip_Frame0 */
     { 0x0839e3f8, 4, 0 }, /* sRidleyInSpaceOam_RightBlueShip_Frame0 */
     { 0x0839e400, 25, 0 }, /* sRidleyInSpaceOam_MotherShip_Frame0 */
@@ -12406,8 +12264,8 @@ static const PortRomObject kObjects[] = {
     { 0x0839fe38, 287, 1 }, /* sRidleyInSpaceRidleySuspiciousEyesSquintedTileTable */
     { 0x083a02b4, 385, 1 }, /* sRidleyInSpaceShipInteriorTileTable2 */
     { 0x083a08b8, 577, 1 }, /* sRidleyInSpaceSpaceBackgroundTileTable */
-    { 0x083a11bc, 5, 50 }, /* sRidleyLandingPageData */
-    { 0x083a11e4, 3, 51 }, /* sRidleyLandingScrollingInfo */
+    { 0x083a11bc, 5, 49 }, /* sRidleyLandingPageData */
+    { 0x083a11e4, 3, 29 }, /* sRidleyLandingScrollingInfo */
     { 0x083a11fc, 2, 17 }, /* sRidleyLandingOam_ShipBottomPart */
     { 0x083a120c, 2, 17 }, /* sRidleyLandingOam_ShipMiddlePart */
     { 0x083a121c, 2, 17 }, /* sRidleyLandingOam_ShipTopPart */
@@ -12436,28 +12294,12 @@ static const PortRomObject kObjects[] = {
     { 0x083a1920, 80, 0 }, /* sCutsceneMotherShipPal */
     { 0x083a19c0, 32, 0 }, /* sRidleyLandingRidleyAndRocksPal */
     { 0x083a1a00, 80, 0 }, /* sRidleyLandingSkyBackgroundPal */
-    { 0x083a1aa0, 3167, 1 }, /* sRidleyLandingZebesBackgroundGfx */
-    { 0x083a4c1c, 38, 1 }, /* sRidleyLandingMotherShipGfx_1 */
-    { 0x083a4cb4, 59, 1 }, /* sRidleyLandingMotherShipGfx_2 */
-    { 0x083a4da0, 65, 1 }, /* sRidleyLandingMotherShipGfx_3 */
-    { 0x083a4ea4, 88, 1 }, /* sRidleyLandingMotherShipGfx_4 */
-    { 0x083a5004, 90, 1 }, /* sRidleyLandingMotherShipGfx_5 */
-    { 0x083a516c, 97, 1 }, /* sRidleyLandingMotherShipGfx_6 */
-    { 0x083a52f0, 75, 1 }, /* sRidleyLandingMotherShipGfx_7 */
-    { 0x083a541c, 40, 1 }, /* sRidleyLandingMotherShipGfx_8 */
-    { 0x083a54bc, 18, 1 }, /* sRidleyLandingMotherShipGfx_9 */
-    { 0x083a5504, 5067, 1 }, /* sCutsceneZebesMotherShipBackgroundGfx */
-    { 0x083aa430, 477, 1 }, /* sCutsceneZebesGroundGfx */
-    { 0x083aaba4, 1514, 1 }, /* sCutsceneZebesRockyBackgroundGfx */
-    { 0x083ac34c, 2955, 1 }, /* sCutsceneMotherShipEscapeShipParticlesGfx */
-    { 0x083af178, 2788, 1 }, /* sRidleyLandingRidleyAndRockShadowGfx */
-    { 0x083b1d08, 2970, 1 }, /* sRidleyLandingRidleyFlyingBackgroundGfx */
     { 0x083b4b70, 545, 1 }, /* sRidleyLandingZebesBackgroundTileTable */
     { 0x083b53f4, 640, 1 }, /* sCutsceneZebesMotherShipBackgroundTileTable */
     { 0x083b5df4, 261, 1 }, /* sCutscene_3b5168_TileTable */
     { 0x083b6208, 111, 1 }, /* sCutsceneZebesGroundTileTable */
     { 0x083b63c4, 368, 1 }, /* sRidleyLandingRidleyFlyingBackgroundTileTable */
-    { 0x083b6984, 4, 50 }, /* sRidleySpawnPageData */
+    { 0x083b6984, 4, 49 }, /* sRidleySpawnPageData */
     { 0x083b69a4, 2, 17 }, /* sRidleySpawnOam_RidleyFlyingReflection */
     { 0x083b69b4, 2, 17 }, /* sRidleySpawnOam_RidleyFlying */
     { 0x083b69c4, 2, 17 }, /* sRidleySpawnOam_RidleyScreaming */
@@ -12472,14 +12314,10 @@ static const PortRomObject kObjects[] = {
     { 0x083b6b00, 48, 0 }, /* sRidleySpawnSamusVariaPal */
     { 0x083b6b60, 208, 0 }, /* sRidleySpawnBackgroundPal */
     { 0x083b6d00, 16, 0 }, /* sRidleySpawnRidleyScreamingPal */
-    { 0x083b6d20, 2830, 1 }, /* sRidleySpawnBackgroundGfx */
-    { 0x083b9958, 2215, 1 }, /* sRidleySpawnSamusAndRidleyGfx */
-    { 0x083bbbf4, 3164, 1 }, /* sRidleySpawnSamusHelmetFaceGfx */
-    { 0x083bed64, 1663, 1 }, /* sRidleySpawnScreamingGfx */
     { 0x083c0760, 368, 1 }, /* sRidleySpawnBackgroundTileTable */
     { 0x083c0d20, 368, 1 }, /* sRidleySpawnSamusHelmetTileTable */
     { 0x083c12e0, 189, 1 }, /* sRidleySpawnSamusFaceTileTable */
-    { 0x083c15d4, 1, 50 }, /* sMechaRidleySeesSamusPagesData */
+    { 0x083c15d4, 1, 49 }, /* sMechaRidleySeesSamusPagesData */
     { 0x083c15dc, 5, 17 }, /* sMechaSeesSamusCutsceneOam */
     { 0x083c1604, 109, 0 }, /* sMechaSeesSamusOam_FocusingEye_Frame0 */
     { 0x083c16de, 109, 0 }, /* sMechaSeesSamusOam_FocusingEye_Frame1 */
@@ -12489,11 +12327,9 @@ static const PortRomObject kObjects[] = {
     { 0x083c198c, 94, 0 }, /* sMechaSeesSamusOam_OpeningEye_Frame2 */
     { 0x083c1a48, 4, 17 }, /* sMechaSeesSamusOam_FocusingEye */
     { 0x083c1a68, 4, 17 }, /* sMechaSeesSamusOam_OpeningEye */
-    { 0x083c1a88, 2382, 1 }, /* sMechaSeesSamusMetalGfx */
-    { 0x083c3fc0, 2671, 1 }, /* sMechaSeesSamusCoverEyeGfx */
     { 0x083c697c, 160, 0 }, /* sMechaSeesSamusPal */
     { 0x083c6abc, 368, 1 }, /* sMechaSeesSamusCoverMetalTileTable */
-    { 0x083c707c, 3, 50 }, /* sGettingFullyPoweredSuitPageData */
+    { 0x083c707c, 3, 49 }, /* sGettingFullyPoweredSuitPageData */
     { 0x083c70a0, 1, 23 }, /* sGettingFullyPoweredSuitRingSparklesPositions */
     { 0x083c70b8, 6, 0 }, /* sGettingFullyPoweredSuitUpSparklesXPositions */
     { 0x083c70c4, 6, 17 }, /* sGettingFullyPoweredSuitCutsceneOam */
@@ -12522,22 +12358,13 @@ static const PortRomObject kObjects[] = {
     { 0x083c72cc, 3, 17 }, /* sGettingFullyPoweredSuitOam_RingTop */
     { 0x083c72e4, 9, 17 }, /* sGettingFullyPoweredSuitOam_SparkleAroundRing2 */
     { 0x083c732c, 304, 0 }, /* sGettingFullyPoweredSuitPal */
-    { 0x083c758c, 2608, 1 }, /* sGettingFullyPoweredSuitSamusGfx */
-    { 0x083c9e4c, 646, 1 }, /* sGettingFullyPoweredSuitRingSparklesGfx */
     { 0x083ca864, 387, 1 }, /* sGettingFullyPoweredSuitSamusTileTable */
     { 0x083ce4a0, 734, 1 }, /* sGettingFullyPoweredSuitBackgroundTileTable */
     { 0x083cf018, 112, 0 }, /* sGettingFullyPoweredSuitRingPal */
-    { 0x083cf0f8, 9, 50 }, /* sBeforeRuinsTestPageData */
+    { 0x083cf0f8, 9, 49 }, /* sBeforeRuinsTestPageData */
     { 0x083cf140, 160, 0 }, /* sBeforeRuinsTestChozoWallSidesPal */
     { 0x083cf280, 128, 0 }, /* sBeforeRuinsTestChozoWallPal */
     { 0x083cf380, 256, 0 }, /* sBeforeRuinsTestSamusCloseUpPal */
-    { 0x083cf580, 4049, 1 }, /* sBeforeRuinsTestLeftSideOfChozoWallGfx */
-    { 0x083d34c4, 3987, 1 }, /* sBeforeRuinsTestRightSideOfChozoWallGfx */
-    { 0x083d7310, 6446, 1 }, /* sBeforeRuinsTestChozoWallBackgroundGfx */
-    { 0x083dd7c8, 1792, 1 }, /* sBeforeRuinsTestYoungSamusAndGreyVoiceGfx */
-    { 0x083df3c8, 3818, 1 }, /* sBeforeRuinsTestYoungSamusAndGreyVoiceCloseUpGfx */
-    { 0x083e2f70, 2979, 1 }, /* sBeforeRuinsTestYoungSamusCloseUpGfx */
-    { 0x083e5dfc, 5285, 1 }, /* sBeforeRuinsTestSamusCloseUpGfx */
     { 0x083eb090, 368, 1 }, /* sBeforeRuinsTestLeftSideOfChozoWallTileTable */
     { 0x083eb650, 369, 1 }, /* sBeforeRuinsTestRightSideOfChozoWallTileTable */
     { 0x083ebc14, 551, 1 }, /* sBeforeRuinsTestChozoWallBackgroundTileTable */
@@ -12547,28 +12374,22 @@ static const PortRomObject kObjects[] = {
     { 0x083ed464, 251, 1 }, /* sBeforeRuinsTestSamusCloseUpEyesClosedTileTable */
     { 0x083ed850, 232, 1 }, /* sBeforeRuinsTestSamusCloseUpEyesOpenedTileTable */
     { 0x083edbf0, 333, 1 }, /* sBeforeRuinsTestSamusCloseUpOutlineTileTable */
-    { 0x083ee124, 3, 50 }, /* sStatueOpeningPageData */
+    { 0x083ee124, 3, 49 }, /* sStatueOpeningPageData */
     { 0x083ee140, 9, 17 }, /* sStatueOpeningOam */
     { 0x083ee188, 128, 0 }, /* sStatueOpeningPal */
-    { 0x083ee288, 2357, 1 }, /* sStatueOpeningRoomGfx */
     { 0x083f075c, 318, 1 }, /* sStatueOpeningRoomTileTable */
     { 0x083f0c54, 242, 1 }, /* sStatueOpening_3effc8 */
-    { 0x083f101c, 2, 50 }, /* sEnterTourianPageData */
+    { 0x083f101c, 2, 49 }, /* sEnterTourianPageData */
     { 0x083f102c, 2, 17 }, /* sEnterTourianOam_SpacePirate */
     { 0x083f103c, 7, 17 }, /* sEnterTourianOam */
     { 0x083f1074, 16, 0 }, /* sEnterTourianOam_SpacePirate_Frame0 */
     { 0x083f1094, 1, 17 }, /* sEnterTourianOam_Empty */
     { 0x083f109c, 160, 0 }, /* sEnterTourianBackgroundPal */
     { 0x083f11dc, 96, 0 }, /* sEnterTourianMetroidPal */
-    { 0x083f129c, 3110, 1 }, /* sEnterTourianBackgroundGfx */
-    { 0x083f4334, 2483, 1 }, /* sEnterTourianForegroundGfx */
-    { 0x083f6a00, 55, 1 }, /* sEnterTourianDeadSpacePirateGfx_1 */
-    { 0x083f6adc, 77, 1 }, /* sEnterTourianDeadSpacePirateGfx_2 */
-    { 0x083f6c10, 32, 1 }, /* sEnterTourianDeadSpacePirateGfx_3 */
     { 0x083f6c90, 385, 1 }, /* sEnterTourianBackgroundTileTable */
     { 0x083f7294, 385, 1 }, /* sEnterTourianForegroundTileTable */
-    { 0x083f7898, 1, 50 }, /* sSamusInBlueShipPageData */
-    { 0x083f78a0, 1, 38 }, /* sSamusInBlueShipScreenShake */
+    { 0x083f7898, 1, 49 }, /* sSamusInBlueShipPageData */
+    { 0x083f78a0, 1, 37 }, /* sSamusInBlueShipScreenShake */
     { 0x083f78a4, 3, 17 }, /* sSamusInBlueShipOam */
     { 0x083f78bc, 115, 0 }, /* sSamusInBlueShipOam_Controls_Frame0 */
     { 0x083f79a2, 115, 0 }, /* sSamusInBlueShipOam_Controls_Frame1 */
@@ -12582,24 +12403,321 @@ static const PortRomObject kObjects[] = {
     { 0x083f80d2, 115, 0 }, /* sSamusInBlueShipOam_Controls_Frame9 */
     { 0x083f81b8, 11, 17 }, /* sSamusInBlueShipOam_Controls */
     { 0x083f8210, 144, 0 }, /* sSamusInBlueShipPal */
-    { 0x083f8330, 3641, 1 }, /* sSamusInBlueShipSamusGfx */
-    { 0x083fbc14, 1642, 1 }, /* sSamusInBlueShipControlsGfx */
     { 0x083fd5bc, 368, 1 }, /* sSamusInBlueShipSamusTileTable */
     { 0x083fdb7c, 176, 0 }, /* sPauseScreen_3fcef0 */
     { 0x083fdcdc, 256, 0 }, /* sTankIconsPal */
     { 0x083fdedc, 80, 0 }, /* sPauseScreen_3fd250 */
     { 0x083fdf7c, 16, 0 }, /* sMinimapAnimatedPalette */
     { 0x083fdf9c, 64, 0 }, /* sSamusWireframePal */
-    { 0x083ff7f8, 278, 1 }, /* sMotifBehindWireframeSamusGfx */
-    { 0x083ffc50, 1404, 1 }, /* sPauseScreenHudGfx */
-    { 0x08401240, 60, 1 }, /* sMinimapLettersGfx */
-    { 0x08401330, 92, 1 }, /* sMenuNamesJapaneseGfx */
-    { 0x084014a0, 384, 1 }, /* sEquipmentNamesJapaneseGfx */
-    { 0x08401aa0, 1786, 1 }, /* sTankIconsGfx */
-    { 0x08403688, 216, 1 }, /* sMapScreenAreaNamesEnglishGfx */
-    { 0x084039e8, 65, 1 }, /* sMapScreenUnknownItemsNamesJapaneseGfx */
-    { 0x08403aec, 152, 1 }, /* sMapScreenChozoStatueAreaNamesEnglishGfx */
-    { 0x08403d4c, 3618, 1 }, /* sChozoHintBackgroundGfx */
+    { 0x083fe01c, 4, 0 }, /* sSamusIconOam_Suit_Frame0 */
+    { 0x083fe024, 4, 0 }, /* sBorderArrowOam_Up_Frame0 */
+    { 0x083fe02c, 4, 0 }, /* sBorderArrowOam_Down_Frame0 */
+    { 0x083fe034, 4, 0 }, /* sBorderArrowOam_Left_Frame0 */
+    { 0x083fe03c, 4, 0 }, /* sBorderArrowOam_Right_Frame0 */
+    { 0x083fe044, 22, 0 }, /* sMiscOam_SamusPowerSuitWireFrame_Frame0 */
+    { 0x083fe070, 22, 0 }, /* sMiscOam_SamusFullSuitWireFrame_Frame0 */
+    { 0x083fe09c, 22, 0 }, /* sMiscOam_EnergyHeader_Frame0 */
+    { 0x083fe0c8, 13, 0 }, /* sMiscOam_BeamHeader_Frame0 */
+    { 0x083fe0e2, 16, 0 }, /* sMiscOam_MissileHeader_Frame0 */
+    { 0x083fe102, 16, 0 }, /* sMiscOam_BombHeader_Frame0 */
+    { 0x083fe122, 16, 0 }, /* sMiscOam_SuitHeader_Frame0 */
+    { 0x083fe142, 16, 0 }, /* sMiscOam_MiscHeader_Frame0 */
+    { 0x083fe162, 4, 0 }, /* sBorderArrowOam_Unused_Frame0 */
+    { 0x083fe16a, 4, 0 }, /* sMiscOam_DownCursor_Frame0 */
+    { 0x083fe172, 4, 0 }, /* sMiscOam_DownCursor_Frame1 */
+    { 0x083fe17a, 4, 0 }, /* sMiscOam_DownCursor_Frame2 */
+    { 0x083fe182, 4, 0 }, /* sMiscOam_RightCursor_Frame0 */
+    { 0x083fe18a, 4, 0 }, /* sMiscOam_RightCursor_Frame1 */
+    { 0x083fe192, 4, 0 }, /* sMiscOam_RightCursor_Frame2 */
+    { 0x083fe19a, 4, 0 }, /* sTargetOam_Target_Frame2 */
+    { 0x083fe1a2, 4, 0 }, /* sTargetOam_Target_Frame3 */
+    { 0x083fe1aa, 4, 0 }, /* sTargetOam_Target_Frame0 */
+    { 0x083fe1b2, 4, 0 }, /* sTargetOam_Target_Frame1 */
+    { 0x083fe1ba, 4, 0 }, /* sTargetOam_UpArrow_Frame0 */
+    { 0x083fe1c2, 7, 0 }, /* sTargetOam_UpArrow_Frame1 */
+    { 0x083fe1d0, 10, 0 }, /* sTargetOam_UpArrow_Frame2 */
+    { 0x083fe1e4, 7, 0 }, /* sTargetOam_UpArrow_Frame3 */
+    { 0x083fe1f2, 4, 0 }, /* sTargetOam_UpArrow_Frame4 */
+    { 0x083fe1fa, 4, 0 }, /* sTargetOam_UpArrow_Frame5 */
+    { 0x083fe202, 4, 0 }, /* sTargetOam_DownArrow_Frame0 */
+    { 0x083fe20a, 7, 0 }, /* sTargetOam_DownArrow_Frame1 */
+    { 0x083fe218, 10, 0 }, /* sTargetOam_DownArrow_Frame2 */
+    { 0x083fe22c, 7, 0 }, /* sTargetOam_DownArrow_Frame3 */
+    { 0x083fe23a, 4, 0 }, /* sTargetOam_DownArrow_Frame4 */
+    { 0x083fe242, 4, 0 }, /* sTargetOam_DownArrow_Frame5 */
+    { 0x083fe24a, 25, 0 }, /* sMiscOam_DownloadLine_Frame0 */
+    { 0x083fe27c, 25, 0 }, /* sMiscOam_DownloadLineTrail_Frame1 */
+    { 0x083fe2ae, 25, 0 }, /* sMiscOam_DownloadLineTrail_Frame2 */
+    { 0x083fe2e0, 25, 0 }, /* sMiscOam_DownloadLineTrail_Frame3 */
+    { 0x083fe312, 4, 0 }, /* sBorderArrowOam_Up_Frame1 */
+    { 0x083fe31a, 4, 0 }, /* sBorderArrowOam_Up_Frame2 */
+    { 0x083fe322, 4, 0 }, /* sBorderArrowOam_Down_Frame1 */
+    { 0x083fe32a, 4, 0 }, /* sBorderArrowOam_Down_Frame2 */
+    { 0x083fe332, 4, 0 }, /* sBorderArrowOam_Left_Frame1 */
+    { 0x083fe33a, 4, 0 }, /* sBorderArrowOam_Left_Frame2 */
+    { 0x083fe342, 4, 0 }, /* sBorderArrowOam_Right_Frame1 */
+    { 0x083fe34a, 4, 0 }, /* sBorderArrowOam_Right_Frame2 */
+    { 0x083fe352, 4, 0 }, /* sSamusIconOam_Suit_Frame4 */
+    { 0x083fe35a, 7, 0 }, /* sOverlayOam_Kraid_Frame0 */
+    { 0x083fe368, 7, 0 }, /* sOverlayOam_Norfair_Frame0 */
+    { 0x083fe376, 7, 0 }, /* sOverlayOam_Ridley_Frame0 */
+    { 0x083fe384, 7, 0 }, /* sOverlayOam_Tourian_Frame0 */
+    { 0x083fe392, 7, 0 }, /* sOverlayOam_Crateria_Frame0 */
+    { 0x083fe3a0, 7, 0 }, /* sOverlayOam_Chozodia_Frame0 */
+    { 0x083fe3ae, 13, 0 }, /* sOverlayOam_AreaNameSpawning_Frame0 */
+    { 0x083fe3c8, 13, 0 }, /* sOverlayOam_AreaNameSpawning_Frame1 */
+    { 0x083fe3e2, 13, 0 }, /* sOverlayOam_AreaNameSpawning_Frame2 */
+    { 0x083fe3fc, 13, 0 }, /* sOverlayOam_AreaNameSpawning_Frame3 */
+    { 0x083fe416, 13, 0 }, /* sOverlayOam_AreaNameSpawning_Frame4 */
+    { 0x083fe430, 7, 0 }, /* sOverlayOam_Brinstar_Frame0 */
+    { 0x083fe43e, 10, 0 }, /* sMiscOam_EnergyTanks_Frame0 */
+    { 0x083fe452, 10, 0 }, /* sMiscOam_MissileTanks_Frame0 */
+    { 0x083fe466, 10, 0 }, /* sMiscOam_SuperMissileTanks_Frame0 */
+    { 0x083fe47a, 10, 0 }, /* sMiscOam_PowerBombTanks_Frame0 */
+    { 0x083fe48e, 10, 0 }, /* sMiscOam_InGameTimer_Frame0 */
+    { 0x083fe4a2, 4, 0 }, /* sMiscOam_BeamLinker_Frame0 */
+    { 0x083fe4aa, 4, 0 }, /* sMiscOam_BeamLinker_Frame1 */
+    { 0x083fe4b2, 7, 0 }, /* sMiscOam_BeamLinker_Frame2 */
+    { 0x083fe4c0, 7, 0 }, /* sMiscOam_BeamLinker_Frame3 */
+    { 0x083fe4ce, 7, 0 }, /* sMiscOam_BeamLinker_Frame4 */
+    { 0x083fe4dc, 7, 0 }, /* sMiscOam_BeamLinker_Frame5 */
+    { 0x083fe4ea, 10, 0 }, /* sMiscOam_BeamLinker_Frame6 */
+    { 0x083fe4fe, 10, 0 }, /* sMiscOam_BeamLinker_Frame7 */
+    { 0x083fe512, 13, 0 }, /* sMiscOam_BeamLinker_Frame8 */
+    { 0x083fe52c, 10, 0 }, /* sMiscOam_BeamLinker_Frame9 */
+    { 0x083fe540, 4, 0 }, /* sMiscOam_MissileLinker_Frame0 */
+    { 0x083fe548, 4, 0 }, /* sMiscOam_MissileLinker_Frame1 */
+    { 0x083fe550, 7, 0 }, /* sMiscOam_MissileLinker_Frame2 */
+    { 0x083fe55e, 10, 0 }, /* sMiscOam_MissileLinker_Frame3 */
+    { 0x083fe572, 10, 0 }, /* sMiscOam_MissileLinker_Frame4 */
+    { 0x083fe586, 4, 0 }, /* sMiscOam_BombLinker_Frame0 */
+    { 0x083fe58e, 7, 0 }, /* sMiscOam_BombLinker_Frame1 */
+    { 0x083fe59c, 7, 0 }, /* sMiscOam_BombLinker_Frame2 */
+    { 0x083fe5aa, 10, 0 }, /* sMiscOam_BombLinker_Frame3 */
+    { 0x083fe5be, 7, 0 }, /* sMiscOam_BombLinker_Frame4 */
+    { 0x083fe5cc, 10, 0 }, /* sMiscOam_BombLinker_Frame5 */
+    { 0x083fe5e0, 13, 0 }, /* sMiscOam_BombLinker_Frame6 */
+    { 0x083fe5fa, 16, 0 }, /* sMiscOam_BombLinker_Frame7 */
+    { 0x083fe61a, 13, 0 }, /* sMiscOam_BombLinker_Frame8 */
+    { 0x083fe634, 4, 0 }, /* sMiscOam_SuitLinker_Frame0 */
+    { 0x083fe63c, 4, 0 }, /* sMiscOam_SuitLinker_Frame1 */
+    { 0x083fe644, 4, 0 }, /* sMiscOam_SuitLinker_Frame2 */
+    { 0x083fe64c, 7, 0 }, /* sMiscOam_SuitLinker_Frame3 */
+    { 0x083fe65a, 7, 0 }, /* sMiscOam_SuitLinker_Frame4 */
+    { 0x083fe668, 10, 0 }, /* sMiscOam_SuitLinker_Frame5 */
+    { 0x083fe67c, 10, 0 }, /* sMiscOam_SuitLinker_Frame6 */
+    { 0x083fe690, 13, 0 }, /* sMiscOam_SuitLinker_Frame7 */
+    { 0x083fe6aa, 10, 0 }, /* sMiscOam_SuitLinker_Frame8 */
+    { 0x083fe6be, 4, 0 }, /* sMiscOam_MiscLinker_Frame0 */
+    { 0x083fe6c6, 4, 0 }, /* sMiscOam_MiscLinker_Frame1 */
+    { 0x083fe6ce, 7, 0 }, /* sMiscOam_MiscLinker_Frame2 */
+    { 0x083fe6dc, 7, 0 }, /* sMiscOam_MiscLinker_Frame3 */
+    { 0x083fe6ea, 10, 0 }, /* sMiscOam_MiscLinker_Frame4 */
+    { 0x083fe6fe, 10, 0 }, /* sMiscOam_MiscLinker_Frame5 */
+    { 0x083fe712, 13, 0 }, /* sMiscOam_MiscLinker_Frame6 */
+    { 0x083fe72c, 10, 0 }, /* sMiscOam_MiscLinker_Frame7 */
+    { 0x083fe740, 4, 0 }, /* sMiscOam_ItemCursorIdle_Frame0 */
+    { 0x083fe748, 4, 0 }, /* sMiscOam_ItemCursorIdle_Frame1 */
+    { 0x083fe750, 4, 0 }, /* sMiscOam_ItemCursorIdle_Frame2 */
+    { 0x083fe758, 4, 0 }, /* sOverlayOam_SelectOn_Frame0 */
+    { 0x083fe760, 4, 0 }, /* sOverlayOam_SelectOff_Frame0 */
+    { 0x083fe768, 4, 0 }, /* sOverlayOam_RPromptPressed_Frame0 */
+    { 0x083fe770, 4, 0 }, /* sOverlayOam_LPromptPressed_Frame0 */
+    { 0x083fe778, 4, 0 }, /* sOverlayOam_CrateriaOutline_Frame0 */
+    { 0x083fe780, 13, 0 }, /* sOverlayOam_BrinstarOutline_Frame0 */
+    { 0x083fe79a, 4, 0 }, /* sOverlayOam_KraidOutline_Frame0 */
+    { 0x083fe7a2, 7, 0 }, /* sOverlayOam_NorfairOutline_Frame0 */
+    { 0x083fe7b0, 7, 0 }, /* sOverlayOam_RidleyOutline_Frame0 */
+    { 0x083fe7be, 4, 0 }, /* sOverlayOam_TourianOutline_Frame0 */
+    { 0x083fe7c6, 4, 0 }, /* sOverlayOam_ChozodiaOutline_Frame0 */
+    { 0x083fe7ce, 19, 0 }, /* sWorldMapOam_OutlinedCrateria_Frame0 */
+    { 0x083fe7f4, 7, 0 }, /* sWorldMapOam_NameCrateria_Frame0 */
+    { 0x083fe802, 34, 0 }, /* sWorldMapOam_OutlinedBrinstar_Frame0 */
+    { 0x083fe846, 7, 0 }, /* sWorldMapOam_NameBrinstar_Frame0 */
+    { 0x083fe854, 19, 0 }, /* sWorldMapOam_OutlinedKraid_Frame0 */
+    { 0x083fe87a, 7, 0 }, /* sWorldMapOam_NameKraid_Frame0 */
+    { 0x083fe888, 19, 0 }, /* sWorldMapOam_OutlinedNorfair_Frame0 */
+    { 0x083fe8ae, 7, 0 }, /* sWorldMapOam_NameNorfair_Frame0 */
+    { 0x083fe8bc, 19, 0 }, /* sWorldMapOam_OutlinedRidley_Frame0 */
+    { 0x083fe8e2, 7, 0 }, /* sWorldMapOam_NameRidley_Frame0 */
+    { 0x083fe8f0, 19, 0 }, /* sWorldMapOam_OutlinedTourian_Frame0 */
+    { 0x083fe916, 7, 0 }, /* sWorldMapOam_NameTourian_Frame0 */
+    { 0x083fe924, 19, 0 }, /* sWorldMapOam_OutlinedChozodia_Frame0 */
+    { 0x083fe94a, 7, 0 }, /* sWorldMapOam_NameChozodia_Frame0 */
+    { 0x083fe958, 4, 0 }, /* sWorldMapOam_Target_Frame0 */
+    { 0x083fe960, 4, 0 }, /* sWorldMapOam_Target_Frame1 */
+    { 0x083fe968, 4, 0 }, /* sWorldMapOam_Target_Frame2 */
+    { 0x083fe970, 4, 0 }, /* sMiscOam_ItemCursorFocusing_Frame0 */
+    { 0x083fe978, 4, 0 }, /* sMiscOam_ItemCursorFocusing_Frame1 */
+    { 0x083fe980, 4, 0 }, /* sMiscOam_ItemCursorFocusing_Frame2 */
+    { 0x083fe988, 4, 0 }, /* sMiscOam_ItemCursorFocusing_Frame3 */
+    { 0x083fe990, 4, 0 }, /* sMiscOam_ItemCursorFocusing_Frame4 */
+    { 0x083fe998, 4, 0 }, /* sMiscOam_TextMarkerDown_Frame0 */
+    { 0x083fe9a0, 4, 0 }, /* sMiscOam_TextMarkerDown_Frame1 */
+    { 0x083fe9a8, 4, 0 }, /* sMiscOam_TextMarkerUp_Frame0 */
+    { 0x083fe9b0, 4, 0 }, /* sMiscOam_TextMarkerUp_Frame1 */
+    { 0x083fe9b8, 4, 0 }, /* sBossIconOam_Kraid_Frame0 */
+    { 0x083fe9c0, 4, 0 }, /* sBossIconOam_Ridley_Frame0 */
+    { 0x083fe9c8, 4, 0 }, /* sSamusIconOam_Suit_Frame1 */
+    { 0x083fe9d0, 4, 0 }, /* sSamusIconOam_Suit_Frame2 */
+    { 0x083fe9d8, 7, 0 }, /* sOverlayOam_ChozoHintCrateria_Frame0 */
+    { 0x083fe9e6, 7, 0 }, /* sOverlayOam_ChozoHintBrinstar_Frame0 */
+    { 0x083fe9f4, 7, 0 }, /* sOverlayOam_ChozoHintKraid_Frame0 */
+    { 0x083fea02, 7, 0 }, /* sOverlayOam_ChozoHintNorfair_Frame0 */
+    { 0x083fea10, 7, 0 }, /* sOverlayOam_ChozoHintRidley_Frame0 */
+    { 0x083fea1e, 7, 0 }, /* sOverlayOam_ChozoHintTourian_Frame0 */
+    { 0x083fea2c, 7, 0 }, /* sOverlayOam_ChozoHintChozodia_Frame0 */
+    { 0x083fea3a, 4, 0 }, /* sBossIconOam_Ship_Frame0 */
+    { 0x083fea42, 4, 0 }, /* sBossIconOam_Crossmark_Frame0 */
+    { 0x083fea4a, 4, 0 }, /* sSamusIconOam_Suit_Frame3 */
+    { 0x083fea52, 13, 0 }, /* sMiscOam_GunHeader_Frame0 */
+    { 0x083fea6c, 4, 0 }, /* sSamusIconOam_Suitless_Frame0 */
+    { 0x083fea74, 4, 0 }, /* sSamusIconOam_Suitless_Frame1 */
+    { 0x083fea7c, 4, 0 }, /* sSamusIconOam_Suitless_Frame2 */
+    { 0x083fea84, 4, 0 }, /* sSamusIconOam_Suitless_Frame3 */
+    { 0x083fea8c, 4, 0 }, /* sTargetOam_GreenFlameSpawning_Frame0 */
+    { 0x083fea94, 4, 0 }, /* sTargetOam_GreenFlameSpawning_Frame1 */
+    { 0x083fea9c, 4, 0 }, /* sTargetOam_GreenFlameSpawning_Frame2 */
+    { 0x083feaa4, 4, 0 }, /* sTargetOam_GreenFlameSpawning_Frame3 */
+    { 0x083feaac, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame6 */
+    { 0x083feab4, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame7 */
+    { 0x083feabc, 7, 0 }, /* sTargetOam_GreenFlameSpawning_Frame4 */
+    { 0x083feaca, 7, 0 }, /* sTargetOam_GreenFlameSpawning_Frame5 */
+    { 0x083fead8, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame0 */
+    { 0x083feae0, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame1 */
+    { 0x083feae8, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame2 */
+    { 0x083feaf0, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame3 */
+    { 0x083feaf8, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame8 */
+    { 0x083feb00, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame9 */
+    { 0x083feb08, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame10 */
+    { 0x083feb10, 4, 0 }, /* sTargetOam_GreenFlameMoving_Frame11 */
+    { 0x083feb18, 4, 0 }, /* sTargetOam_PurpleFlameSpawning_Frame0 */
+    { 0x083feb20, 4, 0 }, /* sTargetOam_PurpleFlameSpawning_Frame1 */
+    { 0x083feb28, 4, 0 }, /* sTargetOam_PurpleFlameSpawning_Frame2 */
+    { 0x083feb30, 4, 0 }, /* sTargetOam_PurpleFlameSpawning_Frame3 */
+    { 0x083feb38, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame6 */
+    { 0x083feb40, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame7 */
+    { 0x083feb48, 7, 0 }, /* sTargetOam_PurpleFlameSpawning_Frame4 */
+    { 0x083feb56, 7, 0 }, /* sTargetOam_PurpleFlameSpawning_Frame5 */
+    { 0x083feb64, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame8 */
+    { 0x083feb6c, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame9 */
+    { 0x083feb74, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame10 */
+    { 0x083feb7c, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame11 */
+    { 0x083feb84, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame0 */
+    { 0x083feb8c, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame1 */
+    { 0x083feb94, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame2 */
+    { 0x083feb9c, 4, 0 }, /* sTargetOam_PurpleFlameMoving_Frame3 */
+    { 0x083feba4, 25, 0 }, /* sMiscOam_SamusSuitlessWireframe_Frame0 */
+    { 0x083febd6, 7, 0 }, /* sMiscOam_PlasmaBeamUnknown_Frame0 */
+    { 0x083febe4, 13, 0 }, /* sMiscOam_SpaceJumpUnknown_Frame0 */
+    { 0x083febfe, 13, 0 }, /* sMiscOam_GravityUnknown_Frame0 */
+    { 0x083fec18, 7, 0 }, /* sMiscOam_PlasmaBeamKnown_Frame0 */
+    { 0x083fec26, 13, 0 }, /* sMiscOam_SpaceJumpKnown_Frame0 */
+    { 0x083fec40, 13, 0 }, /* sMiscOam_GravityKnown_Frame0 */
+    { 0x083fec5c, 9, 17 }, /* sSamusIconOam_Suit */
+    { 0x083feca4, 5, 17 }, /* sMiscOam_RightCursor */
+    { 0x083feccc, 5, 17 }, /* sMiscOam_DownCursor */
+    { 0x083fecf4, 5, 17 }, /* sBorderArrowOam_Up */
+    { 0x083fed1c, 5, 17 }, /* sBorderArrowOam_Down */
+    { 0x083fed44, 5, 17 }, /* sBorderArrowOam_Left */
+    { 0x083fed6c, 5, 17 }, /* sBorderArrowOam_Right */
+    { 0x083fed94, 2, 17 }, /* sBorderArrowOam_Unused */
+    { 0x083feda4, 8, 17 }, /* sTargetOam_UpArrow */
+    { 0x083fede4, 8, 17 }, /* sTargetOam_DownArrow */
+    { 0x083fee24, 5, 17 }, /* sMiscOam_DownloadLineTrail */
+    { 0x083fee4c, 2, 17 }, /* sMiscOam_DownloadLine */
+    { 0x083fee5c, 2, 17 }, /* sOverlayOam_Brinstar */
+    { 0x083fee6c, 2, 17 }, /* sOverlayOam_Kraid */
+    { 0x083fee7c, 2, 17 }, /* sOverlayOam_Norfair */
+    { 0x083fee8c, 2, 17 }, /* sOverlayOam_Ridley */
+    { 0x083fee9c, 2, 17 }, /* sOverlayOam_Tourian */
+    { 0x083feeac, 2, 17 }, /* sOverlayOam_Crateria */
+    { 0x083feebc, 2, 17 }, /* sOverlayOam_Chozodia */
+    { 0x083feecc, 10, 17 }, /* sOverlayOam_AreaNameSpawning */
+    { 0x083fef1c, 2, 17 }, /* sMiscOam_EnergyTanks */
+    { 0x083fef2c, 2, 17 }, /* sMiscOam_MissileTanks */
+    { 0x083fef3c, 2, 17 }, /* sMiscOam_SuperMissileTanks */
+    { 0x083fef4c, 2, 17 }, /* sMiscOam_PowerBombTanks */
+    { 0x083fef5c, 5, 17 }, /* sTargetOam_Target */
+    { 0x083fef84, 2, 17 }, /* sMiscOam_EnergyHeader */
+    { 0x083fef94, 2, 17 }, /* sMiscOam_BeamHeader */
+    { 0x083fefa4, 2, 17 }, /* sMiscOam_MissileHeader */
+    { 0x083fefb4, 2, 17 }, /* sMiscOam_BombHeader */
+    { 0x083fefc4, 2, 17 }, /* sMiscOam_SuitHeader */
+    { 0x083fefd4, 2, 17 }, /* sMiscOam_MiscHeader */
+    { 0x083fefe4, 2, 17 }, /* sMiscOam_SamusPowerSuitWireframe */
+    { 0x083feff4, 2, 17 }, /* sMiscOam_SamusFullSuitWireframe */
+    { 0x083ff004, 11, 17 }, /* sMiscOam_BeamLinker */
+    { 0x083ff05c, 6, 17 }, /* sMiscOam_MissileLinker */
+    { 0x083ff08c, 10, 17 }, /* sMiscOam_BombLinker */
+    { 0x083ff0dc, 10, 17 }, /* sMiscOam_SuitLinker */
+    { 0x083ff12c, 9, 17 }, /* sMiscOam_MiscLinker */
+    { 0x083ff174, 7, 17 }, /* sMiscOam_ItemCursorIdle */
+    { 0x083ff1ac, 2, 17 }, /* sOverlayOam_SelectOn */
+    { 0x083ff1bc, 2, 17 }, /* sOverlayOam_SelectOff */
+    { 0x083ff1cc, 2, 17 }, /* sMiscOam_InGameTimer */
+    { 0x083ff1dc, 2, 17 }, /* sOverlayOam_RPromptPressed */
+    { 0x083ff1ec, 2, 17 }, /* sOverlayOam_LPromptPressed */
+    { 0x083ff1fc, 2, 17 }, /* sOverlayOam_CrateriaOutline */
+    { 0x083ff20c, 2, 17 }, /* sOverlayOam_BrinstarOutline */
+    { 0x083ff21c, 2, 17 }, /* sOverlayOam_KraidOutline */
+    { 0x083ff22c, 2, 17 }, /* sOverlayOam_NorfairOutline */
+    { 0x083ff23c, 2, 17 }, /* sOverlayOam_RidleyOutline */
+    { 0x083ff24c, 2, 17 }, /* sOverlayOam_TourianOutline */
+    { 0x083ff25c, 2, 17 }, /* sOverlayOam_ChozodiaOutline */
+    { 0x083ff26c, 2, 17 }, /* sWorldMapOam_OutlinedCrateria */
+    { 0x083ff27c, 2, 17 }, /* sWorldMapOam_NameCrateria */
+    { 0x083ff28c, 2, 17 }, /* sWorldMapOam_OutlinedBrinstar */
+    { 0x083ff29c, 2, 17 }, /* sWorldMapOam_NameBrinstar */
+    { 0x083ff2ac, 2, 17 }, /* sWorldMapOam_OutlinedKraid */
+    { 0x083ff2bc, 2, 17 }, /* sWorldMapOam_NameKraid */
+    { 0x083ff2cc, 2, 17 }, /* sWorldMapOam_OutlinedNorfair */
+    { 0x083ff2dc, 2, 17 }, /* sWorldMapOam_NameNorfair */
+    { 0x083ff2ec, 2, 17 }, /* sWorldMapOam_OutlinedRidley */
+    { 0x083ff2fc, 2, 17 }, /* sWorldMapOam_NameRidley */
+    { 0x083ff30c, 2, 17 }, /* sWorldMapOam_OutlinedTourian */
+    { 0x083ff31c, 2, 17 }, /* sWorldMapOam_NameTourian */
+    { 0x083ff32c, 2, 17 }, /* sWorldMapOam_OutlinedChozodia */
+    { 0x083ff33c, 2, 17 }, /* sWorldMapOam_NameChozodia */
+    { 0x083ff34c, 8, 17 }, /* sWorldMapOam_Target */
+    { 0x083ff38c, 6, 17 }, /* sMiscOam_ItemCursorFocusing */
+    { 0x083ff3bc, 3, 17 }, /* sMiscOam_TextMarkerDown */
+    { 0x083ff3d4, 3, 17 }, /* sMiscOam_TextMarkerUp */
+    { 0x083ff3ec, 2, 17 }, /* sBossIconOam_Kraid */
+    { 0x083ff3fc, 2, 17 }, /* sBossIconOam_Ridley */
+    { 0x083ff40c, 2, 17 }, /* sOverlayOam_ChozoHintCrateria */
+    { 0x083ff41c, 2, 17 }, /* sOverlayOam_ChozoHintBrinstar */
+    { 0x083ff42c, 2, 17 }, /* sOverlayOam_ChozoHintNorfair */
+    { 0x083ff43c, 2, 17 }, /* sOverlayOam_ChozoHintRidley */
+    { 0x083ff44c, 2, 17 }, /* sOverlayOam_ChozoHintTourian */
+    { 0x083ff45c, 2, 17 }, /* sOverlayOam_ChozoHintChozodia */
+    { 0x083ff46c, 2, 17 }, /* sOverlayOam_ChozoHintKraid */
+    { 0x083ff47c, 2, 17 }, /* sBossIconOam_Crossmark */
+    { 0x083ff48c, 2, 17 }, /* sMiscOam_GunHeader */
+    { 0x083ff49c, 9, 17 }, /* sSamusIconOam_Suitless */
+    { 0x083ff4e4, 2, 17 }, /* sBossIconOam_Ship */
+    { 0x083ff4f4, 7, 17 }, /* sTargetOam_GreenFlameSpawning */
+    { 0x083ff52c, 5, 17 }, /* sTargetOam_GreenFlame */
+    { 0x083ff554, 17, 17 }, /* sTargetOam_GreenFlameMoving */
+    { 0x083ff5dc, 7, 17 }, /* sTargetOam_PurpleFlameSpawning */
+    { 0x083ff614, 5, 17 }, /* sTargetOam_PurpleFlame */
+    { 0x083ff63c, 17, 17 }, /* sTargetOam_PurpleFlameMoving */
+    { 0x083ff6c4, 2, 17 }, /* sMiscOam_SamusSuitlessWireframe */
+    { 0x083ff6d4, 2, 17 }, /* sMiscOam_PlasmaBeamUnknown */
+    { 0x083ff6e4, 2, 17 }, /* sMiscOam_SpaceJumpUnknown */
+    { 0x083ff6f4, 2, 17 }, /* sMiscOam_GravityUnknown */
+    { 0x083ff704, 2, 17 }, /* sMiscOam_PlasmaBeamKnown */
+    { 0x083ff714, 2, 17 }, /* sMiscOam_SpaceJumpKnown */
+    { 0x083ff724, 2, 17 }, /* sMiscOam_GravityKnown */
+    { 0x083ff734, 1, 0 }, /* sMiscOam_DebugCursor_Frame0 */
+    { 0x083ff736, 4, 0 }, /* sMiscOam_DebugCursor_Frame1 */
+    { 0x083ff73e, 7, 0 }, /* sMiscOam_DebugSelector_Frame0 */
+    { 0x083ff74c, 7, 0 }, /* sMiscOam_DebugSelector_Frame1 */
+    { 0x083ff75a, 7, 0 }, /* sMiscOam_DebugSelector_Frame2 */
+    { 0x083ff768, 31, 0 }, /* sMiscOam_DebugSamusHeadAndArrows_Frame0 */
+    { 0x083ff7a8, 3, 17 }, /* sMiscOam_DebugCursor */
+    { 0x083ff7c0, 5, 17 }, /* sMiscOam_DebugSelector */
+    { 0x083ff7e8, 2, 17 }, /* sMiscOam_DebugSamusHeadAndArrows */
     { 0x084075d4, 133, 1 }, /* sBrinstarMinimap */
     { 0x084077e8, 121, 1 }, /* sKraidMinimap */
     { 0x084079cc, 153, 1 }, /* sNorfairMinimap */
@@ -12617,38 +12735,19 @@ static const PortRomObject kObjects[] = {
     { 0x08409684, 169, 1 }, /* sStatusScreenBackgroundTilemap */
     { 0x08409928, 92, 1 }, /* sMapScreenTextBg0TileTable */
     { 0x08409a98, 577, 1 }, /* sChozoHintBackgroundTileTable */
-    { 0x0840a39c, 411, 1 }, /* sEquipmentNamesHiraganaGfx */
-    { 0x0840aa08, 380, 1 }, /* sEquipmentNamesEnglishGfx */
-    { 0x0840aff8, 380, 1 }, /* sEquipmentNamesGermanGfx */
-    { 0x0840b628, 380, 1 }, /* sEquipmentNamesFrenchGfx */
-    { 0x0840bc84, 380, 1 }, /* sEquipmentNamesItalianGfx */
-    { 0x0840c2b4, 380, 1 }, /* sEquipmentNamesSpanishGfx */
-    { 0x0840c918, 198, 1 }, /* sMapScreenAreaNamesHiraganaGfx */
-    { 0x0840cc30, 113, 1 }, /* sMenuNamesHiraganaGfx */
-    { 0x0840cdf4, 92, 1 }, /* sMenuNamesEnglishGfx */
-    { 0x0840cf64, 97, 1 }, /* sMenuNamesGermanGfx */
-    { 0x0840d0e8, 91, 1 }, /* sMenuNamesFrenchGfx */
-    { 0x0840d254, 92, 1 }, /* sMenuNamesItalianGfx */
-    { 0x0840d3c8, 96, 1 }, /* sMenuNamesSpanishGfx */
-    { 0x0840d54c, 76, 1 }, /* sMapScreenUnknownItemsNamesHiraganaGfx */
-    { 0x0840d67c, 65, 1 }, /* sMapScreenUnknownItemsNamesEnglishGfx */
-    { 0x0840d780, 68, 1 }, /* sMapScreenUnknownItemsNamesGermanGfx */
-    { 0x0840d99c, 67, 1 }, /* sMapScreenUnknownItemsNamesItalianGfx */
-    { 0x0840dab4, 69, 1 }, /* sMapScreenUnknownItemsNamesSpanishGfx */
-    { 0x0840dbec, 154, 1 }, /* sMapScreenChozoStatueAreaNamesHiraganaGfx */
-    { 0x0840de54, 1, 52 }, /* sMenuOamData_Empty */
-    { 0x0840de64, 1, 52 }, /* sMenuOamDataChozoHint_Empty */
-    { 0x0840de74, 1, 52 }, /* sMenuOamDataEraseSram_Empty */
-    { 0x0840de84, 1, 53 }, /* sCutsceneOam_Empty */
-    { 0x0840dea4, 1, 52 }, /* sMenuOamDataMinimapRoomInfo */
+    { 0x0840de54, 1, 50 }, /* sMenuOamData_Empty */
+    { 0x0840de64, 1, 50 }, /* sMenuOamDataChozoHint_Empty */
+    { 0x0840de74, 1, 50 }, /* sMenuOamDataEraseSram_Empty */
+    { 0x0840de84, 1, 51 }, /* sCutsceneOam_Empty */
+    { 0x0840dea4, 1, 50 }, /* sMenuOamDataMinimapRoomInfo */
     { 0x0840deb4, 4, 0 }, /* sPauseScreen_BgCntPriority */
-    { 0x0840debc, 8, 50 }, /* sPauseScreenAreaIconsData */
+    { 0x0840debc, 8, 49 }, /* sPauseScreenAreaIconsData */
     { 0x0840defc, 1, 11 }, /* sMapScreenArrowsData */
     { 0x0840df2e, 5, 0 }, /* sPowersOfTen */
-    { 0x0840df38, 7, 54 }, /* sSamusWireframeData */
+    { 0x0840df38, 7, 52 }, /* sSamusWireframeData */
     { 0x0840dfa8, 2, 0 }, /* sChozoHintAreaNamesPosition */
-    { 0x0840dfb4, 7, 29 }, /* sWorldMapData */
-    { 0x0840dfec, 1, 55 }, /* sWorldMapTargetPositions */
+    { 0x0840dfb4, 7, 28 }, /* sWorldMapData */
+    { 0x0840dfec, 1, 53 }, /* sWorldMapTargetPositions */
     { 0x0840e050, 3, 0 }, /* sMapChunksToUpdate */
     { 0x0840e058, 56, 17 }, /* sPauseScreenMiscOam */
     { 0x0840e218, 33, 17 }, /* sPauseScreenOverlayOam */
@@ -12658,21 +12757,18 @@ static const PortRomObject kObjects[] = {
     { 0x0840e388, 16, 17 }, /* sPauseScreenTargetsOam */
     { 0x0840e408, 18, 17 }, /* sPauseScreenWorldMapOam */
     { 0x0840e5d0, 5, 1 }, /* sPauseScreen_IgtAndTanksVramAddresses */
-    { 0x0840ea84, 1, 56 }, /* sMessage_Empty */
-    { 0x0840ea94, 1, 56 }, /* sMessageStoryText_Empty */
-    { 0x0840eaa4, 1, 56 }, /* sMessageFileScreen_Empty */
-    { 0x0840eab4, 1, 56 }, /* sMessageDescription_Empty */
+    { 0x0840ea84, 1, 54 }, /* sMessage_Empty */
+    { 0x0840ea94, 1, 54 }, /* sMessageStoryText_Empty */
+    { 0x0840eaa4, 1, 54 }, /* sMessageFileScreen_Empty */
+    { 0x0840eab4, 1, 54 }, /* sMessageDescription_Empty */
     { 0x0840eac4, 16, 0 }, /* sPauseScreen_40dc90 */
     { 0x0840eae4, 16, 0 }, /* sPauseScreen_40dcb0 */
     { 0x0840eb04, 16, 0 }, /* sPauseScreen_40dcd0 */
     { 0x0840eb44, 96, 0 }, /* sStatusScreenUnknownItemsWhiteFlashingPal */
     { 0x0840ec04, 64, 0 }, /* sStatusScreenUnknownItemsNamesFlashingPal */
-    { 0x084102f8, 1792, 1 }, /* sPauseScreen_40f4c4 */
-    { 0x08411ef8, 79, 1 }, /* sMinimapTilesAreaNamesEnglishGfx */
-    { 0x08412034, 88, 1 }, /* sMinimapTilesAreaNamesHiraganaGfx */
     { 0x08412194, 80, 0 }, /* sMinimapTilesPal */
-    { 0x084122b0, 1, 57 }, /* sFileScreenOptionsUnlocked_Empty */
-    { 0x08412344, 1, 37 }, /* sDefaultButtonAssignments */
+    { 0x084122b0, 1, 55 }, /* sFileScreenOptionsUnlocked_Empty */
+    { 0x08412344, 1, 36 }, /* sDefaultButtonAssignments */
     { 0x0841235c, 112, 0 }, /* sEraseSramMenuObjectsPal */
     { 0x0841243c, 239, 0 }, /* sEraseSramMenuBackgroundPal */
     { 0x0841261a, 52, 0 }, /* sEraseSramOam_ConfirmWindowNoSelected_Frame0 */
@@ -12715,26 +12811,13 @@ static const PortRomObject kObjects[] = {
     { 0x08412968, 2, 17 }, /* sEraseSramOam_QuestionWindowYesSelected */
     { 0x08412978, 2, 17 }, /* sEraseSramOam_ConfirmWindowNoSelected */
     { 0x08412988, 2, 17 }, /* sEraseSramOam_ConfirmWindowYesSelected */
-    { 0x08412998, 477, 1 }, /* sEraseSramMenuObjectsGfx */
-    { 0x0841310c, 118, 1 }, /* sEraseSramMenuFirstBoxGfx */
-    { 0x084132e4, 245, 1 }, /* sEraseSramMenuConfirmJapaneseGfx */
-    { 0x084136b8, 191, 1 }, /* sEraseSramMenuConfirmEnglishGfx */
-    { 0x084139b4, 209, 1 }, /* sEraseSramMenuConfirmFrenchGfx */
-    { 0x08413cf8, 222, 1 }, /* sEraseSramMenuConfirmGermanGfx */
-    { 0x08414070, 201, 1 }, /* sEraseSramMenuConfirmItalianGfx */
-    { 0x08414394, 204, 1 }, /* sEraseSramMenuConfirmSpanishGfx */
-    { 0x084146c4, 245, 1 }, /* sEraseSramMenuQuestionJapaneseGfx */
-    { 0x08414a98, 185, 1 }, /* sEraseSramMenuQuestionEnglishGfx */
-    { 0x08414d7c, 187, 1 }, /* sEraseSramMenuQuestionFrenchGfx */
-    { 0x08415068, 205, 1 }, /* sEraseSramMenuQuestionGermanGfx */
-    { 0x0841539c, 221, 1 }, /* sEraseSramMenuQuestionItalianGfx */
-    { 0x08415710, 208, 1 }, /* sEraseSramMenuQuestionSpanishGfx */
     { 0x08415a50, 137, 1 }, /* sEraseSramMenuBoxTileTable */
     { 0x08415c74, 368, 1 }, /* sEraseSramMenuBackgroundTileTable */
     { 0x08416238, 5, 0 }, /* sEraseSramMenuSoundsId */
-    { 0x08416242, 1, 37 }, /* sEraseSramMenuCursorPosition */
-    { 0x0841624a, 1, 58 }, /* sEraseSramMenuCursorPositionOffset */
+    { 0x08416242, 1, 36 }, /* sEraseSramMenuCursorPosition */
+    { 0x0841624a, 1, 56 }, /* sEraseSramMenuCursorPositionOffset */
     { 0x0841625c, 7, 17 }, /* sEraseSramMenuOam */
+    { 0x08416294, 45056, 1 }, /* sCharactersGfx */
     { 0x08442294, 7, 0 }, /* sJapaneseText_Message_Dummy */
     { 0x084422a2, 37, 0 }, /* sJapaneseText_Message_EnergyTankAcquired */
     { 0x084422ec, 44, 0 }, /* sJapaneseText_Message_MissileTankAcquired */
@@ -13190,6 +13273,7 @@ static const PortRomObject kObjects[] = {
     { 0x084473f8, 15, 0 }, /* sSpanishText_Location_Unused16 */
     { 0x08447416, 15, 0 }, /* sSpanishText_Location_Unused17 */
     { 0x08447434, 15, 0 }, /* sSpanishText_Location_Unused18 */
+    { 0x08447452, 1, 0 }, /* sAlign_0 */
     { 0x08447454, 34, 0 }, /* sJapaneseText_Description_LongBeam */
     { 0x08447498, 51, 0 }, /* sJapaneseText_Description_ChargeBeam */
     { 0x084474fe, 33, 0 }, /* sJapaneseText_Description_IceBeam */
@@ -13252,6 +13336,7 @@ static const PortRomObject kObjects[] = {
     { 0x084483f6, 47, 0 }, /* sJapaneseText_FileScreen_TimeAttackRecordUnlock */
     { 0x08448454, 43, 0 }, /* sJapaneseText_FileScreen_SoundTestUnlock */
     { 0x084484aa, 46, 0 }, /* sJapaneseText_FileScreen_NesMetroidUnlock */
+    { 0x08448506, 1, 0 }, /* sAlign_1 */
     { 0x08448508, 35, 0 }, /* sHiraganaText_Description_LongBeam */
     { 0x0844854e, 55, 0 }, /* sHiraganaText_Description_ChargeBeam */
     { 0x084485bc, 38, 0 }, /* sHiraganaText_Description_IceBeam */
@@ -13333,6 +13418,7 @@ static const PortRomObject kObjects[] = {
     { 0x08449ebc, 71, 0 }, /* sEnglishText_Description_SpaceJump */
     { 0x08449f4a, 62, 0 }, /* sEnglishText_Description_UnknownItem */
     { 0x08449fc6, 64, 0 }, /* sEnglishText_Description_Pistol */
+    { 0x0844a046, 1, 0 }, /* sAlign_2 */
     { 0x0844a048, 218, 0 }, /* sEnglishText_Story_PlanetZebes */
     { 0x0844a1fc, 300, 0 }, /* sEnglishText_Story_TheTiming */
     { 0x0844a454, 39, 0 }, /* sEnglishText_Story_CouldISurvive */
@@ -13635,82 +13721,211 @@ static const PortRomObject kObjects[] = {
     { 0x08451d0c, 240, 0 }, /* sTitleScreenPal */
     { 0x08451eec, 80, 0 }, /* sTitleScreenPromptPal */
     { 0x08451f8c, 16, 0 }, /* sTitleScreenUnselectedMenuPal */
-    { 0x084520a4, 1095, 1 }, /* sTitleScreenTitleGfx */
-    { 0x084531c0, 256, 1 }, /* sTitleScreenSparklesGfx */
-    { 0x084535c0, 3203, 1 }, /* sTitleScreenSpaceBackgroundGfx */
-    { 0x084567cc, 797, 1 }, /* sTitleScreenSpaceBackgroundDecorationGfx */
-    { 0x08457440, 1920, 1 }, /* sTitleScreenSpaceAndGroundBackgroundGfx */
-    { 0x08459240, 85, 1 }, /* sTitleScreenEnglishMenuGfx_Top */
-    { 0x08459394, 72, 1 }, /* sTitleScreenEnglishMenuGfx_Bottom */
-    { 0x084594b4, 89, 1 }, /* sTitleScreenGermanMenuGfx_Top */
-    { 0x08459618, 75, 1 }, /* sTitleScreenGermanMenuGfx_Bottom */
-    { 0x08459744, 63, 1 }, /* sTitleScreenFrenchMenuGfx_Top */
-    { 0x08459840, 55, 1 }, /* sTitleScreenFrenchMenuGfx_Bottom */
-    { 0x0845991c, 79, 1 }, /* sTitleScreenItalianMenuGfx_Top */
-    { 0x08459a58, 62, 1 }, /* sTitleScreenItalianMenuGfx_Bottom */
-    { 0x08459b50, 64, 1 }, /* sTitleScreenSpanishMenuGfx_Top */
-    { 0x08459c50, 45, 1 }, /* sTitleScreenSpanishMenuGfx_Bottom */
-    { 0x08459d04, 199, 1 }, /* sTitleScreenTitleTileTable */
+    { 0x08451fac, 4, 0 }, /* sTitleScreenOam_Comet_Frame0 */
+    { 0x08451fb4, 4, 0 }, /* sTitleScreenOam_Comet_Frame1 */
+    { 0x08451fbc, 4, 0 }, /* sTitleScreenOam_Comet_Frame2 */
+    { 0x08451fc4, 7, 0 }, /* sTitleScreenOam_CometFlying_Frame0 */
+    { 0x08451fd2, 4, 0 }, /* sTitleScreenOam_SparkleIdle_Frame0 */
+    { 0x08451fda, 4, 0 }, /* sTitleScreenOam_SparkleIdle_Frame1 */
+    { 0x08451fe2, 4, 0 }, /* sTitleScreenOam_SparkleIdle_Frame2 */
+    { 0x08451fea, 4, 0 }, /* sTitleScreenOam_SparkleIdle_Frame3 */
+    { 0x08451ff2, 4, 0 }, /* sTitleScreenOam_SparkleDisappearing_Frame0 */
+    { 0x08451ffa, 4, 0 }, /* sTitleScreenOam_SparkleDisappearing_Frame1 */
+    { 0x08452002, 4, 0 }, /* sTitleScreenOam_SparkleDisappearing_Frame2 */
+    { 0x0845200a, 4, 0 }, /* sTitleScreenOam_SparkleDisappearing_Frame3 */
+    { 0x08452012, 4, 0 }, /* sTitleScreenOam_SparkleDisappearing_Frame4 */
+    { 0x0845201c, 4, 17 }, /* sTitleScreenOam_Comet */
+    { 0x0845203c, 2, 17 }, /* sTitleScreenOam_CometFlying */
+    { 0x0845204c, 5, 17 }, /* sTitleScreenOam_SparkleIdle */
+    { 0x08452074, 6, 17 }, /* sTitleScreenOam_SparkleDisappearing */
+    { 0x08459d04, 209, 1 }, /* sTitleScreenTitleTileTable */
     { 0x0845a048, 702, 1 }, /* sTitleScreenSpaceBackgroundTileTable */
     { 0x0845ab50, 2, 5 }, /* sTitleScreenPageData */
-    { 0x0845ab68, 1, 52 }, /* sTitleScreenTopSparkleBaseOam */
-    { 0x0845ab78, 1, 52 }, /* sTitleScreenBottomSparkleBaseOam */
+    { 0x0845ab68, 1, 50 }, /* sTitleScreenTopSparkleBaseOam */
+    { 0x0845ab78, 1, 50 }, /* sTitleScreenBottomSparkleBaseOam */
     { 0x0845ab88, 7, 17 }, /* sTitleScreenOam */
     { 0x0845abc0, 80, 0 }, /* sGameOverMenuPal */
-    { 0x0845ac60, 2738, 1 }, /* sGameOverTextAndBackgroundGfx */
-    { 0x0845d728, 333, 1 }, /* sGameOverTextPromptEnglishGfx */
-    { 0x0845dc5c, 428, 1 }, /* sGameOverTextPromptHiraganaGfx */
-    { 0x0845e30c, 338, 1 }, /* sGameOverTextPromptGermanGfx */
-    { 0x0845e85c, 337, 1 }, /* sGameOverTextPromptFrenchGfx */
-    { 0x0845f2d8, 339, 1 }, /* sGameOverTextPromptSpanishGfx */
     { 0x0845f848, 370, 1 }, /* sGameOverBackgroundTileTable */
     { 0x0845fe10, 116, 1 }, /* sGameOverTextTileTable */
     { 0x0845ffe0, 160, 1 }, /* sGameOver_454520 */
-    { 0x08460260, 1, 59 }, /* sGameOverDynamicPalette_Empty */
+    { 0x08460260, 1, 57 }, /* sGameOverDynamicPalette_Empty */
     { 0x08460274, 7, 0 }, /* sGameOverSamusHeadXPositions */
     { 0x08460282, 2, 0 }, /* sGameOverSamusHeadYPositions */
     { 0x08460290, 9, 17 }, /* sGameOverOam */
     { 0x084602d8, 112, 0 }, /* sFileSelectPal */
     { 0x084603b8, 32, 0 }, /* sFileSelect_4548f8 */
     { 0x084603f8, 96, 0 }, /* sFileSelectIconsPal */
+    { 0x084604b8, 4, 0 }, /* sFileSelectOam_SamusHeadTurningOn_Frame0 */
+    { 0x084604c0, 4, 0 }, /* sFileSelectOam_SamusHeadTurningOn_Frame1 */
+    { 0x084604c8, 4, 0 }, /* sFileSelectOam_SamusHeadTurningOn_Frame2 */
+    { 0x084604d0, 4, 0 }, /* sFileSelectOam_SamusHeadOff_Frame0 */
+    { 0x084604d8, 4, 0 }, /* sFileSelectOam_SamusHeadTurning_Frame1 */
+    { 0x084604e0, 4, 0 }, /* sFileSelectOam_SamusHeadTurning_Frame2 */
+    { 0x084604e8, 4, 0 }, /* sFileSelectOam_SamusHeadTurning_Frame3 */
+    { 0x084604f0, 13, 0 }, /* sFileSelectOam_FileAMarkerSelectedRed_Frame0 */
+    { 0x0846050a, 13, 0 }, /* sFileSelectOam_FileBMarkerSelectedRed_Frame0 */
+    { 0x08460524, 13, 0 }, /* sFileSelectOam_FileCMarkerSelectedRed_Frame0 */
+    { 0x0846053e, 7, 0 }, /* sFileSelectOam_FileAMarkerIdle_Frame0 */
+    { 0x0846054c, 7, 0 }, /* sFileSelectOam_FileBMarkerIdle_Frame0 */
+    { 0x0846055a, 7, 0 }, /* sFileSelectOam_FileCMarkerIdle_Frame0 */
+    { 0x08460568, 13, 0 }, /* sFileSelectOam_FileAMarkerSelectedGreen_Frame0 */
+    { 0x08460582, 13, 0 }, /* sFileSelectOam_FileBMarkerSelectedGreen_Frame0 */
+    { 0x0846059c, 13, 0 }, /* sFileSelectOam_FileCMarkerSelectedGreen_Frame0 */
+    { 0x084605b6, 4, 0 }, /* sFileSelectOam_CursorSelected_Frame0 */
+    { 0x084605be, 4, 0 }, /* sFileSelectOam_Cursor_Frame0 */
+    { 0x084605c6, 4, 0 }, /* sFileSelectOam_Cursor_Frame1 */
+    { 0x084605ce, 4, 0 }, /* sFileSelectOam_Cursor_Frame2 */
+    { 0x084605d6, 4, 0 }, /* sOptionsOam_GbaIdle_Frame0 */
+    { 0x084605de, 4, 0 }, /* sOptionsOam_SpeakersIdle_Frame0 */
+    { 0x084605e6, 7, 0 }, /* sFileSelectOam_CopyArrowOneDownActive_Frame0 */
+    { 0x084605f4, 7, 0 }, /* sFileSelectOam_CopyArrowOneDownActive_Frame1 */
+    { 0x08460602, 7, 0 }, /* sFileSelectOam_CopyArrowOneDownActive_Frame2 */
+    { 0x08460610, 7, 0 }, /* sFileSelectOam_CopyArrowOneDownActive_Frame3 */
+    { 0x0846061e, 7, 0 }, /* sFileSelectOam_CopyArrowTwoDownActive_Frame0 */
+    { 0x0846062c, 7, 0 }, /* sFileSelectOam_CopyArrowTwoDownActive_Frame1 */
+    { 0x0846063a, 7, 0 }, /* sFileSelectOam_CopyArrowTwoDownActive_Frame2 */
+    { 0x08460648, 7, 0 }, /* sFileSelectOam_CopyArrowTwoDownActive_Frame3 */
+    { 0x08460656, 4, 0 }, /* sFileSelectOam_CopyArrowOneUpActive_Frame0 */
+    { 0x0846065e, 4, 0 }, /* sFileSelectOam_CopyArrowOneUpActive_Frame1 */
+    { 0x08460666, 4, 0 }, /* sFileSelectOam_CopyArrowOneUpActive_Frame2 */
+    { 0x0846066e, 4, 0 }, /* sFileSelectOam_CopyArrowOneUpActive_Frame3 */
+    { 0x08460676, 10, 0 }, /* sFileSelectOam_CopyArrowTwoUpActive_Frame0 */
+    { 0x0846068a, 10, 0 }, /* sFileSelectOam_CopyArrowTwoUpActive_Frame1 */
+    { 0x0846069e, 10, 0 }, /* sFileSelectOam_CopyArrowTwoUpActive_Frame2 */
+    { 0x084606b2, 10, 0 }, /* sFileSelectOam_CopyArrowTwoUpActive_Frame3 */
+    { 0x084606c6, 4, 0 }, /* sFileSelectOam_MetroidLogo_Frame0 */
+    { 0x084606ce, 4, 0 }, /* sFileSelectOam_SamusHeadTurning_Frame4 */
+    { 0x084606d6, 4, 0 }, /* sFileSelectOam_SamusHeadTurning_Frame5 */
+    { 0x084606de, 4, 0 }, /* sFileSelectOam_SamusHeadTurning_Frame6 */
+    { 0x084606e6, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessIdle_Frame0 */
+    { 0x084606f4, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessIdle_Frame1 */
+    { 0x08460702, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessIdle_Frame2 */
+    { 0x08460710, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame0 */
+    { 0x0846071e, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame1 */
+    { 0x08460726, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame2 */
+    { 0x0846072e, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame3 */
+    { 0x08460736, 4, 0 }, /* sOptionsOam_LeftArrowIdle_Frame0 */
+    { 0x0846073e, 4, 0 }, /* sOptionsOam_LeftArrowMoving_Frame0 */
+    { 0x08460746, 4, 0 }, /* sOptionsOam_RightArrowIdle_Frame0 */
+    { 0x0846074e, 4, 0 }, /* sOptionsOam_RightArrowMoving_Frame0 */
+    { 0x08460756, 4, 0 }, /* sOptionsOam_SoundTestId_Frame0 */
+    { 0x0846075e, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame4 */
+    { 0x08460766, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame5 */
+    { 0x0846076e, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurning_Frame6 */
+    { 0x08460776, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurningOn_Frame0 */
+    { 0x0846077e, 4, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurningOn_Frame1 */
+    { 0x08460786, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurningOn_Frame2 */
+    { 0x08460794, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurningOn_Frame3 */
+    { 0x084607a2, 7, 0 }, /* sFileSelectOam_SamusHeadSuitlessTurningOn_Frame4 */
+    { 0x084607b0, 10, 0 }, /* sOptionsOam_GbaActive_Frame1 */
+    { 0x084607c4, 10, 0 }, /* sOptionsOam_GbaActive_Frame2 */
+    { 0x084607d8, 10, 0 }, /* sOptionsOam_GbaActive_Frame3 */
+    { 0x084607ec, 10, 0 }, /* sOptionsOam_GbaActive_Frame4 */
+    { 0x08460800, 13, 0 }, /* sOptionsOam_SpeakersActive_Frame1 */
+    { 0x0846081a, 13, 0 }, /* sOptionsOam_SpeakersActive_Frame2 */
+    { 0x08460834, 13, 0 }, /* sOptionsOam_SpeakersActive_Frame3 */
+    { 0x0846084e, 13, 0 }, /* sOptionsOam_SpeakersActive_Frame4 */
+    { 0x08460868, 4, 0 }, /* sOptionsOam_LeftArrowIdle_Frame1 */
+    { 0x08460870, 4, 0 }, /* sOptionsOam_RightArrowIdle_Frame1 */
+    { 0x08460878, 37, 0 }, /* sOptionsOam_GbaLinking_Frame0 */
+    { 0x084608c2, 37, 0 }, /* sOptionsOam_GbaLinking_Frame1 */
+    { 0x0846090c, 37, 0 }, /* sOptionsOam_GbaLinking_Frame2 */
+    { 0x08460956, 37, 0 }, /* sOptionsOam_GbaLinking_Frame3 */
+    { 0x084609a0, 37, 0 }, /* sOptionsOam_GbaLinking_Frame4 */
+    { 0x084609ea, 40, 0 }, /* sOptionsOam_GbaLinking_Frame5 */
+    { 0x08460a3a, 46, 0 }, /* sOptionsOam_GbaLinking_Frame6 */
+    { 0x08460a96, 43, 0 }, /* sOptionsOam_GbaLinking_Frame7 */
+    { 0x08460aec, 43, 0 }, /* sOptionsOam_GbaLinking_Frame8 */
+    { 0x08460b42, 43, 0 }, /* sOptionsOam_GbaLinking_Frame9 */
+    { 0x08460b98, 43, 0 }, /* sOptionsOam_GbaLinking_Frame10 */
+    { 0x08460bee, 43, 0 }, /* sOptionsOam_GbaLinking_Frame11 */
+    { 0x08460c44, 43, 0 }, /* sOptionsOam_GbaLinking_Frame12 */
+    { 0x08460c9a, 40, 0 }, /* sOptionsOam_GbaLinking_Frame13 */
+    { 0x08460cea, 40, 0 }, /* sOptionsOam_GbaLinking_Frame14 */
+    { 0x08460d3a, 37, 0 }, /* sOptionsOam_GbaLinking_Frame15 */
+    { 0x08460d84, 37, 0 }, /* sOptionsOam_GbaLinking_Frame16 */
+    { 0x08460dce, 37, 0 }, /* sOptionsOam_GbaLinking_Frame17 */
+    { 0x08460e18, 37, 0 }, /* sOptionsOam_GbaLinking_Frame18 */
+    { 0x08460e62, 37, 0 }, /* sOptionsOam_GbaLinking_Frame22 */
+    { 0x08460eac, 37, 0 }, /* sOptionsOam_GbaLinking_Frame23 */
+    { 0x08460ef6, 37, 0 }, /* sOptionsOam_GbaLinking_Frame24 */
+    { 0x08460f40, 37, 0 }, /* sOptionsOam_GbaLinking_Frame25 */
+    { 0x08460f8a, 37, 0 }, /* sOptionsOam_GbaLinking_Frame26 */
+    { 0x08460fd4, 40, 0 }, /* sOptionsOam_GbaLinking_Frame27 */
+    { 0x08461024, 43, 0 }, /* sOptionsOam_GbaLinking_Frame28 */
+    { 0x0846107a, 40, 0 }, /* sOptionsOam_GbaLinking_Frame35 */
+    { 0x084610ca, 37, 0 }, /* sOptionsOam_GbaLinking_Frame36 */
+    { 0x08461114, 37, 0 }, /* sOptionsOam_GbaLinking_Frame37 */
+    { 0x0846115e, 37, 0 }, /* sOptionsOam_GbaLinking_Frame38 */
+    { 0x084611a8, 37, 0 }, /* sOptionsOam_GbaLinking_Frame39 */
+    { 0x084611f2, 34, 0 }, /* sOptionsOam_455cac_Frame0 */
+    { 0x08461236, 7, 0 }, /* sOptionsOam_GbaActive_Frame0 */
+    { 0x08461244, 7, 0 }, /* sOptionsOam_SpeakersActive_Frame0 */
     { 0x08461254, 5, 17 }, /* sFileSelectOam_SamusHeadTurningOn */
+    { 0x0846127c, 2, 17 }, /* sFileSelectOam_SamusHeadOff */
     { 0x0846128c, 11, 17 }, /* sFileSelectOam_SamusHeadTurning */
+    { 0x084612e4, 2, 17 }, /* sFileSelectOam_FileAMarkerSelectedRed */
+    { 0x084612f4, 2, 17 }, /* sFileSelectOam_FileBMarkerSelectedRed */
+    { 0x08461304, 2, 17 }, /* sFileSelectOam_FileCMarkerSelectedRed */
+    { 0x08461314, 2, 17 }, /* sFileSelectOam_FileAMarkerIdle */
+    { 0x08461324, 2, 17 }, /* sFileSelectOam_FileBMarkerIdle */
+    { 0x08461334, 2, 17 }, /* sFileSelectOam_FileCMarkerIdle */
+    { 0x08461344, 2, 17 }, /* sFileSelectOam_FileAMarkerSelectedGreen */
+    { 0x08461354, 2, 17 }, /* sFileSelectOam_FileBMarkerSelectedGreen */
+    { 0x08461364, 2, 17 }, /* sFileSelectOam_FileCMarkerSelectedGreen */
+    { 0x08461374, 2, 17 }, /* sFileSelectOam_CursorSelected */
+    { 0x08461384, 4, 17 }, /* sFileSelectOam_Cursor */
+    { 0x084613a4, 2, 17 }, /* sOptionsOam_GbaIdle */
+    { 0x084613b4, 2, 17 }, /* sOptionsOam_SpeakersIdle */
+    { 0x084613c4, 5, 17 }, /* sFileSelectOam_CopyArrowOneDownActive */
+    { 0x084613ec, 2, 17 }, /* sFileSelectOam_CopyArrowOneDownInactive */
+    { 0x084613fc, 5, 17 }, /* sFileSelectOam_CopyArrowTwoDownActive */
+    { 0x08461424, 2, 17 }, /* sFileSelectOam_CopyArrowTwoDownInactive */
+    { 0x08461434, 5, 17 }, /* sFileSelectOam_CopyArrowOneUpActive */
+    { 0x0846145c, 2, 17 }, /* sFileSelectOam_CopyArrowOneUpInactive */
+    { 0x0846146c, 5, 17 }, /* sFileSelectOam_CopyArrowTwoUpActive */
+    { 0x08461494, 2, 17 }, /* sFileSelectOam_CopyArrowTwoUpInactive */
+    { 0x084614a4, 2, 17 }, /* sFileSelectOam_MetroidLogo */
     { 0x084614b4, 5, 17 }, /* sFileSelectOam_SamusHeadSuitlessIdle */
     { 0x084614dc, 8, 17 }, /* sFileSelectOam_SamusHeadSuitlessTurning */
+    { 0x0846151c, 3, 17 }, /* sOptionsOam_LeftArrowIdle */
+    { 0x08461534, 2, 17 }, /* sOptionsOam_LeftArrowMoving */
+    { 0x08461544, 3, 17 }, /* sOptionsOam_RightArrowIdle */
+    { 0x0846155c, 2, 17 }, /* sOptionsOam_RightArrowMoving */
+    { 0x0846156c, 2, 17 }, /* sOptionsOam_SoundTestId */
     { 0x0846157c, 6, 17 }, /* sFileSelectOam_SamusHeadSuitlessTurningOn */
-    { 0x08461a30, 2985, 1 }, /* sFileSelectChozoBackgroundGfx */
-    { 0x084648d4, 331, 1 }, /* sFileSelectAreaNamesGfx */
-    { 0x08464e00, 651, 1 }, /* sFileSelectBgIconsGfx */
-    { 0x0846582c, 345, 1 }, /* sFileSelectOptionsTextEnglishGfx */
-    { 0x08465d90, 345, 1 }, /* sFileSelectOptionsTextGermanGfx */
-    { 0x084662fc, 345, 1 }, /* sFileSelectOptionsTextFrenchGfx */
-    { 0x084668a4, 345, 1 }, /* sFileSelectOptionsTextItalianGfx */
-    { 0x08466e1c, 345, 1 }, /* sFileSelectOptionsTextSpanishGfx */
-    { 0x0846742c, 332, 1 }, /* sFileSelectLargeTextEnglishGfx */
-    { 0x0846795c, 391, 1 }, /* sFileSelectLargeTextGermanGfx */
-    { 0x08467f78, 392, 1 }, /* sFileSelectLargeTextFrenchGfx */
-    { 0x08468598, 353, 1 }, /* sFileSelectLargeTextItalianGfx */
-    { 0x08468b1c, 364, 1 }, /* sFileSelectLargeTextSpanishGfx */
-    { 0x084690cc, 67, 1 }, /* sFileSelectDifficultyTextEnglishGfx */
-    { 0x084691d8, 70, 1 }, /* sFileSelectDifficultyTextGermanGfx */
-    { 0x084692f0, 71, 1 }, /* sFileSelectDifficultyTextFrenchGfx */
-    { 0x0846940c, 71, 1 }, /* sFileSelectDifficultyTextItalianGfx */
-    { 0x08469528, 70, 1 }, /* sFileSelectDifficultyTextSpanishGfx */
-    { 0x08469640, 1722, 1 }, /* sFileSelectObjIconsGfx */
+    { 0x084615ac, 6, 17 }, /* sOptionsOam_GbaActive */
+    { 0x084615dc, 6, 17 }, /* sOptionsOam_SpeakersActive */
+    { 0x0846160c, 44, 17 }, /* sOptionsOam_GbaLinking */
+    { 0x0846176c, 2, 17 }, /* sOptionsOam_455cac */
+    { 0x0846177c, 13, 0 }, /* sFileSelectOam_SmallPanel_Frame0 */
+    { 0x08461796, 19, 0 }, /* sFileSelectOam_SmallPanel_Frame1 */
+    { 0x084617bc, 37, 0 }, /* sFileSelectOam_SmallPanel_Frame2 */
+    { 0x08461806, 25, 0 }, /* sFileSelectOam_SmallPanel_Frame3 */
+    { 0x08461838, 13, 0 }, /* sFileSelectOam_SmallPanel_Frame4 */
+    { 0x08461852, 19, 0 }, /* sFileSelectOam_LargePanel_Frame5 */
+    { 0x08461878, 43, 0 }, /* sFileSelectOam_LargePanel_Frame6 */
+    { 0x084618ce, 31, 0 }, /* sFileSelectOam_MediumPanel_Frame6 */
+    { 0x0846190c, 25, 0 }, /* sOptionsOam_SmallPanel_Frame2 */
+    { 0x0846193e, 13, 0 }, /* sOptionsOam_SmallPanel_Frame3 */
+    { 0x08461958, 6, 17 }, /* sFileSelectOam_SmallPanel */
+    { 0x08461988, 8, 17 }, /* sFileSelectOam_LargePanel */
+    { 0x084619c8, 8, 17 }, /* sFileSelectOam_MediumPanel */
+    { 0x08461a08, 5, 17 }, /* sOptionsOam_SmallPanel */
     { 0x0846b128, 368, 1 }, /* sFileSelectChozoBackgroundTileTable */
-    { 0x0846b6e8, 148, 1 }, /* sFileSelectMenuTileTable */
-    { 0x0846b9c4, 188, 1 }, /* sFileSelectOptionsTileTable */
+    { 0x0846b6e8, 183, 1 }, /* sFileSelectMenuTileTable */
+    { 0x0846b9c4, 147, 1 }, /* sFileSelectOptionsTileTable */
+    { 0x0846bc10, 233, 1 }, /* sFileSelect3BigPanelsTileTable */
     { 0x0846bfb4, 233, 1 }, /* sFileSelect1Small2BigPanelsTileTable */
     { 0x0846c358, 230, 1 }, /* sFileSelect2Big1SmallPanelsTileTable */
-    { 0x0846c6f0, 2, 52 }, /* sFileSelectOamData_Empty */
+    { 0x0846c6f0, 2, 50 }, /* sFileSelectOamData_Empty */
     { 0x0846c710, 40, 17 }, /* sFileSelectOam */
     { 0x0846c850, 22, 17 }, /* sOptionsOam */
-    { 0x0846c964, 1, 56 }, /* sFileScreenMessage_Empty */
+    { 0x0846c964, 1, 54 }, /* sFileScreenMessage_Empty */
     { 0x0846c986, 5, 0 }, /* sTimeAttackButtonCode */
     { 0x0846c990, 256, 0 }, /* sLanguageSelectBgPal */
-    { 0x0846cb90, 145, 1 }, /* sLanguageSelectGfx */
     { 0x0846cdd4, 95, 1 }, /* sLanguageSelectTileTable */
-    { 0x0846cf50, 1, 35 }, /* sInitialLanguageColorAnimation */
+    { 0x0846cf50, 1, 34 }, /* sInitialLanguageColorAnimation */
     { 0x0846cf58, 5, 0 }, /* sLanguageSelectLanguageTileTableOffsets */
     { 0x0846cf70, 52, 0 }, /* sIntroEmergencyOrderTextOam */
     { 0x0846cfd8, 163, 0 }, /* sIntroExterminateAllTextOam */
@@ -13728,17 +13943,10 @@ static const PortRomObject kObjects[] = {
     { 0x0846d5a8, 160, 0 }, /* sIntroViewOfZebesPal */
     { 0x0846d6e8, 80, 0 }, /* sIntroMotherBrainPal */
     { 0x0846d828, 4, 1 }, /* sTimeAttackAntiCheatTimes */
-    { 0x0846d8c8, 1310, 1 }, /* sIntroTextAndShipFlyingInGfx */
-    { 0x0846ed40, 3181, 1 }, /* sIntroSpaceBackgroundGfx */
     { 0x08471ef4, 577, 1 }, /* sIntroSpaceBackgroundTileTable */
-    { 0x084727f8, 4800, 1 }, /* sIntroSamusInHerShipGfx */
     { 0x084772f8, 418, 1 }, /* sIntroSamusInHerShipTileTable */
-    { 0x08477980, 1224, 1 }, /* sIntroSamusShipViewOfZebesGfx */
-    { 0x08478ca0, 2986, 1 }, /* sIntroViewOfZebesGfx */
     { 0x0847bb48, 577, 1 }, /* sIntroViewOfZebesTileTable */
-    { 0x0847c44c, 5004, 1 }, /* sIntroMotherBrainGfx */
     { 0x0848127c, 577, 1 }, /* sIntroMotherBrainTileTable */
-    { 0x08481b80, 5224, 1 }, /* sIntroFuzzGfx */
     { 0x08486d20, 125, 1 }, /* sIntro_47920c */
     { 0x08486f14, 144, 0 }, /* sTourianEscapeExplodingPal */
     { 0x08487034, 96, 0 }, /* sMotherShipBlowingUpExplosionsPal */
@@ -13816,7 +14024,6 @@ static const PortRomObject kObjects[] = {
     { 0x0848863c, 73, 0 }, /* sTourianEscape_47ab28 */
     { 0x084886ce, 7, 0 }, /* sTourianEscape_47abba */
     { 0x084886dc, 7, 0 }, /* sTourianEscape_47abc8 */
-    { 0x084886ec, 14, 1 }, /* sTourianEscapeRainGfx */
     { 0x08488724, 4, 0 }, /* sTourianEscape_47ac10 */
     { 0x0848872c, 7, 0 }, /* sTourianEscape_47ac18 */
     { 0x0848873a, 16, 0 }, /* sTourianEscapeRainPal */
@@ -13953,7 +14160,6 @@ static const PortRomObject kObjects[] = {
     { 0x0848a778, 11, 17 }, /* sChozodiaEscapeOam_47cc64 */
     { 0x0848a7d0, 15, 17 }, /* sChozodiaEscapeOam_47ccbc */
     { 0x0848a848, 9, 17 }, /* sChozodiaEscapeOam_MotherShipDecaying */
-    { 0x0848a890, 25, 1 }, /* sTourianEscapeDebrisGfx */
     { 0x0848a8f4, 4, 0 }, /* sTourianEscape_47cde0 */
     { 0x0848a8fc, 4, 0 }, /* sTourianEscape_47cde8 */
     { 0x0848a904, 4, 0 }, /* sTourianEscape_47cdf0 */
@@ -13979,46 +14185,23 @@ static const PortRomObject kObjects[] = {
     { 0x0848aae8, 8, 0 }, /* sTourianEscape_47cfd4 */
     { 0x0848aaf8, 4, 1 }, /* sTourianEscape_47cfe4 */
     { 0x0848ab12, 10, 0 }, /* sTourianEscape_47cffe */
-    { 0x0848ab28, 2588, 1 }, /* sMotherShipExplodingFlashGfx */
     { 0x0848d398, 561, 1 }, /* sMotherShipExplodingFlashTileTable */
-    { 0x0848dc5c, 1761, 1 }, /* sMotherShipBlowingUpExplosionsGfx */
-    { 0x0848f7e0, 3108, 1 }, /* sTourianEscapeSamusInHerShipSuitGfx */
     { 0x08492870, 368, 1 }, /* sTourianEscapeSamusInHerShipSuitTileTable */
-    { 0x08492e30, 4280, 1 }, /* sTourianEscapeSamusInHerShipSuitlessGfx */
     { 0x08497110, 368, 1 }, /* sTourianEscapeSamusInHerShipSuitlessTileTable */
     { 0x084976d0, 368, 1 }, /* sTourianEscapeSamusInHerShipSuitlessEyesOpenedTileTable */
-    { 0x08497c90, 3442, 1 }, /* sTourianEscapeZebesGfx */
     { 0x0849b258, 577, 1 }, /* sTourianEscapeZebesTileTable */
-    { 0x0849bb5c, 1297, 1 }, /* sTourianEscapeZebesExplodingShipAndExplosionsGfx */
-    { 0x0849cfa0, 5470, 1 }, /* sTourianEscapeSamusChasedBackgroundGfx */
     { 0x084a2518, 577, 1 }, /* sTourianEscapeSamusChasedBackgroundTileTable */
-    { 0x084a2e1c, 2337, 1 }, /* sTourianEscapeSamusSurroundedBackgroundGfx */
     { 0x084a52a0, 551, 1 }, /* sTourianEscapeSamusSurroundedBackgroundTileTable */
-    { 0x084a5b3c, 4090, 1 }, /* sTourianEscapeSamusSamusInHerShipLookingGfx */
     { 0x084a9b24, 368, 1 }, /* sTourianEscapeSamusSamusInHerShipLookingLeftTileTable */
     { 0x084aa0e4, 368, 1 }, /* sTourianEscapeSamusSamusInHerShipLookingRightTileTable */
-    { 0x084aa6a4, 3064, 1 }, /* sTourianEscape_49cb90 */
     { 0x084ad684, 113, 1 }, /* sTourianEscape_49fb70 */
-    { 0x084ad848, 2507, 1 }, /* sTourianEscapeSamusSamusChasedShipsGfx */
-    { 0x084aff74, 1461, 1 }, /* sTourianEscapeShipsAndProjectilesGfx */
-    { 0x084b1648, 563, 1 }, /* sTourianEscapeSamusGettingShotShipGfx */
-    { 0x084b1f14, 2999, 1 }, /* sTourianEscapeSamusGettingShotGfx */
     { 0x084b4df0, 566, 1 }, /* sTourianEscapeSamusGettingShotTileTable */
-    { 0x084b56c8, 3251, 1 }, /* sTourianEscapeShipCrashingBackgroundAndShipGfx */
-    { 0x084b8994, 1914, 1 }, /* sTourianEscapeShipCrashingForegroundGfx */
     { 0x084ba77c, 577, 1 }, /* sTourianEscapeShipCrashingForegroundTileTable */
-    { 0x084bb080, 1219, 1 }, /* sTourianEscapeShipGoingToCrashGfx */
-    { 0x084bc38c, 1826, 1 }, /* sTourianEscapeShipCrashingExplosionGfx */
     { 0x084be014, 577, 1 }, /* sTourianEscapeShipCrashingExplosionTileTable */
-    { 0x084be918, 867, 1 }, /* sTourianEscapeSamusLookingAtSkyPiratesShipGfx */
-    { 0x084bf6a4, 3056, 1 }, /* sTourianEscapeSamusLookingAtSkySkyBackgroundGfx */
     { 0x084c2664, 399, 1 }, /* sTourianEscapeSamusLookingAtSkySkyBackgroundTileTable */
-    { 0x084c2ca0, 4060, 1 }, /* sTourianEscapeSamusLookingAtSkyGfx */
     { 0x084c6c10, 430, 1 }, /* sTourianEscapeSamusLookingAtSkyTopTileTable */
     { 0x084c72c8, 185, 1 }, /* sTourianEscapeSamusLookingAtSkyBottomTileTable */
-    { 0x084c75ac, 2153, 1 }, /* sTourianEscapeSamusLookingAtMotherShipGfx */
     { 0x084c9750, 577, 1 }, /* sTourianEscapeSamusLookingAtMotherShipTileTable */
-    { 0x084ca054, 3112, 1 }, /* sTourianEscapeSamusLookingAtMotherShipMotherShipGfx */
     { 0x084cd0f4, 577, 1 }, /* sTourianEscapeSamusLookingAtMotherShipMotherShipTileTable */
     { 0x084cd9f8, 256, 0 }, /* sFusionGallery_Palette_0 */
     { 0x084cdbf8, 256, 0 }, /* sFusionGallery_Palette_1 */
@@ -14033,17 +14216,7 @@ static const PortRomObject kObjects[] = {
     { 0x084cedf8, 256, 0 }, /* sFusionGallery_Palette_8 */
     { 0x084ceff8, 256, 0 }, /* sFusionGallery_Palette_9 */
     { 0x084cf1f8, 256, 0 }, /* sFusionGallery_Palette_10 */
-    { 0x084cf3f8, 13, 60 }, /* sFusionGalleryData */
-    { 0x084cf4fc, 5628, 1 }, /* sFusionGallery_TopGfx_0 */
-    { 0x084d4cec, 3191, 1 }, /* sFusionGallery_BottomGfx_0 */
-    { 0x084d7ec8, 5900, 1 }, /* sFusionGallery_TopGfx_1 */
-    { 0x084ddaf8, 2986, 1 }, /* sFusionGallery_BottomGfx_1 */
-    { 0x084e09a0, 5731, 1 }, /* sFusionGallery_TopGfx_2 */
-    { 0x084e632c, 3293, 1 }, /* sFusionGallery_BottomGfx_2 */
-    { 0x084e96a0, 6364, 1 }, /* sFusionGallery_TopGfx_3 */
-    { 0x084efa10, 3818, 1 }, /* sFusionGallery_BottomGfx_3 */
-    { 0x084f35b8, 6851, 1 }, /* sFusionGallery_TopGfx_4 */
-    { 0x084fa0c4, 3504, 1 }, /* sFusionGallery_BottomGfx_4 */
+    { 0x084cf3f8, 13, 58 }, /* sFusionGalleryData */
     { 0x084fd784, 551, 1 }, /* sFusionGallery_TopTileTable_0 */
     { 0x084fe020, 368, 1 }, /* sFusionGallery_BottomTileTable_0 */
     { 0x084fe5e0, 551, 1 }, /* sFusionGallery_TopTileTable_1 */
@@ -14054,22 +14227,6 @@ static const PortRomObject kObjects[] = {
     { 0x08500b34, 369, 1 }, /* sFusionGallery_BottomTileTable_3 */
     { 0x085010f8, 551, 1 }, /* sFusionGallery_TopTileTable_4 */
     { 0x08501994, 369, 1 }, /* sFusionGallery_BottomTileTable_4 */
-    { 0x08501f58, 5936, 1 }, /* sFusionGallery_TopGfx_11 */
-    { 0x08507c18, 3930, 1 }, /* sFusionGallery_BottomGfx_11 */
-    { 0x0850b980, 5604, 1 }, /* sFusionGallery_TopGfx_12 */
-    { 0x08511110, 3582, 1 }, /* sFusionGallery_BottomGfx_12 */
-    { 0x08514908, 6633, 1 }, /* sFusionGallery_TopGfx_5 */
-    { 0x0851b0ac, 3277, 1 }, /* sFusionGallery_BottomGfx_5 */
-    { 0x0851e3e0, 6754, 1 }, /* sFusionGallery_TopGfx_6 */
-    { 0x08524d68, 3419, 1 }, /* sFusionGallery_BottomGfx_6 */
-    { 0x085282d4, 6977, 1 }, /* sFusionGallery_TopGfx_7 */
-    { 0x0852efd8, 4372, 1 }, /* sFusionGallery_BottomGfx_7 */
-    { 0x08533428, 6417, 1 }, /* sFusionGallery_TopGfx_8 */
-    { 0x0853986c, 3919, 1 }, /* sFusionGallery_BottomGfx_8 */
-    { 0x0853d5a8, 6918, 1 }, /* sFusionGallery_TopGfx_9 */
-    { 0x085441c0, 4360, 1 }, /* sFusionGallery_BottomGfx_9 */
-    { 0x085485e0, 5764, 1 }, /* sFusionGallery_TopGfx_10 */
-    { 0x0854dff0, 2273, 1 }, /* sFusionGallery_BottomGfx_10 */
     { 0x08550374, 551, 1 }, /* sFusionGallery_TopTileTable_11 */
     { 0x08550c10, 368, 1 }, /* sFusionGallery_BottomTileTable_11 */
     { 0x085511d0, 550, 1 }, /* sFusionGallery_TopTileTable_12 */
@@ -14087,9 +14244,239 @@ static const PortRomObject kObjects[] = {
     { 0x085567fc, 551, 1 }, /* sFusionGallery_TopTileTable_10 */
     { 0x08557098, 368, 1 }, /* sFusionGallery_BottomTileTable_10 */
     { 0x08557658, 224, 0 }, /* sEndingImageTextPal */
+    { 0x08557818, 25, 0 }, /* sEndingImageOam_LineTimer_English */
+    { 0x0855784a, 13, 0 }, /* sEndingImageOam_LinePercentage_English */
+    { 0x08557864, 10, 0 }, /* sEndingImageOam_LineClearTime_English */
+    { 0x08557878, 4, 0 }, /* sClearTimeEnglishOam_Clear_C */
+    { 0x08557880, 4, 0 }, /* sClearTimeEnglishOam_Clear_L */
+    { 0x08557888, 4, 0 }, /* sClearTimeEnglishOam_Clear_E */
+    { 0x08557890, 4, 0 }, /* sClearTimeEnglishOam_Clear_A */
+    { 0x08557898, 4, 0 }, /* sClearTimeEnglishOam_Clear_R */
+    { 0x085578a0, 4, 0 }, /* sClearTimeEnglishOam_Time_T */
+    { 0x085578a8, 4, 0 }, /* sClearTimeEnglishOam_Time_I */
+    { 0x085578b0, 4, 0 }, /* sClearTimeEnglishOam_Time_M */
+    { 0x085578b8, 4, 0 }, /* sClearTimeEnglishOam_Time_E */
+    { 0x085578c0, 13, 0 }, /* sEndingImageOam_LineYourRate_English */
+    { 0x085578da, 4, 0 }, /* sYourRateEnglishOam_Your_Y */
+    { 0x085578e2, 4, 0 }, /* sYourRateEnglishOam_Your_O */
+    { 0x085578ea, 4, 0 }, /* sYourRateEnglishOam_Your_U */
+    { 0x085578f2, 4, 0 }, /* sYourRateEnglishOam_Your_R */
+    { 0x085578fa, 4, 0 }, /* sYourRateEnglishOam_Rate_R */
+    { 0x08557902, 4, 0 }, /* sYourRateEnglishOam_Rate_A */
+    { 0x0855790a, 4, 0 }, /* sYourRateEnglishOam_Rate_T */
+    { 0x08557912, 4, 0 }, /* sYourRateEnglishOam_Rate_E */
+    { 0x0855791a, 4, 0 }, /* sYourRateEnglishOam_For_F */
+    { 0x08557922, 4, 0 }, /* sYourRateEnglishOam_For_O */
+    { 0x0855792a, 4, 0 }, /* sYourRateEnglishOam_For_R */
+    { 0x08557932, 19, 0 }, /* sEndingImageOam_LineCollecting_English */
+    { 0x08557958, 4, 0 }, /* sCollectingEnglishOam_Collecting_C1 */
+    { 0x08557960, 4, 0 }, /* sCollectingEnglishOam_Collecting_O */
+    { 0x08557968, 4, 0 }, /* sCollectingEnglishOam_Collecting_L1 */
+    { 0x08557970, 4, 0 }, /* sCollectingEnglishOam_Collecting_L2 */
+    { 0x08557978, 4, 0 }, /* sCollectingEnglishOam_Collecting_E */
+    { 0x08557980, 4, 0 }, /* sCollectingEnglishOam_Collecting_C2 */
+    { 0x08557988, 4, 0 }, /* sCollectingEnglishOam_Collecting_T */
+    { 0x08557990, 4, 0 }, /* sCollectingEnglishOam_Collecting_I */
+    { 0x08557998, 4, 0 }, /* sCollectingEnglishOam_Collecting_N */
+    { 0x085579a0, 4, 0 }, /* sCollectingEnglishOam_Collecting_G */
+    { 0x085579a8, 4, 0 }, /* sCollectingEnglishOam_Items_I */
+    { 0x085579b0, 4, 0 }, /* sCollectingEnglishOam_Items_T */
+    { 0x085579b8, 4, 0 }, /* sCollectingEnglishOam_Items_E */
+    { 0x085579c0, 4, 0 }, /* sCollectingEnglishOam_Items_M */
+    { 0x085579c8, 4, 0 }, /* sCollectingEnglishOam_Items_S */
+    { 0x085579d0, 4, 0 }, /* sCollectingEnglishOam_Is_I */
+    { 0x085579d8, 4, 0 }, /* sCollectingEnglishOam_Is_S */
+    { 0x085579e0, 16, 0 }, /* sEndingImageOam_LineNextMission_English */
     { 0x08557a00, 19, 0 }, /* sEndingImageOam_NewRecordEnglish */
+    { 0x08557a26, 19, 0 }, /* sFullLinesFrenchOam_0 */
+    { 0x08557a4c, 4, 0 }, /* sClearTimeFrenchOam_0 */
+    { 0x08557a54, 4, 0 }, /* sClearTimeFrenchOam_1 */
+    { 0x08557a5c, 4, 0 }, /* sClearTimeFrenchOam_2 */
+    { 0x08557a64, 4, 0 }, /* sClearTimeFrenchOam_3 */
+    { 0x08557a6c, 4, 0 }, /* sClearTimeFrenchOam_4 */
+    { 0x08557a74, 4, 0 }, /* sClearTimeFrenchOam_5 */
+    { 0x08557a7c, 4, 0 }, /* sClearTimeFrenchOam_6 */
+    { 0x08557a84, 4, 0 }, /* sClearTimeFrenchOam_7 */
+    { 0x08557a8c, 4, 0 }, /* sClearTimeFrenchOam_8 */
+    { 0x08557a94, 4, 0 }, /* sClearTimeFrenchOam_9 */
+    { 0x08557a9c, 4, 0 }, /* sClearTimeFrenchOam_10 */
+    { 0x08557aa4, 4, 0 }, /* sClearTimeFrenchOam_11 */
+    { 0x08557aac, 4, 0 }, /* sClearTimeFrenchOam_12 */
+    { 0x08557ab4, 4, 0 }, /* sClearTimeFrenchOam_13 */
+    { 0x08557abc, 4, 0 }, /* sClearTimeFrenchOam_14 */
+    { 0x08557ac4, 4, 0 }, /* sClearTimeFrenchOam_15 */
+    { 0x08557acc, 22, 0 }, /* sFullLinesFrenchOam_3 */
+    { 0x08557af8, 4, 0 }, /* sCollectingFrenchOam_0 */
+    { 0x08557b00, 4, 0 }, /* sCollectingFrenchOam_1 */
+    { 0x08557b08, 4, 0 }, /* sCollectingFrenchOam_2 */
+    { 0x08557b10, 4, 0 }, /* sCollectingFrenchOam_3 */
+    { 0x08557b18, 4, 0 }, /* sCollectingFrenchOam_4 */
+    { 0x08557b20, 4, 0 }, /* sCollectingFrenchOam_5 */
+    { 0x08557b28, 4, 0 }, /* sCollectingFrenchOam_6 */
+    { 0x08557b30, 4, 0 }, /* sCollectingFrenchOam_7 */
+    { 0x08557b38, 4, 0 }, /* sCollectingFrenchOam_8 */
+    { 0x08557b40, 4, 0 }, /* sCollectingFrenchOam_9 */
+    { 0x08557b48, 4, 0 }, /* sCollectingFrenchOam_10 */
+    { 0x08557b50, 4, 0 }, /* sCollectingFrenchOam_11 */
+    { 0x08557b58, 4, 0 }, /* sCollectingFrenchOam_12 */
+    { 0x08557b60, 4, 0 }, /* sCollectingFrenchOam_13 */
+    { 0x08557b68, 4, 0 }, /* sCollectingFrenchOam_14 */
+    { 0x08557b70, 4, 0 }, /* sCollectingFrenchOam_15 */
+    { 0x08557b78, 4, 0 }, /* sCollectingFrenchOam_16 */
+    { 0x08557b80, 4, 0 }, /* sCollectingFrenchOam_17 */
+    { 0x08557b88, 4, 0 }, /* sCollectingFrenchOam_18 */
+    { 0x08557b90, 4, 0 }, /* sCollectingFrenchOam_19 */
+    { 0x08557b98, 25, 0 }, /* sFullLinesFrenchOam_2 */
+    { 0x08557bca, 13, 0 }, /* sEndingImageOam_NewRecordFrench */
+    { 0x08557be4, 22, 0 }, /* sFullLinesItalianOam_0 */
+    { 0x08557c10, 4, 0 }, /* sClearTimeItalianOam_0 */
+    { 0x08557c18, 4, 0 }, /* sClearTimeItalianOam_1 */
+    { 0x08557c20, 4, 0 }, /* sClearTimeItalianOam_2 */
+    { 0x08557c28, 4, 0 }, /* sClearTimeItalianOam_3 */
+    { 0x08557c30, 4, 0 }, /* sClearTimeItalianOam_4 */
+    { 0x08557c38, 4, 0 }, /* sClearTimeItalianOam_5 */
+    { 0x08557c40, 4, 0 }, /* sClearTimeItalianOam_6 */
+    { 0x08557c48, 4, 0 }, /* sClearTimeItalianOam_7 */
+    { 0x08557c50, 4, 0 }, /* sClearTimeItalianOam_8 */
+    { 0x08557c58, 4, 0 }, /* sClearTimeItalianOam_9 */
+    { 0x08557c60, 4, 0 }, /* sClearTimeItalianOam_10 */
+    { 0x08557c68, 4, 0 }, /* sClearTimeItalianOam_11 */
+    { 0x08557c70, 4, 0 }, /* sClearTimeItalianOam_12 */
+    { 0x08557c78, 4, 0 }, /* sClearTimeItalianOam_13 */
+    { 0x08557c80, 4, 0 }, /* sClearTimeItalianOam_14 */
+    { 0x08557c88, 4, 0 }, /* sClearTimeItalianOam_15 */
+    { 0x08557c90, 4, 0 }, /* sClearTimeItalianOam_16 */
+    { 0x08557c98, 4, 0 }, /* sClearTimeItalianOam_17 */
+    { 0x08557ca0, 13, 0 }, /* sFullLinesItalianOam_2 */
+    { 0x08557cba, 4, 0 }, /* sYourRateItalianOam_0 */
+    { 0x08557cc2, 4, 0 }, /* sYourRateItalianOam_1 */
+    { 0x08557cca, 4, 0 }, /* sYourRateItalianOam_2 */
+    { 0x08557cd2, 4, 0 }, /* sYourRateItalianOam_3 */
+    { 0x08557cda, 4, 0 }, /* sYourRateItalianOam_4 */
+    { 0x08557ce2, 4, 0 }, /* sYourRateItalianOam_5 */
+    { 0x08557cea, 4, 0 }, /* sYourRateItalianOam_6 */
+    { 0x08557cf2, 4, 0 }, /* sYourRateItalianOam_7 */
+    { 0x08557cfa, 4, 0 }, /* sYourRateItalianOam_8 */
+    { 0x08557d02, 4, 0 }, /* sYourRateItalianOam_9 */
+    { 0x08557d0a, 4, 0 }, /* sYourRateItalianOam_10 */
+    { 0x08557d12, 22, 0 }, /* sFullLinesItalianOam_3 */
+    { 0x08557d3e, 4, 0 }, /* sCollectingItalianOam_0 */
+    { 0x08557d46, 4, 0 }, /* sCollectingItalianOam_1 */
+    { 0x08557d4e, 4, 0 }, /* sCollectingItalianOam_2 */
+    { 0x08557d56, 4, 0 }, /* sCollectingItalianOam_3 */
+    { 0x08557d5e, 4, 0 }, /* sCollectingItalianOam_4 */
+    { 0x08557d66, 4, 0 }, /* sCollectingItalianOam_5 */
+    { 0x08557d6e, 4, 0 }, /* sCollectingItalianOam_6 */
+    { 0x08557d76, 4, 0 }, /* sCollectingItalianOam_7 */
+    { 0x08557d7e, 4, 0 }, /* sCollectingItalianOam_8 */
+    { 0x08557d86, 4, 0 }, /* sCollectingItalianOam_9 */
+    { 0x08557d8e, 4, 0 }, /* sCollectingItalianOam_10 */
+    { 0x08557d96, 4, 0 }, /* sCollectingItalianOam_11 */
+    { 0x08557d9e, 4, 0 }, /* sCollectingItalianOam_12 */
+    { 0x08557da6, 4, 0 }, /* sCollectingItalianOam_13 */
+    { 0x08557dae, 4, 0 }, /* sCollectingItalianOam_14 */
+    { 0x08557db6, 4, 0 }, /* sCollectingItalianOam_15 */
+    { 0x08557dbe, 4, 0 }, /* sCollectingItalianOam_16 */
+    { 0x08557dc6, 19, 0 }, /* sFullLinesItalianOam_5 */
+    { 0x08557dec, 19, 0 }, /* sEndingImageOam_NewRecordItalian */
+    { 0x08557e12, 16, 0 }, /* sFullLinesSpanishOam_0 */
+    { 0x08557e32, 4, 0 }, /* sClearTimeSpanishOam_0 */
+    { 0x08557e3a, 4, 0 }, /* sClearTimeSpanishOam_1 */
+    { 0x08557e42, 4, 0 }, /* sClearTimeSpanishOam_2 */
+    { 0x08557e4a, 4, 0 }, /* sClearTimeSpanishOam_3 */
+    { 0x08557e52, 4, 0 }, /* sClearTimeSpanishOam_4 */
+    { 0x08557e5a, 4, 0 }, /* sClearTimeSpanishOam_5 */
+    { 0x08557e62, 4, 0 }, /* sClearTimeSpanishOam_6 */
+    { 0x08557e6a, 4, 0 }, /* sClearTimeSpanishOam_7 */
+    { 0x08557e72, 4, 0 }, /* sClearTimeSpanishOam_8 */
+    { 0x08557e7a, 4, 0 }, /* sClearTimeSpanishOam_9 */
+    { 0x08557e82, 4, 0 }, /* sClearTimeSpanishOam_10 */
+    { 0x08557e8a, 4, 0 }, /* sClearTimeSpanishOam_11 */
+    { 0x08557e92, 4, 0 }, /* sClearTimeSpanishOam_12 */
+    { 0x08557e9a, 4, 0 }, /* sClearTimeSpanishOam_13 */
+    { 0x08557ea2, 4, 0 }, /* sClearTimeSpanishOam_14 */
+    { 0x08557eaa, 22, 0 }, /* sFullLinesSpanishOam_3 */
+    { 0x08557ed6, 4, 0 }, /* sCollectingSpanishOam_0 */
+    { 0x08557ede, 4, 0 }, /* sCollectingSpanishOam_1 */
+    { 0x08557ee6, 4, 0 }, /* sCollectingSpanishOam_2 */
+    { 0x08557eee, 4, 0 }, /* sCollectingSpanishOam_3 */
+    { 0x08557ef6, 4, 0 }, /* sCollectingSpanishOam_4 */
+    { 0x08557efe, 4, 0 }, /* sCollectingSpanishOam_5 */
+    { 0x08557f06, 4, 0 }, /* sCollectingSpanishOam_6 */
+    { 0x08557f0e, 4, 0 }, /* sCollectingSpanishOam_7 */
+    { 0x08557f16, 4, 0 }, /* sCollectingSpanishOam_8 */
+    { 0x08557f1e, 4, 0 }, /* sCollectingSpanishOam_9 */
+    { 0x08557f26, 4, 0 }, /* sCollectingSpanishOam_10 */
+    { 0x08557f2e, 4, 0 }, /* sCollectingSpanishOam_11 */
+    { 0x08557f36, 4, 0 }, /* sCollectingSpanishOam_12 */
+    { 0x08557f3e, 4, 0 }, /* sCollectingSpanishOam_13 */
+    { 0x08557f46, 4, 0 }, /* sCollectingSpanishOam_14 */
+    { 0x08557f4e, 4, 0 }, /* sCollectingSpanishOam_15 */
+    { 0x08557f56, 4, 0 }, /* sCollectingSpanishOam_16 */
+    { 0x08557f5e, 4, 0 }, /* sCollectingSpanishOam_17 */
+    { 0x08557f66, 4, 0 }, /* sCollectingSpanishOam_18 */
+    { 0x08557f6e, 22, 0 }, /* sFullLinesSpanishOam_2 */
+    { 0x08557f9a, 19, 0 }, /* sEndingImageOam_NewRecordSpanish */
+    { 0x08557fc0, 16, 0 }, /* sFullLinesGermanOam_0 */
+    { 0x08557fe0, 4, 0 }, /* sClearTimeGermanOam_0 */
+    { 0x08557fe8, 4, 0 }, /* sClearTimeGermanOam_1 */
+    { 0x08557ff0, 4, 0 }, /* sClearTimeGermanOam_2 */
+    { 0x08557ff8, 4, 0 }, /* sClearTimeGermanOam_3 */
+    { 0x08558000, 4, 0 }, /* sClearTimeGermanOam_4 */
+    { 0x08558008, 4, 0 }, /* sClearTimeGermanOam_5 */
+    { 0x08558010, 4, 0 }, /* sClearTimeGermanOam_6 */
+    { 0x08558018, 4, 0 }, /* sClearTimeGermanOam_7 */
+    { 0x08558020, 4, 0 }, /* sClearTimeGermanOam_8 */
+    { 0x08558028, 4, 0 }, /* sClearTimeGermanOam_9 */
+    { 0x08558030, 4, 0 }, /* sClearTimeGermanOam_10 */
+    { 0x08558038, 4, 0 }, /* sClearTimeGermanOam_11 */
+    { 0x08558040, 4, 0 }, /* sClearTimeGermanOam_12 */
+    { 0x08558048, 16, 0 }, /* sFullLinesGermanOam_3 */
+    { 0x08558068, 4, 0 }, /* sCollectingGermanOam_0 */
+    { 0x08558070, 4, 0 }, /* sCollectingGermanOam_1 */
+    { 0x08558078, 4, 0 }, /* sCollectingGermanOam_2 */
+    { 0x08558080, 4, 0 }, /* sCollectingGermanOam_3 */
+    { 0x08558088, 4, 0 }, /* sCollectingGermanOam_4 */
+    { 0x08558090, 4, 0 }, /* sCollectingGermanOam_5 */
+    { 0x08558098, 4, 0 }, /* sCollectingGermanOam_6 */
+    { 0x085580a0, 4, 0 }, /* sCollectingGermanOam_7 */
+    { 0x085580a8, 4, 0 }, /* sCollectingGermanOam_8 */
+    { 0x085580b0, 4, 0 }, /* sCollectingGermanOam_9 */
+    { 0x085580b8, 4, 0 }, /* sCollectingGermanOam_10 */
+    { 0x085580c0, 4, 0 }, /* sCollectingGermanOam_11 */
+    { 0x085580c8, 4, 0 }, /* sCollectingGermanOam_12 */
+    { 0x085580d0, 4, 0 }, /* sCollectingGermanOam_13 */
+    { 0x085580d8, 19, 0 }, /* sFullLinesGermanOam_2 */
+    { 0x085580fe, 19, 0 }, /* sEndingImageOam_NewRecordGerman */
+    { 0x08558124, 10, 0 }, /* sEndingImageOam_LineClearTime_Hiragana */
+    { 0x08558138, 4, 0 }, /* sClearTimeHiraganaOam_0 */
+    { 0x08558140, 4, 0 }, /* sClearTimeHiraganaOam_1 */
+    { 0x08558148, 4, 0 }, /* sClearTimeHiraganaOam_2 */
+    { 0x08558150, 4, 0 }, /* sClearTimeHiraganaOam_3 */
+    { 0x08558158, 4, 0 }, /* sClearTimeHiraganaOam_4 */
+    { 0x08558160, 4, 0 }, /* sClearTimeHiraganaOam_5 */
+    { 0x08558168, 16, 0 }, /* sEndingImageOam_LineCollecting_Hiragana */
+    { 0x08558188, 4, 0 }, /* sYourRateHiraganaOam_0 */
+    { 0x08558190, 4, 0 }, /* sYourRateHiraganaOam_1 */
+    { 0x08558198, 4, 0 }, /* sYourRateHiraganaOam_2 */
+    { 0x085581a0, 4, 0 }, /* sYourRateHiraganaOam_3 */
+    { 0x085581a8, 4, 0 }, /* sYourRateHiraganaOam_4 */
+    { 0x085581b0, 4, 0 }, /* sYourRateHiraganaOam_5 */
+    { 0x085581b8, 4, 0 }, /* sYourRateHiraganaOam_6 */
+    { 0x085581c0, 4, 0 }, /* sYourRateHiraganaOam_7 */
+    { 0x085581c8, 4, 0 }, /* sYourRateHiraganaOam_8 */
+    { 0x085581d0, 4, 0 }, /* sYourRateHiraganaOam_9 */
+    { 0x085581d8, 4, 0 }, /* sYourRateHiraganaOam_10 */
     { 0x085581e0, 48, 0 }, /* sCreditsCharactersPal */
     { 0x08558240, 240, 0 }, /* sCreditsChozoWallPal */
+    { 0x08558420, 256, 0 }, /* sEndingImage_Palette_0 */
+    { 0x08558620, 256, 0 }, /* sEndingImage_Palette_1 */
+    { 0x08558820, 256, 0 }, /* sEndingImage_Palette_2 */
+    { 0x08558a20, 256, 0 }, /* sEndingImage_Palette_3 */
+    { 0x08558c20, 256, 0 }, /* sEndingImage_Palette_4 */
+    { 0x08558e20, 256, 0 }, /* sEndingImage_Palette_5 */
+    { 0x08559020, 256, 0 }, /* sEndingImage_Palette_6 */
+    { 0x08559220, 256, 0 }, /* sEndingImage_Palette_7 */
     { 0x08559420, 208, 0 }, /* sEndingPosingPal */
     { 0x085595c0, 80, 0 }, /* sEndingPosingPal_White1 */
     { 0x08559660, 80, 0 }, /* sEndingPosingPal_White2 */
@@ -14123,45 +14510,35 @@ static const PortRomObject kObjects[] = {
     { 0x0855a3cc, 8, 1 }, /* sEndingImagesPalPointers */
     { 0x0855cf3c, 4, 1 }, /* sEndingWhitePalPointers */
     { 0x0855cf60, 7, 1 }, /* sEndingImageOamPointers_NewRecord */
-    { 0x0855cf7c, 615, 1 }, /* sCreditsCharactersGfx */
-    { 0x085ae238, 803, 1 }, /* sEndingImageTextEnglishGfx */
-    { 0x085aeec4, 511, 1 }, /* sEndingImageTextHiraganaGfx */
-    { 0x085af6c0, 759, 1 }, /* sEndingImageTextFrenchGfx */
-    { 0x085b029c, 726, 1 }, /* sEndingImageTextGermanGfx */
-    { 0x085b0df4, 883, 1 }, /* sEndingImageTextItalianGfx */
-    { 0x085b1bc0, 773, 1 }, /* sEndingImageTextSpanishGfx */
-    { 0x085b2cd4, 218, 1 }, /* sEndingImageNumbersMiscEnglishGfx */
-    { 0x085b303c, 209, 1 }, /* sEndingImageNumbersMiscGermanGfx */
-    { 0x085b3380, 217, 1 }, /* sEndingImageNumbersMiscFrenchGfx */
-    { 0x085b36e4, 208, 1 }, /* sEndingImageNumbersMiscItalianGfx */
-    { 0x085b3a24, 225, 1 }, /* sEndingImageNumbersMiscSpanishGfx */
-    { 0x085b3da8, 2938, 1 }, /* sEndingSamusPosingSpaceBackgroundGfx */
+    { 0x085639c4, 577, 1 }, /* sEndingImage_TopTileTable_0 */
+    { 0x085679dc, 398, 1 }, /* sEndingImage_BottomTileTable_0 */
+    { 0x0856d73c, 577, 1 }, /* sEndingImage_TopTileTable_1 */
+    { 0x0857146c, 577, 1 }, /* sEndingImage_BottomTileTable_1 */
+    { 0x08577f3c, 577, 1 }, /* sEndingImage_TopTileTable_2 */
+    { 0x0857b9e8, 577, 1 }, /* sEndingImage_BottomTileTable_2 */
+    { 0x08581590, 577, 1 }, /* sEndingImage_TopTileTable_3 */
+    { 0x08584a28, 577, 1 }, /* sEndingImage_BottomTileTable_3 */
+    { 0x0858af5c, 577, 1 }, /* sEndingImage_TopTileTable_4 */
+    { 0x0858e7b4, 577, 1 }, /* sEndingImage_BottomTileTable_4 */
+    { 0x08594018, 577, 1 }, /* sEndingImage_TopTileTable_5 */
+    { 0x08598608, 577, 1 }, /* sEndingImage_BottomTileTable_5 */
+    { 0x0859e8dc, 577, 1 }, /* sEndingImage_TopTileTable_6 */
+    { 0x085a1fb0, 577, 1 }, /* sEndingImage_BottomTileTable_6 */
+    { 0x085a933c, 577, 1 }, /* sEndingImage_TopTileTable_7 */
+    { 0x085ad934, 577, 1 }, /* sEndingImage_BottomTileTable_7 */
     { 0x085b6b90, 412, 1 }, /* sEndingSamusPosingSpaceBackgroundTileTable */
-    { 0x085b7200, 743, 1 }, /* sEndingLightGfx */
     { 0x085b7d9c, 145, 1 }, /* sEndingLightTileTable */
-    { 0x085b7fe0, 1481, 1 }, /* sEndingSamusPosingGfx_1 */
     { 0x085b9704, 209, 1 }, /* sEndingSamusPosingTileTable_1 */
-    { 0x085b9a48, 1562, 1 }, /* sEndingSamusPosingGfx_2 */
     { 0x085bb2b0, 230, 1 }, /* sEndingSamusPosingTileTable_2 */
-    { 0x085bb648, 1712, 1 }, /* sEndingSamusPosingGfx_3 */
     { 0x085bd108, 238, 1 }, /* sEndingSamusPosingTileTable_3 */
-    { 0x085bd4c0, 1692, 1 }, /* sEndingSamusPosingGfx_4 */
     { 0x085bef30, 221, 1 }, /* sEndingSamusPosingTileTable_4 */
-    { 0x085bf2a4, 1279, 1 }, /* sEndingSamusPosingGfx_5 */
     { 0x085c06a0, 181, 1 }, /* sEndingSamusPosingTileTable_5 */
-    { 0x085c0974, 1167, 1 }, /* sEndingSamusPosingSuitlessGfx */
     { 0x085c1bb0, 135, 1 }, /* sEndingSamusPosingSuitlessTileTable */
-    { 0x085c1dcc, 1557, 1 }, /* sEndingSamusPosingFullSuitGfx */
     { 0x085c3620, 226, 1 }, /* sEndingSamusPosingFullSuitTileTable */
-    { 0x085c39a8, 1568, 1 }, /* sEndingSamusPosingHelmetOffGfx */
     { 0x085c5228, 226, 1 }, /* sEndingSamusPosingHelmetOffTileTable */
-    { 0x085c55b0, 7710, 1 }, /* sCreditsChozoWallBackgroundGfx */
     { 0x085cce28, 551, 1 }, /* sCreditsChozoWallBackgroundTileTable */
-    { 0x085cd6c4, 3909, 1 }, /* sCreditsChozoWallBottomGfx */
     { 0x085d13d8, 307, 1 }, /* sCreditsChozoWallBottomTileTable */
-    { 0x085d18a4, 5160, 1 }, /* sCreditsChozoWallBottomZoomedGfx */
     { 0x085d6944, 368, 1 }, /* sCreditsChozoWallBottomZoomedTileTable */
-    { 0x085d6f04, 4770, 1 }, /* sCreditsChozoDrawingGfx */
     { 0x085db98c, 368, 1 }, /* sCreditsChozoDrawingTileTable */
     { 0x085dbf4c, 127, 1 }, /* sUnlockedOptionsTileTable */
     { 0x085dc148, 128, 0 }, /* sChozodiaEscapeShipHeatingUpPal */
@@ -14198,22 +14575,12 @@ static const PortRomObject kObjects[] = {
     { 0x085dcd90, 1, 11 }, /* sChozodiaEscape_5ca0d8 */
     { 0x085dcdb0, 1, 11 }, /* sChozodiaEscape_5ca0f8 */
     { 0x085dcdd0, 7, 1 }, /* sChozodiaEscapeOamPointers_MissionAccomplished */
-    { 0x085dcdec, 5227, 1 }, /* sChozodiaEscapeCraterBackgroundGfx */
     { 0x085e1f98, 418, 1 }, /* sChozodiaEscapeCraterBackgroundTileTable */
-    { 0x085e2620, 1079, 1 }, /* sChozodiaEscapeBlueShipVeryCloseGfx */
     { 0x085e36fc, 176, 1 }, /* sChozodiaEscapeZebesBackgroundTileTable */
-    { 0x085e39bc, 4574, 1 }, /* sChozodiaEscapeZebesAndSkyGfx */
     { 0x085e8134, 418, 1 }, /* sChozodiaEscapeZebesSkyTileTable */
-    { 0x085e87bc, 2699, 1 }, /* sChozodiaEscapeSamusInBlueShipGfx */
     { 0x085eb1e8, 368, 1 }, /* sChozodiaEscapeSamusInBlueShipTileTable */
-    { 0x085eb7a8, 414, 1 }, /* sChozodiaEscapeMissionAccomplishedLettersGfx */
-    { 0x085ec1a0, 1, 61 }, /* sIoTransferInfo_Empty */
+    { 0x085ec1a0, 1, 59 }, /* sIoTransferInfo_Empty */
     { 0x085ec300, 176, 0 }, /* sClipdataBehaviorTypes */
-    { 0x085ee460, 736, 1 }, /* sTileset_42_Gfx */
-    { 0x085eefe0, 736, 1 }, /* sTileset_78_Gfx */
-    { 0x085efb60, 807, 1 }, /* sTileset_27_Gfx */
-    { 0x085f07fc, 591, 1 }, /* sTileset_42_Bg_Gfx */
-    { 0x085f1138, 1487, 1 }, /* sTileset_27_Bg_Gfx */
     { 0x085f2874, 224, 0 }, /* sTileset_42_Pal */
     { 0x085f2a34, 64, 0 }, /* sAnimatedPal_7 */
     { 0x085f2ab4, 128, 0 }, /* sAnimatedPal_16 */
@@ -14226,26 +14593,9 @@ static const PortRomObject kObjects[] = {
     { 0x085f3094, 240, 0 }, /* sDoorTransitionMotherShipPal */
     { 0x085f3274, 256, 0 }, /* sHatchFlashingMotherShipPal */
     { 0x085f3474, 256, 0 }, /* sHatchFlashingPal */
-    { 0x085f59c8, 2752, 1 }, /* sTileset_8_Gfx */
-    { 0x085f84c8, 2032, 1 }, /* sTileset_17_Gfx */
-    { 0x085fa5f8, 1569, 1 }, /* sTileset_34_Gfx */
-    { 0x085fbe7c, 2026, 1 }, /* sTileset_37_Gfx */
-    { 0x085fde24, 1742, 1 }, /* sTileset_53_Gfx */
-    { 0x085ff95c, 1519, 1 }, /* sTileset_72_Gfx */
-    { 0x08601118, 1221, 1 }, /* sTileset_33_Gfx */
-    { 0x0860242c, 1393, 1 }, /* sTileset_4_Gfx */
-    { 0x086039f0, 1846, 1 }, /* sTileset_65_Gfx */
-    { 0x086056c8, 882, 1 }, /* sTileset_18_Gfx */
-    { 0x08606490, 973, 1 }, /* sTileset_20_Gfx */
-    { 0x086073c4, 1284, 1 }, /* sTileset_8_Bg_Gfx */
-    { 0x086087d4, 1629, 1 }, /* sTileset_17_Bg_Gfx */
-    { 0x0860a148, 1195, 1 }, /* sTileset_34_Bg_Gfx */
-    { 0x0860b3f4, 1720, 1 }, /* sTileset_37_Bg_Gfx */
-    { 0x0860ced4, 1495, 1 }, /* sTileset_72_Bg_Gfx */
-    { 0x0860e630, 1761, 1 }, /* sTileset_53_Bg_Gfx */
-    { 0x086101b4, 1334, 1 }, /* sTileset_33_Bg_Gfx */
-    { 0x0861168c, 2256, 1 }, /* sTileset_65_Bg_Gfx */
-    { 0x086139cc, 1967, 1 }, /* sTileset_12_Bg_Gfx */
+    { 0x085f3674, 898, 0 }, /* sTileset_42_Tilemap */
+    { 0x085f3d78, 898, 0 }, /* sTileset_78_Tilemap */
+    { 0x085f447c, 898, 0 }, /* sTileset_27_Tilemap */
     { 0x08615888, 224, 0 }, /* sTileset_8_Pal */
     { 0x08615a48, 224, 0 }, /* sTileset_17_Pal */
     { 0x08615c08, 224, 0 }, /* sTileset_34_Pal */
@@ -14257,15 +14607,17 @@ static const PortRomObject kObjects[] = {
     { 0x08616688, 224, 0 }, /* sTileset_65_Pal */
     { 0x08616848, 224, 0 }, /* sTileset_18_Pal */
     { 0x08616a08, 224, 0 }, /* sTileset_20_Pal */
-    { 0x0862e4ac, 2905, 1 }, /* sTileset_9_Gfx */
-    { 0x08631210, 2185, 1 }, /* sTileset_22_Gfx */
-    { 0x08633434, 1822, 1 }, /* sTileset_29_Gfx */
-    { 0x086350ac, 1494, 1 }, /* sTileset_39_Gfx */
-    { 0x08636804, 1472, 1 }, /* sTileset_5_Gfx */
-    { 0x08637f04, 1456, 1 }, /* sTileset_9_Bg_Gfx */
-    { 0x086395c4, 1618, 1 }, /* sTileset_22_Bg_Gfx */
-    { 0x0863af0c, 1713, 1 }, /* sTileset_29_Bg_Gfx */
-    { 0x0863c9d0, 1762, 1 }, /* sTileset_39_Bg_Gfx */
+    { 0x08616bc8, 2114, 0 }, /* sTileset_8_Tilemap */
+    { 0x08617c4c, 1666, 0 }, /* sTileset_17_Tilemap */
+    { 0x08618950, 2114, 0 }, /* sTileset_34_Tilemap */
+    { 0x086199d4, 2114, 0 }, /* sTileset_37_Tilemap */
+    { 0x0861aa58, 2114, 0 }, /* sTileset_53_Tilemap */
+    { 0x0861badc, 1154, 0 }, /* sTileset_72_Tilemap */
+    { 0x0861c3e0, 1154, 0 }, /* sTileset_33_Tilemap */
+    { 0x0861cce4, 1218, 0 }, /* sTileset_4_Tilemap */
+    { 0x0861d668, 1410, 0 }, /* sTileset_65_Tilemap */
+    { 0x0861e16c, 1218, 0 }, /* sTileset_18_Tilemap */
+    { 0x0861eaf0, 1218, 0 }, /* sTileset_20_Tilemap */
     { 0x0863e558, 224, 0 }, /* sTileset_9_Pal */
     { 0x0863e718, 192, 0 }, /* sAnimatedPal_2 */
     { 0x0863e898, 224, 0 }, /* sTileset_22_Pal */
@@ -14274,25 +14626,11 @@ static const PortRomObject kObjects[] = {
     { 0x0863ed18, 224, 0 }, /* sTileset_51_Pal */
     { 0x0863eed8, 224, 0 }, /* sTileset_39_Pal */
     { 0x0863f098, 224, 0 }, /* sTileset_5_Pal */
-    { 0x0864c848, 2010, 1 }, /* sTileset_7_Gfx */
-    { 0x0864e7b0, 2734, 1 }, /* sTileset_1_Gfx */
-    { 0x08651268, 4132, 1 }, /* sTileset_30_Gfx */
-    { 0x086552f8, 3252, 1 }, /* sTileset_6_Gfx */
-    { 0x086585c8, 1607, 1 }, /* sTileset_68_Gfx */
-    { 0x08659ee4, 2005, 1 }, /* sTileset_15_Gfx */
-    { 0x0865be38, 1445, 1 }, /* sTileset_12_Gfx */
-    { 0x0865d4cc, 2310, 1 }, /* sTileset_13_Gfx */
-    { 0x0865f8e4, 1890, 1 }, /* sTileset_14_Gfx */
-    { 0x0866166c, 2168, 1 }, /* sTileset_16_Gfx */
-    { 0x0866384c, 1640, 1 }, /* sTileset_19_Gfx */
-    { 0x086651ec, 1761, 1 }, /* sTileset_7_Bg_Gfx */
-    { 0x08666d70, 2190, 1 }, /* sTileset_1_Bg_Gfx */
-    { 0x08668fa8, 2190, 1 }, /* sTileset_30_Bg_Gfx */
-    { 0x0866b1e0, 1196, 1 }, /* sTileset_15_Bg_Gfx */
-    { 0x0866c490, 1296, 1 }, /* sTileset_14_Bg_Gfx */
-    { 0x0866d8d0, 1850, 1 }, /* sTileset_16_Bg_Gfx */
-    { 0x0866f5b8, 1665, 1 }, /* sTileset_19_Bg_Gfx */
-    { 0x08670fbc, 1706, 1 }, /* sTileset_13_Bg_Gfx */
+    { 0x0863f258, 1346, 0 }, /* sTileset_9_Tilemap */
+    { 0x0863fcdc, 1538, 0 }, /* sTileset_22_Tilemap */
+    { 0x086408e0, 1282, 0 }, /* sTileset_29_Tilemap */
+    { 0x086412e4, 1730, 0 }, /* sTileset_39_Tilemap */
+    { 0x08642068, 1282, 0 }, /* sTileset_5_Tilemap */
     { 0x08672a64, 224, 0 }, /* sTileset_7_Pal */
     { 0x08672c24, 224, 0 }, /* sTileset_1_Pal */
     { 0x08672de4, 224, 0 }, /* sTileset_30_Pal */
@@ -14304,46 +14642,38 @@ static const PortRomObject kObjects[] = {
     { 0x08673864, 224, 0 }, /* sTileset_14_Pal */
     { 0x08673a24, 224, 0 }, /* sTileset_16_Pal */
     { 0x08673be4, 224, 0 }, /* sTileset_19_Pal */
-    { 0x08694598, 2582, 1 }, /* sTileset_23_Gfx */
-    { 0x08696df0, 1770, 1 }, /* sTileset_24_Gfx */
-    { 0x08698998, 1744, 1 }, /* sTileset_25_Gfx */
-    { 0x0869a4d8, 649, 1 }, /* sTileset_76_Gfx */
-    { 0x0869aefc, 3200, 1 }, /* sTileset_61_Gfx */
-    { 0x0869e0fc, 2953, 1 }, /* sTileset_64_Gfx */
-    { 0x086a0f20, 1882, 1 }, /* sTileset_23_Bg_Gfx */
-    { 0x086a2c88, 1656, 1 }, /* sTileset_24_Bg_Gfx */
-    { 0x086a4668, 1893, 1 }, /* sTileset_25_Bg_Gfx */
-    { 0x086a63fc, 1638, 1 }, /* sTileset_76_Bg_Gfx */
+    { 0x08673da4, 1730, 0 }, /* sTileset_7_Tilemap */
+    { 0x08674b28, 1730, 0 }, /* sTileset_1_Tilemap */
+    { 0x086758ac, 3074, 0 }, /* sTileset_30_Tilemap */
+    { 0x086770b0, 2370, 0 }, /* sTileset_6_Tilemap */
+    { 0x08678334, 1794, 0 }, /* sTileset_68_Tilemap */
+    { 0x08679138, 1730, 0 }, /* sTileset_15_Tilemap */
+    { 0x08679ebc, 1474, 0 }, /* sTileset_12_Tilemap */
+    { 0x0867aa40, 2114, 0 }, /* sTileset_13_Tilemap */
+    { 0x0867bac4, 1730, 0 }, /* sTileset_14_Tilemap */
+    { 0x0867c848, 2690, 0 }, /* sTileset_16_Tilemap */
+    { 0x0867dd4c, 1666, 0 }, /* sTileset_19_Tilemap */
+    { 0x086a7d94, 1986, 0 }, /* sTileset_23_Tilemap */
+    { 0x086a8d18, 1922, 0 }, /* sTileset_24_Tilemap */
+    { 0x086a9c1c, 1666, 0 }, /* sTileset_25_Tilemap */
+    { 0x086aa920, 834, 0 }, /* sTileset_76_Tilemap */
+    { 0x086aafa4, 2370, 0 }, /* sTileset_61_Tilemap */
+    { 0x086ac228, 2306, 0 }, /* sTileset_64_Tilemap */
     { 0x086ad42c, 224, 0 }, /* sTileset_23_Pal */
     { 0x086ad5ec, 224, 0 }, /* sTileset_24_Pal */
     { 0x086ad7ac, 224, 0 }, /* sTileset_25_Pal */
     { 0x086ad96c, 224, 0 }, /* sTileset_76_Pal */
     { 0x086adb2c, 224, 0 }, /* sTileset_61_Pal */
     { 0x086adcec, 224, 0 }, /* sTileset_64_Pal */
-    { 0x086b8708, 2843, 1 }, /* sTileset_26_Gfx */
-    { 0x086bb374, 3143, 1 }, /* sTileset_69_Gfx */
-    { 0x086be490, 1558, 1 }, /* sTileset_40_Gfx */
-    { 0x086bfce8, 3095, 1 }, /* sTileset_35_Gfx */
-    { 0x086c2d44, 2287, 1 }, /* sTileset_69_Bg_Gfx */
-    { 0x086c5100, 2281, 1 }, /* sTileset_26_Bg_Gfx */
-    { 0x086c74a4, 920, 1 }, /* sTileset_35_Bg_Gfx */
-    { 0x086c8304, 709, 1 }, /* sTileset_40_Bg_Gfx */
+    { 0x086c8e18, 2434, 0 }, /* sTileset_26_Tilemap */
+    { 0x086ca11c, 1666, 0 }, /* sTileset_69_Tilemap */
+    { 0x086cae20, 1986, 0 }, /* sTileset_40_Tilemap */
+    { 0x086cbda4, 2242, 0 }, /* sTileset_35_Tilemap */
     { 0x086ccf28, 224, 0 }, /* sTileset_26_Pal */
     { 0x086cd0e8, 224, 0 }, /* sTileset_69_Pal */
     { 0x086cd2a8, 224, 0 }, /* sTileset_40_Pal */
     { 0x086cd468, 128, 0 }, /* sAnimatedPal_13 */
     { 0x086cd568, 224, 0 }, /* sTileset_35_Pal */
-    { 0x086d3e28, 1632, 1 }, /* sTileset_11_Gfx */
-    { 0x086d57a8, 2523, 1 }, /* sTileset_2_Gfx */
-    { 0x086d7f14, 2847, 1 }, /* sTileset_36_Gfx */
-    { 0x086dab90, 2536, 1 }, /* sTileset_3_Gfx */
-    { 0x086dd330, 3667, 1 }, /* sTileset_55_Gfx */
-    { 0x086e0c7c, 1973, 1 }, /* sTileset_54_Gfx */
-    { 0x086e2b50, 808, 1 }, /* sTileset_11_Bg_Gfx */
-    { 0x086e37f0, 1459, 1 }, /* sTileset_2_Bg_Gfx */
-    { 0x086e4ebc, 1309, 1 }, /* sTileset_32_Bg_Gfx */
-    { 0x086e6330, 1239, 1 }, /* sTileset_55_Bg_Gfx */
-    { 0x086e768c, 1266, 1 }, /* sTileset_54_Bg_Gfx */
     { 0x086e8a54, 224, 0 }, /* sTileset_11_Pal */
     { 0x086e8c14, 224, 0 }, /* sTileset_21_Pal */
     { 0x086e8dd4, 224, 0 }, /* sTileset_31_Pal */
@@ -14353,32 +14683,27 @@ static const PortRomObject kObjects[] = {
     { 0x086e94d4, 224, 0 }, /* sTileset_3_Pal */
     { 0x086e9694, 224, 0 }, /* sTileset_55_Pal */
     { 0x086e9854, 224, 0 }, /* sTileset_54_Pal */
-    { 0x086f924c, 3663, 1 }, /* sTileset_10_Gfx */
-    { 0x086fcb88, 3073, 1 }, /* sTileset_52_Gfx */
-    { 0x086ffb8c, 3034, 1 }, /* sTileset_74_Gfx */
-    { 0x08703ab4, 633, 1 }, /* sTileset_77_Gfx */
-    { 0x08704498, 2791, 1 }, /* sTileset_44_Gfx */
-    { 0x08707034, 2110, 1 }, /* sTileset_46_Gfx */
-    { 0x0870912c, 1058, 1 }, /* sTileset_75_Gfx */
-    { 0x0870a1b4, 3119, 1 }, /* sTileset_38_Gfx */
-    { 0x0870d270, 2581, 1 }, /* sTileset_48_Gfx */
-    { 0x0870fac4, 4380, 1 }, /* sTileset_56_Gfx */
-    { 0x08713f34, 1737, 1 }, /* sTileset_47_Gfx */
-    { 0x08715a58, 2469, 1 }, /* sTileset_49_Gfx */
-    { 0x087180ec, 2359, 1 }, /* sTileset_50_Gfx */
-    { 0x0871a5c8, 541, 1 }, /* sTileset_28_Gfx */
-    { 0x0871ae3c, 2133, 1 }, /* sTileset_74_Bg_Gfx */
-    { 0x0871cf90, 1836, 1 }, /* sTileset_66_Bg_Gfx */
-    { 0x0871ec40, 3168, 1 }, /* sTileset_52_Bg_Gfx */
-    { 0x08721dc0, 1788, 1 }, /* sTileset_77_Bg_Gfx */
-    { 0x087239b0, 405, 1 }, /* sTileset_44_Bg_Gfx */
-    { 0x08724004, 950, 1 }, /* sTileset_46_Bg_Gfx */
-    { 0x08724edc, 1222, 1 }, /* sTileset_75_Bg_Gfx */
-    { 0x087261f4, 2100, 1 }, /* sTileset_38_Bg_Gfx */
-    { 0x087282c4, 726, 1 }, /* sTileset_56_Bg_Gfx */
-    { 0x08728e1c, 808, 1 }, /* sTileset_47_Bg_Gfx */
-    { 0x08729abc, 1727, 1 }, /* sTileset_62_Bg_Gfx */
-    { 0x0872b5b8, 20, 1 }, /* sTileset_63_Bg_Gfx */
+    { 0x086e9a14, 2114, 0 }, /* sTileset_11_Tilemap */
+    { 0x086eaa98, 1730, 0 }, /* sTileset_2_Tilemap */
+    { 0x086eb81c, 1794, 0 }, /* sTileset_36_Tilemap */
+    { 0x086ec620, 1730, 0 }, /* sTileset_3_Tilemap */
+    { 0x086ed3a4, 2114, 0 }, /* sTileset_55_Tilemap */
+    { 0x086ee428, 1666, 0 }, /* sTileset_54_Tilemap */
+    { 0x0872b608, 3010, 0 }, /* sTileset_10_Tilemap */
+    { 0x0872cd8c, 3010, 0 }, /* sTileset_52_Tilemap */
+    { 0x0872e510, 3010, 0 }, /* sTileset_74_Tilemap */
+    { 0x0872fc94, 1218, 0 }, /* sTileset_66_Tilemap */
+    { 0x08730618, 1090, 0 }, /* sTileset_77_Tilemap */
+    { 0x08730e9c, 2882, 0 }, /* sTileset_44_Tilemap */
+    { 0x08732520, 1730, 0 }, /* sTileset_46_Tilemap */
+    { 0x087332a4, 1218, 0 }, /* sTileset_75_Tilemap */
+    { 0x08733c28, 2882, 0 }, /* sTileset_38_Tilemap */
+    { 0x087352ac, 2882, 0 }, /* sTileset_48_Tilemap */
+    { 0x08736930, 2434, 0 }, /* sTileset_56_Tilemap */
+    { 0x08737c34, 1730, 0 }, /* sTileset_47_Tilemap */
+    { 0x087389b8, 2882, 0 }, /* sTileset_49_Tilemap */
+    { 0x0873a03c, 3842, 0 }, /* sTileset_50_Tilemap */
+    { 0x0873be40, 2242, 0 }, /* sTileset_28_Tilemap */
     { 0x0873cfc4, 224, 0 }, /* sTileset_10_Pal */
     { 0x0873d184, 224, 0 }, /* sTileset_52_Pal */
     { 0x0873d344, 224, 0 }, /* sTileset_57_Pal */

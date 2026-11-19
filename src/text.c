@@ -157,6 +157,19 @@ u32 TextGetCharacterWidth(u16 charId)
         return sCharacterWidths[charId];
 }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+/* TextDrawCharacter and TextDrawMessageCharacter OR and AND u32 pixel rows
+ * into the tiles at dst. On a big-endian host the tiles hold GBA halfwords
+ * (port_gba_mem.h), so the words they touch (24 per pass, the passes 0x100
+ * words apart) are put in word order before and back after. */
+static void TextTileWordsToHost(u32* dst, u16 indent)
+{
+    u32* base = dst + ((indent & 0xFF) / 8) * 8 + (indent / 256) * 0x200;
+
+    Port_SwapWordHalves(base, 24);
+    Port_SwapWordHalves(base + 0x100, 24);
+}
+#endif
 /**
  * @brief 6e484 | 4b8 | Draws a character in append mode
  * 
@@ -181,6 +194,7 @@ void TextDrawCharacter(u16 charId, u32* dst, u16 indent, u8 color)
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
     /* See GBA_RESOLVE comment in TextDrawMessageCharacter above. */
     dst = GBA_RESOLVE(dst);
+    TextTileWordsToHost(dst, indent);
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 
@@ -447,6 +461,9 @@ void TextDrawCharacter(u16 charId, u32* dst, u16 indent, u8 color)
             }
         }
     }
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    TextTileWordsToHost(dst, indent);
+#endif
 }
 
 /**
@@ -475,6 +492,7 @@ void TextDrawMessageCharacter(u16 charId, u32* dst, u16 indent, u8 color)
      * dereferences it directly below via dstGfx. See GBA_RESOLVE in
      * port_gba_mem.h. */
     dst = GBA_RESOLVE(dst);
+    TextTileWordsToHost(dst, indent);
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 
@@ -748,6 +766,9 @@ void TextDrawMessageCharacter(u16 charId, u32* dst, u16 indent, u8 color)
             }
         }
     }
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    TextTileWordsToHost(dst, indent);
+#endif
 }
 
 /**

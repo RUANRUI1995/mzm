@@ -443,9 +443,33 @@ const void* port_resolve_copy_src(const void* src, u32 size) {
 /* ---- Unit copies and fills (port_gba_mem.h) ------------------------------ */
 
 #if PORT_HOST_BIG_ENDIAN
-enum { ORDER_NATIVE, ORDER_HALFWORDS, ORDER_GBA };
+/* ORDER_WORDS: native memory the game fills with u32 words of tile pixels
+ * (word value: the GBA's bytes 0-3, little-endian) and copies to VRAM in
+ * 16-bit units; a halfword of it is its word's low or high half. */
+enum { ORDER_NATIVE, ORDER_HALFWORDS, ORDER_GBA, ORDER_WORDS };
+
+/* Host buffers of graphics that the game builds in units other than
+ * halfwords and then copies to VRAM in 16-bit units: those copies convert per
+ * unit. The buffers are 4-byte aligned. */
+extern u8 gAmmoDigitsGfx[64];
+extern u32 gMinimapTilesGfx[5 * 24];
+
+static const struct {
+    const u8* start;
+    u32 size;
+    int order;
+} sGfxBuffers[] = {
+    { gAmmoDigitsGfx, sizeof(gAmmoDigitsGfx), ORDER_GBA },                     /* src/hud.c, bytes */
+    { (const u8*)gMinimapTilesGfx, sizeof(gMinimapTilesGfx), ORDER_WORDS },  /* src/minimap.c, u32 rows */
+    { gEwram + 0x1B000, 16 * 0x80, ORDER_GBA },  /* ANIMATED_GFX_EWRAM_BASE: animated tiles from the ROM, 16 slots */
+};
 
 static int PortMemOrder(const u8* p) {
+    u32 i;
+    for (i = 0; i < sizeof(sGfxBuffers) / sizeof(sGfxBuffers[0]); i++) {
+        if (p >= sGfxBuffers[i].start && p < sGfxBuffers[i].start + sGfxBuffers[i].size)
+            return sGfxBuffers[i].order;
+    }
     if (p >= (const u8*)gPaletteRam && p < (const u8*)gPaletteRam + sizeof(gPaletteRam))
         return ORDER_HALFWORDS;
     if (p >= (const u8*)gOamMem && p < (const u8*)gOamMem + sizeof(gOamMem))
@@ -460,6 +484,11 @@ static int PortMemOrder(const u8* p) {
 }
 
 static u32 UnitRead(int order, const u8* p, u32 unit) {
+    if (order == ORDER_WORDS && unit == 2) {
+        u32 word;
+        memcpy(&word, (const u8*)((uintptr_t)p & ~(uintptr_t)3), 4);
+        return ((uintptr_t)p & 2) ? word >> 16 : word & 0xFFFF;
+    }
     if (order == ORDER_GBA) {
         if (unit == 2)
             return (u32)p[0] | ((u32)p[1] << 8);
@@ -483,6 +512,14 @@ static u32 UnitRead(int order, const u8* p, u32 unit) {
 }
 
 static void UnitWrite(int order, u8* p, u32 unit, u32 v) {
+    if (order == ORDER_WORDS && unit == 2) {
+        u32 word;
+        u8* base = (u8*)((uintptr_t)p & ~(uintptr_t)3);
+        memcpy(&word, base, 4);
+        word = ((uintptr_t)p & 2) ? (word & 0xFFFF) | (v << 16) : (word & 0xFFFF0000u) | (v & 0xFFFF);
+        memcpy(base, &word, 4);
+        return;
+    }
     if (order == ORDER_GBA) {
         p[0] = (u8)v;
         p[1] = (u8)(v >> 8);
@@ -509,16 +546,18 @@ int Port_GbaMemHoldsUnits(const void* p) {
     return PortMemOrder((const u8*)p) != ORDER_GBA;
 }
 
-/* The source and its order for a copy to dstOrder. A typed ROM object is read
- * from the swapped copy into native memory (same type on both sides, the
- * usual case); everything else in the ROM (graphics, byte data) is read from
- * the original bytes as GBA units, which native memory then holds by value. */
+/* The source and its order for a copy to dstOrder. Into native memory, a
+ * typed ROM object comes from the swapped copy (same type on both sides, the
+ * usual case) and everything else from the original bytes as they are: byte
+ * tables (clipdata types, ...) that C code reads as u8. Graphics staged in a
+ * native buffer on their way to VRAM need that buffer in sGfxBuffers. Into
+ * the other memories, ROM data is read as GBA units. */
 static const u8* CopySource(const void* src, int dstOrder, int* order) {
     const u8* typed = (const u8*)port_resolve_addr((uintptr_t)src);
     if (gRomData != NULL && typed >= gRomData && typed < gRomData + gRomSize) {
-        if (dstOrder == ORDER_NATIVE && Port_RomIsTyped((u32)(typed - gRomData))) {
+        if (dstOrder == ORDER_NATIVE) {
             *order = ORDER_NATIVE;
-            return typed;
+            return Port_RomIsTyped((u32)(typed - gRomData)) ? typed : gRomDataRaw + (typed - gRomData);
         }
         *order = ORDER_GBA;
         return gRomDataRaw + (typed - gRomData);
@@ -533,7 +572,7 @@ static int SameLayout(int a, int b, u32 unit) {
     /* Native and halfword memory agree on 16-bit units, and a 32-bit copy
      * between them is taken to move u16 data (palettes, OAM). */
     (void)unit;
-    return a != ORDER_GBA && b != ORDER_GBA;
+    return a != ORDER_GBA && b != ORDER_GBA && a != ORDER_WORDS && b != ORDER_WORDS;
 }
 
 void Port_GbaCopy(void* dst, const void* src, u32 len, u32 unit) {

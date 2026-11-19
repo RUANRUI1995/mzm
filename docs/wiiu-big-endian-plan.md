@@ -8,21 +8,45 @@ with the x86 one (`compare_traces.py --cross-endian`).
 
 ## Where it stands (2026-11-19)
 
-Step 2 is in: the PowerPC build matches x86 on every neutral hash (the frame
-included) through the intro and the whole title screen, frames 0-197 of
-`replays/eu_new_game_walk.txt`. It diverges on entering the file select
-(frame 198: OAM empty) and crashes at frame 301 in `ProcessMenuOam`:
-`src/data/menus/file_select_data.c` is one of the 22 sections whose statics
-the type map does not cover yet (step 3).
+Step 3 is in for the sample replay: the PowerPC build matches x86 on every
+neutral hash (frame, VRAM, palettes, OAM, EWRAM, IWRAM, I/O) for all 2551
+frames of `replays/eu_new_game_walk.txt` (title, file select, intro, Brinstar
+walk). Other replays (step 4) are next.
+
+Step 3 (what the replay found):
+
+- Type map: per-region assets (`extract_region_assets`, the EU ROM's own
+  `.inc` files instead of `include/extracted`), agbcc's struct layout
+  (`-mstructure-size-boundary=32`; 4-byte alignment unless the size says
+  `PACKED`), and a misplaced global now drops only the statics just before it.
+  All of `src/data` is placed except part of `text_data.o`. `.gfx` objects are
+  left untyped (byte streams even when declared `u32`); the tilesets' tilemaps
+  (`sTileset_*_Tilemap`, declared `u8`) are typed as u16; the other `.tm`
+  object, `sDoorTransitionTilemap`, is an RLE stream and stays untyped.
+- `Port_RomIsTyped`'s bitmap is allocated (step 2 never did, so every copy
+  read the original bytes). Into native memory, typed ROM data comes from the
+  swapped copy and untyped data as raw bytes (u8 tables such as
+  `sClipdataCollisionTypes`).
+- Bitfields (E): `BombChain`, `BlockBehavior`, `HatchLockEvent`, `HatchData`,
+  `CutsceneInfo`, `CutsceneOamData`, `Demo`, `Haze`, `MenuOamData` and
+  `SectionInfo` have big-endian variants with the fields reversed within each
+  byte, so their bytes match the GBA's; the type map swaps a bitfield's unit
+  only when a field straddles a byte (`OamData`).
+- Native buffers of graphics built in other units are listed in
+  `sGfxBuffers` (port_gba_mem.c): `gAmmoDigitsGfx` and the animated tiles
+  staged at `EWRAM + 0x1B000` (GBA byte order), `gMinimapTilesGfx` (u32 words,
+  `ORDER_WORDS`).
+- Per site: `RoomRleDecompress` swaps its u16 output pairs; the room tilemap
+  updates build their two-entry words with `PORT_HALVES32`; the text renderer
+  converts its u32 tile rows (`TextTileWordsToHost`).
 
 Step 1 (the type map and the swapped ROM):
 
 - `tools/gen_rom_type_map.py` generates `port/generated/byteswap/rom_type_map_eu.c`
-  (10,718 typed objects, from the 473 `src/data` files plus `sSoundDataEntries`).
-  Statics are placed from gcc's order and natural alignment, re-anchored on the
-  map's globals; 22 file sections disagree with the map somewhere and keep only
-  their anchored (global) objects for now. Regenerate it after a change to
-  `src/data` or `include/structs`.
+  (11,046 typed objects after step 3, from the 473 `src/data` files plus
+  `sSoundDataEntries`). Statics are placed from gcc's order and alignment,
+  re-anchored on the map's globals. Regenerate it after a change to `src/data`
+  or `include/structs`.
 - `port_rom_swap.c` builds the swapped copy at load (`PORT_ROM_SWAP`, PC builds;
   little-endian hosts skip it). `gRomData` is the typed copy, `gRomDataRaw` the
   original; `gba_read*` and `port_resolve_copy_src` use the original. It also

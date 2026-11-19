@@ -23,6 +23,20 @@
 
 #define SRAM_GET_CHECKSUM_SIZE(type, iteration, checksumType) ((s32)(sizeof(type) / iteration / sizeof(checksumType)))
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct SectionInfo {
+    u8 sectionIndex;
+    u8 starIndex;
+    u8 downloadedMaps;
+    // 3
+    u8 unk_3_1:7;
+    u8 onMapScreen:1;
+};
+#else
 struct SectionInfo {
     u8 sectionIndex;
     u8 starIndex;
@@ -31,6 +45,17 @@ struct SectionInfo {
     u8 onMapScreen:1;
     u8 unk_3_1:7;
 };
+#endif
+#else
+struct SectionInfo {
+    u8 sectionIndex;
+    u8 starIndex;
+    u8 downloadedMaps;
+    // 3
+    u8 onMapScreen:1;
+    u8 unk_3_1:7;
+};
+#endif
 
 struct SaveFileInfo {
     u8 exists;

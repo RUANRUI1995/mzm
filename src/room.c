@@ -999,6 +999,18 @@ u32 RoomRleDecompress(u8 isBg, const u8* src, u8* dst)
         }
     }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if PORT_HOST_BIG_ENDIAN
+    /* The two passes wrote little-endian u16s (tilemaps, clipdata), which
+     * C code reads natively: put them in host order. */
+    for (length = 0; length < (isBg ? 0x3000 : 0x2000); length += 2)
+    {
+        numBytes = dst[length];
+        dst[length] = dst[length + 1];
+        dst[length + 1] = numBytes;
+    }
+#endif
+#endif
     return size;
 }
 
@@ -1318,8 +1330,13 @@ void RoomUpdateVerticalTilemap(s32 offset)
             if (xPosition & 0x10)
                 unk += 0x200;
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            dst[unk] = PORT_HALVES32(pTilemap[0], pTilemap[1]);
+            dst[unk + 0x10] = PORT_HALVES32(pTilemap[2], pTilemap[3]);
+#else
             dst[unk] = pTilemap[0] | pTilemap[1] << 0x10;
             dst[unk + 0x10] = pTilemap[2] | pTilemap[3] << 0x10;
+#endif
         }
     }
 }
@@ -1402,8 +1419,13 @@ void RoomUpdateHorizontalTilemap(s32 offset)
 
             unk = (yPosition & 0xF) * 32;
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            dst[unk] = PORT_HALVES32(pTilemap[0], pTilemap[1]);
+            dst[unk + 0x10] = PORT_HALVES32(pTilemap[2], pTilemap[3]);
+#else
             dst[unk] = pTilemap[0] | pTilemap[1] << 0x10;
             dst[unk + 0x10] = pTilemap[2] | pTilemap[3] << 0x10;
+#endif
 
             tilemapOffset += gBgPointersAndDimensions.backgrounds[i].width;
             yPosition++;

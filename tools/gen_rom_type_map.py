@@ -12,9 +12,10 @@ How:
   - The objects of each file are laid out in the order gcc emits them, each at
     its type's natural alignment, starting from the file's .rodata address in
     the .map; every global symbol re-anchors at its real address from the .map.
-    (gcc over-aligns some arrays; agbcc, which built the ROM, does not.) A file
-    whose layout disagrees with the .map at any global is reported and its
-    objects that are not anchored are skipped.
+    (gcc over-aligns some arrays; agbcc, which built the ROM, does not; agbcc
+    rounds structs to 4 bytes, which -mstructure-size-boundary=32 copies.)
+    Where the layout reaches a global at the wrong address, the statics placed
+    since the previous global are reported and left out.
   - Objects made only of bytes (graphics, compressed data, text) need nothing
     and are left out.
 
@@ -24,7 +25,8 @@ Output: a C file with three tables (types, scalar ops, objects) for one region.
         --out port/generated/byteswap/rom_type_map_eu.c
 
 Needs devkitARM (DEVKITARM or C:/devkitPro/devkitARM, /opt/devkitpro/devkitARM)
-and the extracted assets in include/extracted (`make extract REGION=...`).
+and mzm_<region>_baserom.gba: the region's assets are extracted into a
+temporary directory (database.json), whatever include/extracted holds.
 """
 import argparse
 import os
@@ -148,6 +150,21 @@ def attr_int(die, name):
     return int(m.group(1)) if m else None
 
 
+def bitfield_first_bit(member):
+    """A little-endian bitfield's first bit from the start of the struct, from
+    DWARF 5's DW_AT_data_bit_offset or DWARF 4's DW_AT_bit_offset (counted from
+    the most significant bit of a DW_AT_byte_size unit at the member location)."""
+    data_bit_offset = attr_int(member, "DW_AT_data_bit_offset")
+    if data_bit_offset is not None:
+        return data_bit_offset
+    bit_offset = attr_int(member, "DW_AT_bit_offset")
+    unit = attr_int(member, "DW_AT_byte_size")
+    bits = attr_int(member, "DW_AT_bit_size")
+    if bit_offset is None or unit is None or bits is None:
+        return None
+    return (attr_int(member, "DW_AT_data_member_location") or 0) * 8 + unit * 8 - bit_offset - bits
+
+
 class Types:
     """Layouts of DWARF types: size, natural alignment, and the scalar ops
     [(offset, width)] with width 2 or 4."""
@@ -213,18 +230,32 @@ class Types:
                 if len(shapes) > 1:
                     self.warnings.add("union %s: members disagree on scalar layout" % (attr_name(die) or "?"))
                 members = [max(members, key=lambda m: self.layout(attr_ref(m, "DW_AT_type"))[0])]
+            # Bitfields: the port declares them so that every byte holds the
+            # GBA's bits on any host (include/structs, reversed per byte on
+            # big-endian), so they are left alone, unless one crosses a byte
+            # (union OamData), where the port keeps the unit's value instead
+            # and the unit is swapped like a scalar.
+            straddles = False
+            for member in members:
+                bits = attr_int(member, "DW_AT_bit_size")
+                first = bitfield_first_bit(member)
+                if bits is not None and first is not None and first // 8 != (first + bits - 1) // 8:
+                    straddles = True
             for member in members:
                 msize, malign, mops = self.layout(attr_ref(member, "DW_AT_type"))
                 base = attr_int(member, "DW_AT_data_member_location") or 0
                 align = max(align, malign)
                 if "DW_AT_bit_size" in member.attrs:
-                    # A bitfield: swap its storage unit, the member's type.
-                    if msize in (2, 4):
-                        start = base - base % msize if "DW_AT_data_bit_offset" in member.attrs else base
-                        ops[start] = msize
+                    if straddles and msize in (2, 4):
+                        byte = (bitfield_first_bit(member) or 0) // 8
+                        ops[byte - byte % msize] = msize
                     continue
                 for (o, w) in mops:
                     ops[base + o] = w
+            # agbcc aligns structs and unions to 4 bytes (see -mstructure-size-boundary);
+            # a size that is not a multiple of 4 means PACKED, which keeps its own.
+            if size % 4 == 0:
+                align = max(align, 4)
             return (size, align, sorted(ops.items()))
         self.warnings.add("unhandled type tag %s" % tag)
         return (0, 1, [])
@@ -270,6 +301,8 @@ def compile_file(source, region_define, workdir, gcc, readelf):
             f.write(code)
         run = subprocess.run([gcc, "-x", "c", base + ".c", "-c", "-o", base + ".o", "-g", "-gdwarf-4", "-O0",
                               "-fno-common", "-fno-toplevel-reorder", "-nostdinc",
+                              # agbcc (the ROM's compiler) rounds every struct up to 4 bytes.
+                              "-mstructure-size-boundary=32",
                               "-I" + os.path.join(ROOT, "include"), "-I" + ROOT, "-D" + region_define, "-w"],
                              cwd=ROOT, capture_output=True, text=True)
         if run.returncode == 0:
@@ -304,11 +337,14 @@ def compile_file(source, region_define, workdir, gcc, readelf):
 REGION_DEFINES = {"eu": "REGION_EU", "us": "REGION_US", "jp": "REGION_JP"}
 
 # Typed ROM data the decomp defines in assembly (no src/data/*.c to compile),
-# which C code reads natively: (symbol, C definition of a stand-in with the
-# same type, named `probe`). Its address comes from the .map.
+# or declares as bytes but C code reads in wider units: (symbol, C definition
+# of a stand-in with the type it is read as, named `probe`). Its address comes
+# from the .map.
 EXTRA_OBJECTS = [
     ("sSoundDataEntries", '#include "types.h"\n#include "structs/audio.h"\n#include "constants/audio.h"\n'
                           "const struct SoundEntry probe[SOUND_COUNT] = { 0 };\n"),
+    # Declared u8; TextDraw*Character (src/text.c) reads it as u32 rows of 4bpp pixels.
+    ("sCharactersGfx", "const unsigned int probe[176 * 1024 / 4] = { 0 };\n"),
 ]
 
 ANY_SYMBOL_RE = re.compile(r"^\s+0x(08[0-9a-f]{6})\s+([A-Za-z_]\w*)\s*$")
@@ -335,8 +371,8 @@ def extra_objects(region_define, workdir, gcc, readelf, map_path):
         with open(base + ".c", "w", encoding="utf-8") as f:
             f.write(code)
         run = subprocess.run([gcc, "-x", "c", base + ".c", "-c", "-o", base + ".o", "-g", "-gdwarf-4", "-O0",
-                              "-nostdinc", "-I" + os.path.join(ROOT, "include"), "-I" + ROOT,
-                              "-D" + region_define, "-w"], cwd=ROOT, capture_output=True, text=True)
+                              "-nostdinc", "-mstructure-size-boundary=32", "-I" + os.path.join(ROOT, "include"),
+                              "-I" + ROOT, "-D" + region_define, "-w"], cwd=ROOT, capture_output=True, text=True)
         if run.returncode != 0:
             raise RuntimeError("extra object %s: %s" % (name, run.stderr[-400:]))
         dies = parse_dwarf(subprocess.run([readelf, "-wi", base + ".o"], capture_output=True, text=True).stdout)
@@ -353,6 +389,57 @@ def extra_objects(region_define, workdir, gcc, readelf, map_path):
     return result
 
 
+def extract_region_assets(region, workdir):
+    """Write the region's extracted .inc files (tools/extractor.py's format)
+    under workdir/extracted. Data files compile from workdir, so their
+    `#include "extracted/..."` finds these before include/extracted, which may
+    hold another region's assets (language graphics differ in size)."""
+    import json
+    with open(os.path.join(ROOT, "database.json")) as f:
+        db = json.load(f)
+    with open(os.path.join(ROOT, "mzm_%s_baserom.gba" % region), "rb") as f:
+        rom = f.read()
+    for entry in db:
+        addr = entry["addr"].get(region)
+        if addr is None:
+            continue
+        count = entry["count"]
+        if isinstance(count, dict):
+            count = count[region]
+        unit = entry["size"]
+        size = int(count, 16) * unit
+        start = int(addr, 16)
+        data = rom[start:start + size]
+        path = os.path.join(workdir, "extracted", entry.get("dir", "data"), entry["path"] + ".inc")
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "w") as f:
+            f.write(",".join(str(int.from_bytes(data[i:i + unit], "little")) + "u" for i in range(0, size, unit)))
+
+
+GRAPHICS_RE = re.compile(r'\b(\w+)\s*\[[^\]]*\]\s*=\s*\{\s*#include\s+"[^"]*\.(?:gfx|lz)[^"]*"')
+
+
+TILEMAP_RE = re.compile(r'\b(sTileset_\w+_Tilemap)\s*\[[^\]]*\]\s*=\s*\{\s*#include\s+"[^"]*\.tm\.inc"')
+
+
+def tilemap_objects(source):
+    """Names of the tilesets' tilemaps (sTileset_*_Tilemap, from extracted .tm
+    files): u16 entries, though the decomp declares them as u8, which C code
+    copies into u16 buffers (gTilemap) and reads natively. Other .tm objects
+    (sDoorTransitionTilemap) are RLE byte streams and stay untyped."""
+    with open(source, encoding="utf-8") as f:
+        return set(TILEMAP_RE.findall(f.read()))
+
+
+def graphics_objects(source):
+    """Names of the objects of a data file filled from extracted graphics or
+    compressed data (.gfx, .lz). Whatever their declared type (often u32),
+    they are byte streams: copied by DMA and decompressed as bytes, so not
+    swapped. C code that reads one in wider units lists it in EXTRA_OBJECTS."""
+    with open(source, encoding="utf-8") as f:
+        return set(GRAPHICS_RE.findall(f.read()))
+
+
 def align_up(value, alignment):
     return (value + alignment - 1) // alignment * alignment if alignment > 1 else value
 
@@ -363,11 +450,13 @@ def main():
     ap.add_argument("--map", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--only", help="regex: just these object files (for testing)")
+    ap.add_argument("--verbose", action="store_true", help="print where a layout disagrees with the map")
     args = ap.parse_args()
 
     gcc, readelf = devkitarm_bin("gcc"), devkitarm_bin("readelf")
     files = read_map(os.path.join(ROOT, args.map) if not os.path.isabs(args.map) else args.map)
     workdir = tempfile.mkdtemp(prefix="romtypes-")
+    extract_region_assets(args.region, workdir)
     type_index = OrderedDict()   # ops tuple + size -> index
     objects = []                 # (address, count, type index, name)
     report = {"files": 0, "objects": 0, "byte_only": 0, "skipped_files": [], "warnings": set(),
@@ -383,6 +472,8 @@ def main():
                 continue
             try:
                 dwarf, section_symbols = compile_file(source, REGION_DEFINES[args.region], workdir, gcc, readelf)
+                byte_streams = graphics_objects(source)
+                tilemaps = tilemap_objects(source)
             except RuntimeError as e:
                 report["skipped_files"].append("%s: %s" % (obj, str(e).splitlines()[0][:160]))
                 continue
@@ -395,6 +486,8 @@ def main():
                 pos = start
                 consistent = True
                 placed = []
+                bad = set()        # statics in a stretch that ends at a misplaced global
+                segment = 0        # index in placed where the current stretch starts
                 for (name, _off, gcc_size, is_global) in symbols:
                     type_ref = var_types.get(name)
                     if type_ref is None:
@@ -412,22 +505,35 @@ def main():
                             esize, _ealign, eops = types.layout(attr_ref(stripped, "DW_AT_type"))
                             if esize:
                                 element = (esize, eops, size // esize)
+                    if name in tilemaps:
+                        element = (2, [(0, 2)], size // 2)
                     if name in globals_:
                         anchor = globals_[name]
                         if anchor != align_up(pos, align):
                             consistent = False
+                            bad.update(range(segment, len(placed)))
+                            if args.verbose:
+                                print("  %s %s: %s at 0x%x in the map, 0x%x by layout (after %s)"
+                                      % (obj, section, name, anchor, align_up(pos, align),
+                                         placed[-1][0] if placed else "-"))
                         pos = anchor
+                        segment = len(placed) + 1
                     else:
                         pos = align_up(pos, align)
                     placed.append((name, pos, element, name in globals_))
                     pos += size
-                if pos > start + total or not consistent:
-                    report["skipped_files"].append("%s %s: layout disagrees with the map; only anchored objects kept" % (obj, section))
+                if pos > start + total:
+                    consistent = False
+                    bad.update(range(segment, len(placed)))
+                if not consistent:
+                    report["skipped_files"].append(
+                        "%s %s: layout disagrees with the map before some globals; %d statics there left out"
+                        % (obj, section, sum(1 for i in bad if not placed[i][3])))
                 report["warnings"] |= {"%s: %s" % (obj, w) for w in types.warnings}
-                for (name, address, (element_size, element_ops, count), anchored) in placed:
-                    if not consistent and not anchored:
+                for index, (name, address, (element_size, element_ops, count), anchored) in enumerate(placed):
+                    if index in bad and not anchored:
                         continue
-                    if not element_ops or count == 0:
+                    if not element_ops or count == 0 or name in byte_streams:
                         report["byte_only"] += 1
                         continue
                     key = (element_size, tuple(element_ops))

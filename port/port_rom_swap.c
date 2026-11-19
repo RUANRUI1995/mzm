@@ -69,6 +69,11 @@ int Port_RomSwap_Apply(uint8_t* rom, uint32_t size, int region) {
         fprintf(stderr, "[ROM] No type map for this region: typed ROM data stays little-endian\n");
         return 0;
     }
+    free(sTypedBits);
+    sTypedSize = size;
+    sTypedBits = (uint8_t*)calloc((size / 2 + 7) / 8, 1);
+    if (sTypedBits == NULL)
+        fprintf(stderr, "[ROM] No memory for the typed-data bitmap: copies read the original bytes\n");
     for (i = 0; i < map->objectCount; i++) {
         const PortRomObject* object = &map->objects[i];
         const PortRomType* type = &map->types[object->type];

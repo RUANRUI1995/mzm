@@ -36,6 +36,33 @@ struct EventBasedConnection {
     u8 destinationDoor;
 };
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct HatchLockEvent {
+    u8 room;
+    Event event;
+    HatchLockEventType type;
+    boolu8 hatchesToLock_7:1;
+    boolu8 hatchesToLock_6:1;
+    boolu8 hatchesToLock_5:1;
+    boolu8 hatchesToLock_4:1;
+    boolu8 hatchesToLock_3:1;
+    boolu8 hatchesToLock_2:1;
+    boolu8 hatchesToLock_1:1;
+    boolu8 hatchesToLock_0:1;
+    boolu8 hatchesToLock_15:1;
+    boolu8 hatchesToLock_14:1;
+    boolu8 hatchesToLock_13:1;
+    boolu8 hatchesToLock_12:1;
+    boolu8 hatchesToLock_11:1;
+    boolu8 hatchesToLock_10:1;
+    boolu8 hatchesToLock_9:1;
+    boolu8 hatchesToLock_8:1;
+};
+#else
 struct HatchLockEvent {
     u8 room;
     Event event;
@@ -57,7 +84,57 @@ struct HatchLockEvent {
     boolu8 hatchesToLock_14:1;
     boolu8 hatchesToLock_15:1;
 };
+#endif
+#else
+struct HatchLockEvent {
+    u8 room;
+    Event event;
+    HatchLockEventType type;
+    boolu8 hatchesToLock_0:1;
+    boolu8 hatchesToLock_1:1;
+    boolu8 hatchesToLock_2:1;
+    boolu8 hatchesToLock_3:1;
+    boolu8 hatchesToLock_4:1;
+    boolu8 hatchesToLock_5:1;
+    boolu8 hatchesToLock_6:1;
+    boolu8 hatchesToLock_7:1;
+    boolu8 hatchesToLock_8:1;
+    boolu8 hatchesToLock_9:1;
+    boolu8 hatchesToLock_10:1;
+    boolu8 hatchesToLock_11:1;
+    boolu8 hatchesToLock_12:1;
+    boolu8 hatchesToLock_13:1;
+    boolu8 hatchesToLock_14:1;
+    boolu8 hatchesToLock_15:1;
+};
+#endif
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct HatchData {
+    /* 0 */
+    u8 securityLevel:3; // Left over from fusion
+    u8 facingRight:1;
+    u8 currentAnimationFrame:3;
+    u8 exists:1;
+    /* 1 */
+    u8 flashingTimer:4;
+    u8 locked:2;
+    u8 state:2;
+    /* 2 */
+    u8 hits:4;
+    u8 hitTimer:4;
+    /* 3 */
+    HatchType type;
+    u8 animationDurationCounter;
+    u8 xPosition;
+    u8 yPosition;
+    u8 sourceDoor;
+} __attribute__((aligned(2)));
+#else
 struct HatchData {
     /* 0 */
     boolu16 exists:1;
@@ -78,6 +155,29 @@ struct HatchData {
     u8 yPosition;
     u8 sourceDoor;
 };
+#endif
+#else
+struct HatchData {
+    /* 0 */
+    boolu16 exists:1;
+    u16 currentAnimationFrame:3;
+    boolu16 facingRight:1;
+    u16 securityLevel:3; // Left over from fusion
+    /* 1 */
+    HatchState state:2;
+    HatchLockState locked:2;
+    u16 flashingTimer:4;
+    /* 2 */
+    u16 hitTimer:4;
+    u16 hits:4;
+    /* 3 */
+    HatchType type;
+    u8 animationDurationCounter;
+    u8 xPosition;
+    u8 yPosition;
+    u8 sourceDoor;
+};
+#endif
 
 struct LastElevatorUsed {
     u16 unused;

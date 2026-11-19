@@ -80,7 +80,6 @@ CPPFLAGS := \
 	-DNON_MATCHING=1 \
 	-DPLATFORM_PC \
 	-DMZM_3DS \
-	-DPORT_NATIVE_AUDIO_STUBS \
 	-I$(ROOT) \
 	-I$(ROOT)/port \
 	-I$(ROOT)/port/generated/shadow \
@@ -116,7 +115,10 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_gba_mem.c \
 	$(ROOT)/port/port_sram_legacy.c \
 	$(ROOT)/port/port_bios.c \
-	$(ROOT)/port/port_audio_stubs.c \
+	$(ROOT)/port/port_mzm_audio_glue.c \
+	$(ROOT)/port/port_psg_synth.c \
+	$(ROOT)/port/audio/port_audio_engine.c \
+	$(ROOT)/port/audio/port_audio_bind.c \
 	$(ROOT)/port/port_debug_log.c \
 	$(ROOT)/port/port_debug_files.c \
 	$(ROOT)/port/port_constructor_init.c \
@@ -138,6 +140,7 @@ SRCS_PC := \
 	$(CURDIR)/source/port_hooks_pc.c \
 	$(CURDIR)/source/port_services_pc.c \
 	$(CURDIR)/source/screens_pc.c \
+	$(CURDIR)/source/audio_pc.c \
 	$(CURDIR)/source/port_trace_pc.c
 
 OBJS_ROOT := $(patsubst $(ROOT)/%.c, $(BUILD)/root/%.o, $(SRCS_ROOT))

@@ -11,6 +11,7 @@ typedef struct {
     uint32_t maxFrames;   /* 0 = run until quit */
     bool pulseA;          /* --test without a replay: tap A to get through menus */
     bool quiet;           /* no periodic progress lines */
+    bool mute;            /* --mute: no sound device (the engine still runs) */
     int scale;            /* window scale */
     int shotCount;
     struct {

@@ -4,6 +4,7 @@
 #include "platform_pc_options.h"
 #include "port_trace_pc.h"
 #include "screens_pc.h"
+#include "audio_pc.h"
 #include "port_rom.h"
 #include "port_gba_mem.h"
 
@@ -249,6 +250,8 @@ static void Usage(const char* argv0) {
            "  --tap N X Y           touch the bottom screen at (X, Y) on frame N (repeatable)\n"
            "  --save-dir DIR        directory for mzm.sav (replay and trace runs default\n"
            "                        to a new empty one, so they start from a blank save)\n"
+           "  --mute                no sound (the sound engine still runs)\n"
+           "  --wav PATH            also write the sound to a WAV file\n"
            "  --quiet               no progress lines\n"
            "See platform/pc/README.md.\n", argv0);
 }
@@ -360,6 +363,13 @@ int main(int argc, char** argv) {
             gPcOptions.taps[gPcOptions.tapCount].y = (int)y;
             gPcOptions.tapCount++;
             i += 3;
+        } else if (strcmp(a, "--mute") == 0) {
+            gPcOptions.mute = true;
+        } else if (strcmp(a, "--wav") == 0 && hasValue) {
+            if (!Audio_PC_OpenWav(Absolute(argv[++i]))) {
+                fprintf(stderr, "Cannot write '%s'\n", argv[i]);
+                return 2;
+            }
         } else if (strcmp(a, "--quiet") == 0) {
             gPcOptions.quiet = true;
         } else if (strcmp(a, "--help") == 0 || strcmp(a, "-h") == 0) {

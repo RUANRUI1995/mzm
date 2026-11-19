@@ -39,6 +39,11 @@ InitTrack: @ 0x08004b50
     lsls r2, r6, #0x18
     lsrs r2, r2, #0x18
     bne lbl_08004b7c
+    @ [PORT] The port_resolve_addr call above left the resolved header in r0;
+    @ the original reaches this bl with r0 = pTrack (untouched since entry).
+    @ Without this, an empty header ("stop") reset the header bytes (a no-op)
+    @ instead of the track, so its channels kept sounding.
+    adds r0, r4, #0
     bl ResetTrack
     movs r2, #0
     strb r2, [r4, o_TrackData_flags]

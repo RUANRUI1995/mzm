@@ -159,6 +159,9 @@ OBJS_RC   := $(patsubst $(RCHEEVOS)/%.c, $(BUILD)/rcheevos/%.o, $(SRCS_RCHEEVOS)
 # Port code shared with the other platforms (port/ui: the bottom-screen UI).
 # Hand-written like platform/3ds/source, so it gets CFLAGS, not CFLAGS_DECOMP.
 SRCS_UI := $(ROOT)/port/ui/port_bottom_ui.c $(ROOT)/port/ui/port_ui_game.c
+ifeq ($(AUDIO_LOCKSTEP),1)
+SRCS_UI += $(ROOT)/port/audio/port_audio_engine.c $(ROOT)/port/audio/port_audio_lockstep.c
+endif
 OBJS_UI := $(patsubst $(ROOT)/%.c, $(BUILD)/ui/%.o, $(SRCS_UI))
 
 # PICA200 vertex shaders: picasso assembles each into a .shbin, bin2s turns
@@ -308,6 +311,20 @@ else ifneq ($(DEBUG_TOOLS),0)
   $(error Unknown DEBUG_TOOLS '$(DEBUG_TOOLS)' -- expected '0' or '1')
 endif
 
+# AUDIO_LOCKSTEP=1: also build the C sound engine (port/audio) and check it
+# against the assembly on every call (port/audio/port_audio_lockstep.c); the
+# results go to debug/audio-lockstep.txt. The game keeps playing the
+# assembly's sound. Test builds only: it roughly doubles the engine's cost.
+#   make clean && make DEBUG_TOOLS=1 AUDIO_LOCKSTEP=1
+AUDIO_LOCKSTEP ?= 0
+AUDIO_WRAPPED := InitTrack StopMusicOrSound ResetTrack unk_4cfc unk_4d1c UpdateAudio unk_4e10 \
+                 unk_4eb4 unk_4f10 unk_4f8c AudioCommand_Goto AudioCommand_PatternPlay \
+                 UploadSampleToWaveRam unk_5104 CallSoundCodeA CallSoundCodeB CallSoundCodeC \
+                 CallGetNoteFrequency
+ifeq ($(AUDIO_LOCKSTEP),1)
+  CFLAGS += -DPORT_AUDIO_LOCKSTEP
+endif
+
 # Extra flags from the command line, for one-off experiments. The debug
 # tooling no longer needs any (see DEBUG_TOOLS above); this stays for things
 # like -DPORT_VERBOSE_FRAME_LOG when bisecting a boot hang.
@@ -351,6 +368,9 @@ INCLUDES := \
 # vendored copy in this directory (3dsx.ld), which adds the save-state section
 # brackets. ewram_symbols.ld stays a pure symbol-assignment augmenter.
 LDFLAGS  := -specs=3dsx.specs -B$(CURDIR) -g $(ARCH) -Wl,-Map,$(BUILD)/mzm-3ds.map -Wl,--gc-sections -T $(CURDIR)/ewram_symbols.ld
+ifeq ($(AUDIO_LOCKSTEP),1)
+LDFLAGS  += $(foreach f,$(AUDIO_WRAPPED),-Wl,--wrap=$(f))
+endif
 LIBS     := -L$(CTRULIB)/lib -L$(PORTLIBS)/lib -lcitro2d -lcitro3d -lcurl -lmbedtls -lmbedx509 -lmbedcrypto -lz -lctru -lm
 
 

@@ -297,18 +297,22 @@ bool Trace_DumpMemory(const char* dir, uint32_t frame) {
     return true;
 }
 
-bool Trace_WritePpm(const char* path, const uint32_t* framebuffer) {
+bool Trace_WritePpmSized(const char* path, const uint32_t* pixels, int width, int height) {
     FILE* f = fopen(path, "wb");
     int i;
     if (!f) return false;
-    fprintf(f, "P6\n240 160\n255\n");
-    for (i = 0; i < 240 * 160; ++i) {
-        uint32_t c = framebuffer[i]; /* ABGR8888: R in the low byte */
+    fprintf(f, "P6\n%d %d\n255\n", width, height);
+    for (i = 0; i < width * height; ++i) {
+        uint32_t c = pixels[i]; /* ABGR8888: R in the low byte */
         uint8_t rgb[3] = { (uint8_t)c, (uint8_t)(c >> 8), (uint8_t)(c >> 16) };
         fwrite(rgb, 1, 3, f);
     }
     fclose(f);
     return true;
+}
+
+bool Trace_WritePpm(const char* path, const uint32_t* framebuffer) {
+    return Trace_WritePpmSized(path, framebuffer, 240, 160);
 }
 
 void Trace_Close(void) {

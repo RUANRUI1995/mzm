@@ -8,8 +8,11 @@ build is checked against this one long before Cemu or a console are involved.
 The window, keyboard and controller go through SDL2, which a Wii U frontend
 can use too.
 
-There is no audio (`PORT_NATIVE_AUDIO_STUBS`) and no 3DS feature (Wide view,
-bottom screen, save states; `source/port_hooks_pc.c` stubs them as "off").
+The bottom screen is the 3DS one (`port/ui/port_bottom_ui.c`, shared), drawn
+in software (`port/ui/port_draw2d_soft.c`). There is no audio
+(`PORT_NATIVE_AUDIO_STUBS`) and none of the 3DS-only features: Wide view,
+save states, RetroAchievements, the updater, FTP (`source/port_hooks_pc.c` and
+`source/port_services_pc.c` answer for them as "off" / "not available").
 
 ## Build
 
@@ -41,6 +44,22 @@ SELECT, hold Tab = fast forward, Esc = quit. A game controller works too.
 `mzm.sav` is read and written in the current directory (`--save-dir` changes
 it).
 
+### The second screen
+
+F2 cycles how the game and the bottom screen are shown (`--layout` picks the
+first one):
+
+| Layout | |
+|---|---|
+| `stacked` | one window, the game above the bottom screen, like a 3DS (default) |
+| `side` | one window, side by side |
+| `two-windows` | a window each, like a Wii U's TV and GamePad |
+| `game-only` | the game alone |
+
+The mouse on the bottom screen is the stylus (click, drag). The tabs work as on
+the 3DS; what needs a 3DS service (save states, achievements, updates) shows as
+empty or does nothing, and the Options settings are kept in memory only.
+
 ## Options
 
 | Option | |
@@ -56,6 +75,10 @@ it).
 | `--trace FILE` | one state line per frame (`-` = stdout) |
 | `--shot N PATH` | write frame N as a PPM image (repeatable) |
 | `--dump N DIR` | write frame N's raw GBA memory (`ewram_N.bin`, `io_N.bin`, ...) into DIR |
+| `--layout NAME` | first screen layout: `stacked`, `side`, `two-windows`, `game-only` |
+| `--bottom` | run the bottom-screen UI even without a window |
+| `--bottom-shot N PATH` | write frame N's bottom screen (320x240) as a PPM image (repeatable) |
+| `--tap N X Y` | touch the bottom screen at (X, Y) on frame N, for three frames (repeatable) |
 | `--save-dir DIR` | where `mzm.sav` lives; replay and trace runs default to a new empty directory, so they always start from a blank save |
 | `--quiet` | no progress lines |
 
@@ -100,6 +123,16 @@ frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam | ewram
 ```sh
 make replay-check          # the same replay twice: the build is deterministic
 python3 compare_traces.py expected.txt actual.txt [--cross-endian]
+```
+
+The bottom-screen UI only runs when something shows it (a layout with it,
+`--bottom`, `--bottom-shot`): drawing the map reads game data, so a trace with
+it on is not comparable to one with it off. For example, the five tabs, by
+tapping the tab bar:
+
+```sh
+./mzm-linux --replay replays/eu_new_game_walk.txt --frames 1700 \
+  --tap 1600 49 13 --bottom-shot 1610 status.ppm --tap 1620 83 13 --bottom-shot 1630 states.ppm
 ```
 
 `compare_traces.py` prints the first frame and column that differ; with

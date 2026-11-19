@@ -25,7 +25,5 @@ bool PortPpuMzm_DebugGetForceEffect(unsigned smfBit) { (void)smfBit; return fals
 /* No save states on this platform. */
 void Port_SaveState_ServicePending(void) {}
 
-/* Bottom-screen messages: there is no bottom screen. */
-void Port_SaveFile_ShowFailed(void) {}
-void Port_NesMetroid_ShowUnavailable(void) {}
-void Port_FusionLink_ShowUnavailable(void) {}
+/* The bottom-screen messages (Port_SaveFile_ShowFailed, ...) come from the
+ * shared UI, port/ui/port_bottom_ui.c. */

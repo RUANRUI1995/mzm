@@ -69,7 +69,12 @@ CFLAGS := $(ARCH_FLAGS) -O1 -g -fcommon -fno-omit-frame-pointer \
 	-Wno-comment -Wno-strict-aliasing -Wno-implicit-function-declaration \
 	-Wno-implicit-int -Wno-builtin-declaration-mismatch -Wno-discarded-qualifiers
 
+# Shown by the bottom-screen UI (Options footer); the 3DS derives it from the
+# release branch, here the git description is enough.
+PC_VERSION := $(shell git -C $(ROOT) rev-parse --short HEAD 2>/dev/null || echo unknown)
+
 CPPFLAGS := \
+	-DMZM_PORT_VERSION=\"PC-$(PC_VERSION)\" \
 	-DREGION_EU \
 	-DPORT_NATIVE \
 	-DNON_MATCHING=1 \
@@ -82,6 +87,7 @@ CPPFLAGS := \
 	-I$(ROOT)/port/generated \
 	-I$(ROOT)/include \
 	-I$(ROOT)/port/ppu/include \
+	-I$(ROOT)/port/ui \
 	-I$(CURDIR)/source
 
 # Extra EWRAM-offset symbols (see ewram_symbols.ld) injected additively via
@@ -118,15 +124,26 @@ SRCS_ROOT := \
 	$(ROOT)/port/ppu/src/mode1.c \
 	$(filter-out %_selftest.c %_test.c, $(wildcard $(ROOT)/port/generated/*.c))
 
+# The bottom-screen UI shared with the 3DS (port/ui). It declares the 3DS
+# services it uses through platform/3ds/source headers (plain C); the PC
+# versions are in source/port_services_pc.c.
+SRCS_UI := \
+	$(ROOT)/port/ui/port_bottom_ui.c \
+	$(ROOT)/port/ui/port_ui_game.c \
+	$(ROOT)/port/ui/port_draw2d_soft.c
+
 SRCS_PC := \
 	$(CURDIR)/source/main_pc.c \
 	$(CURDIR)/source/platform_pc.c \
 	$(CURDIR)/source/port_hooks_pc.c \
+	$(CURDIR)/source/port_services_pc.c \
+	$(CURDIR)/source/screens_pc.c \
 	$(CURDIR)/source/port_trace_pc.c
 
 OBJS_ROOT := $(patsubst $(ROOT)/%.c, $(BUILD)/root/%.o, $(SRCS_ROOT))
+OBJS_UI   := $(patsubst $(ROOT)/%.c, $(BUILD)/ui/%.o, $(SRCS_UI))
 OBJS_PC   := $(patsubst $(CURDIR)/%.c, $(BUILD)/pc/%.o, $(SRCS_PC))
-OBJS := $(OBJS_ROOT) $(OBJS_PC)
+OBJS := $(OBJS_ROOT) $(OBJS_UI) $(OBJS_PC)
 
 UNIT_TEST_TARGET := port_gba_mem_test
 
@@ -161,10 +178,15 @@ $(BUILD)/root/%.o: $(ROOT)/%.c
 	@echo "CC $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
 
+$(BUILD)/ui/%.o: $(ROOT)/%.c
+	@mkdir -p $(dir $@)
+	@echo "CC $<"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -I$(ROOT)/platform/3ds/source -c -o $@ $<
+
 $(BUILD)/pc/%.o: $(CURDIR)/%.c
 	@mkdir -p $(dir $@)
 	@echo "CC $<"
-	@$(CC) $(CFLAGS) $(CPPFLAGS) $(SDL_CFLAGS) -c -o $@ $<
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(SDL_CFLAGS) -I$(ROOT)/platform/3ds/source -c -o $@ $<
 
 test: $(TARGET)
 	@echo "Running headless automated test..."

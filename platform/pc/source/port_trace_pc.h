@@ -26,6 +26,8 @@ bool Trace_LogEnabled(void);
 void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer);
 
 bool Trace_WritePpm(const char* path, const uint32_t* framebuffer);
+/* Any size, e.g. the 320x240 bottom screen. */
+bool Trace_WritePpmSized(const char* path, const uint32_t* pixels, int width, int height);
 
 /* Writes the raw GBA memory of this frame (ewram, iwram, io, vram, bgpal,
  * objpal, oam) as <dir>/<region>_<frame>.bin, to find which bytes a

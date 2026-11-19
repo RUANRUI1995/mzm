@@ -22,6 +22,18 @@ typedef struct {
         uint32_t frame;
         const char* dir;
     } dumps[PC_MAX_SHOTS];
+    int layout;           /* ScreensLayout (screens_pc.h) */
+    bool bottomAlways;    /* run the bottom-screen UI even with no window (--bottom) */
+    int bottomShotCount;
+    struct {
+        uint32_t frame;
+        const char* path;
+    } bottomShots[PC_MAX_SHOTS];
+    int tapCount;         /* --tap: stylus taps on the bottom screen, for scripted runs */
+    struct {
+        uint32_t frame;
+        int x, y;
+    } taps[PC_MAX_SHOTS];
 } PcOptions;
 
 extern PcOptions gPcOptions;

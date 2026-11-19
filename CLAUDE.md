@@ -48,6 +48,11 @@ shared code (`src/`, `port/`) without the console: `make replay-check`, and comp
 before and after the change. It is the yardstick for the Wii U port (issue #39). See
 `platform/pc/README.md`.
 
+The bottom-screen UI lives in `port/ui/` and is built by both the 3DS and the PC. It draws only
+through `port_draw2d.h` (citro2d on the 3DS, software elsewhere) and reaches the system only
+through `port_ui_platform.h` and the service headers in `platform/3ds/source`; the PC answers for
+those in `platform/pc/source/port_services_pc.c`. A UI change has to build in both.
+
 ## Git remotes: `origin` is the one that matters
 
 `origin` is `tinaut1986/mzm` (this project). `upstream` is `metroidret/mzm`, the

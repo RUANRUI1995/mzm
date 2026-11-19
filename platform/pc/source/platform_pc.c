@@ -10,6 +10,9 @@
 #include "virtuappu.h"
 #include "cpu/mode1.h"
 #include "structs/game_state.h"
+#include "screens_pc.h"
+#include "port_bottom_ui.h"
+#include "port_draw2d.h"
 
 #define SDL_MAIN_HANDLED /* main() stays ours on Windows too */
 #include <SDL.h>
@@ -25,10 +28,9 @@ static u16 sFrameKeys = 0;     /* keys the game sees this frame */
 static uint32_t sFrame = 0;    /* frames finished so far; the current one is sFrame */
 static bool sRenderEveryFrame = false;
 static uint32_t sFramebuffer[240 * 160];
-
-static SDL_Window* sWindow;
-static SDL_Renderer* sRenderer;
-static SDL_Texture* sTexture;
+static uint32_t sBottomFramebuffer[320 * 240];
+static bool sBottomValid;
+static bool sWindowOpen;
 static SDL_GameController* sController;
 static Uint64 sNextFrameDeadline;
 static bool sFastForward;
@@ -60,29 +62,27 @@ static bool OpenWindow(void) {
         fprintf(stderr, "[PC] SDL_Init failed: %s\n", SDL_GetError());
         return false;
     }
-    sWindow = SDL_CreateWindow("Metroid: Zero Mission (PC reference build)",
-                               SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                               240 * gPcOptions.scale, 160 * gPcOptions.scale, SDL_WINDOW_RESIZABLE);
-    if (!sWindow) {
-        fprintf(stderr, "[PC] SDL_CreateWindow failed: %s\n", SDL_GetError());
-        return false;
-    }
-    sRenderer = SDL_CreateRenderer(sWindow, -1, 0);
-    if (!sRenderer) {
-        fprintf(stderr, "[PC] SDL_CreateRenderer failed: %s\n", SDL_GetError());
-        return false;
-    }
-    SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
-    SDL_RenderSetLogicalSize(sRenderer, 240, 160);
-    SDL_RenderSetIntegerScale(sRenderer, SDL_TRUE);
-    /* The PPU writes 0xAABBGGRR words: ABGR8888 in SDL's packed-format terms. */
-    sTexture = SDL_CreateTexture(sRenderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STREAMING, 240, 160);
-    if (!sTexture) {
-        fprintf(stderr, "[PC] SDL_CreateTexture failed: %s\n", SDL_GetError());
-        return false;
-    }
+    if (!Screens_Open(gPcOptions.scale, (ScreensLayout)gPcOptions.layout)) return false;
+    sWindowOpen = true;
     sNextFrameDeadline = SDL_GetPerformanceCounter();
     return true;
+}
+
+/* The bottom-screen UI (port/ui/port_bottom_ui.c) runs when something shows
+ * it: a layout with the UI, or a --bottom-shot. Like the 3DS, it ticks every
+ * frame and redraws only when it asks to. Off otherwise, so plain trace runs
+ * stay what they were (the map view reads game data while drawing). */
+static bool BottomActive(void) {
+    return (sWindowOpen && Screens_ShowsBottom()) || gPcOptions.bottomShotCount > 0 || gPcOptions.bottomAlways;
+}
+
+static void RenderBottom(void) {
+    Port_BottomUI_FrameTick();
+    if (Port_BottomUI_WantsRedraw() || !sBottomValid) {
+        Draw2D_SoftBegin(sBottomFramebuffer, 320, 240, 320, Draw2D_Color32(0, 0, 0, 255));
+        Port_BottomUI_Render();
+        sBottomValid = true;
+    }
 }
 
 bool Platform_PC_Init(bool headless) {
@@ -96,14 +96,12 @@ bool Platform_PC_Init(bool headless) {
 void Platform_PC_Cleanup(void) {
     Trace_Close();
     if (sController) SDL_GameControllerClose(sController);
-    if (sTexture) SDL_DestroyTexture(sTexture);
-    if (sRenderer) SDL_DestroyRenderer(sRenderer);
-    if (sWindow) SDL_DestroyWindow(sWindow);
-    if (sWindow) SDL_Quit();
     sController = NULL;
-    sTexture = NULL;
-    sRenderer = NULL;
-    sWindow = NULL;
+    if (sWindowOpen) {
+        Screens_Close();
+        SDL_Quit();
+        sWindowOpen = false;
+    }
 }
 
 /* ---- Display timing -------------------------------------------------------
@@ -136,7 +134,9 @@ void Platform_PC_ScanlineTick(void) {
 
 /* ---- Input -------------------------------------------------------------------
  * Keyboard: arrows, Z = A, X = B, A = L, S = R, Enter = START,
- * Backspace or right Shift = SELECT, hold Tab = fast forward, Esc = quit.
+ * Backspace or right Shift = SELECT, hold Tab = fast forward, Esc = quit,
+ * F2 = screen layout (screens_pc.h). The mouse on the bottom screen is the
+ * stylus.
  * A game controller works too (first one plugged in). */
 
 static u16 KeyForScancode(SDL_Scancode sc) {
@@ -183,8 +183,9 @@ static u16 ControllerKeys(void) {
 
 static void PollWindow(void) {
     SDL_Event ev;
-    if (!sWindow) return;
+    if (!sWindowOpen) return;
     while (SDL_PollEvent(&ev)) {
+        if (Screens_HandleEvent(&ev)) sQuit = true;
         switch (ev.type) {
             case SDL_QUIT:
                 sQuit = true;
@@ -194,6 +195,10 @@ static void PollWindow(void) {
                 bool down = ev.type == SDL_KEYDOWN;
                 if (ev.key.keysym.scancode == SDL_SCANCODE_ESCAPE && down) sQuit = true;
                 if (ev.key.keysym.scancode == SDL_SCANCODE_TAB) sFastForward = down;
+                if (ev.key.keysym.scancode == SDL_SCANCODE_F2 && down && !ev.key.repeat) {
+                    Screens_CycleLayout();
+                    sBottomValid = false;
+                }
                 if (down) sLiveKeys |= KeyForScancode(ev.key.keysym.scancode);
                 else sLiveKeys &= (u16)~KeyForScancode(ev.key.keysym.scancode);
                 break;
@@ -216,6 +221,18 @@ static void PollWindow(void) {
 
 u16 Platform_PC_PollKeys(void) {
     PollWindow();
+    if (sWindowOpen && Screens_ShowsBottom()) Screens_PumpTouch();
+    if (BottomActive()) {
+        /* --tap: the stylus down for three frames, then lifted. */
+        int t;
+        for (t = 0; t < gPcOptions.tapCount; ++t) {
+            const uint32_t start = gPcOptions.taps[t].frame;
+            if (sFrame >= start && sFrame < start + 3)
+                Port_BottomUI_HandleTouchDrag(gPcOptions.taps[t].x, gPcOptions.taps[t].y, sFrame == start);
+            else if (sFrame == start + 3)
+                Port_BottomUI_TouchReleased();
+        }
+    }
     if (Trace_HasReplay()) {
         sFrameKeys = Trace_ReplayKeys(sFrame);
     } else if (gPcOptions.pulseA) {
@@ -237,14 +254,6 @@ void Platform_PC_VBlank(void) {
     sScanline = GBA_VBLANK_START_LINE;
     PublishScanline();
     Platform_PC_PollKeys();
-}
-
-static void PresentWindow(void) {
-    SDL_UpdateTexture(sTexture, NULL, sFramebuffer, 240 * (int)sizeof(uint32_t));
-    SDL_SetRenderDrawColor(sRenderer, 0, 0, 0, 255);
-    SDL_RenderClear(sRenderer);
-    SDL_RenderCopy(sRenderer, sTexture, NULL, NULL);
-    SDL_RenderPresent(sRenderer);
 }
 
 /* GBA refresh: 16.78 MHz / 280896 cycles per frame = 59.73 Hz. */
@@ -275,6 +284,7 @@ void Platform_PC_AfterVBlank(void) {
     int i;
 
     if (sRenderEveryFrame) RenderFrame();
+    if (BottomActive()) RenderBottom();
     Trace_LogFrame(sFrame, sFrameKeys, sRenderEveryFrame ? sFramebuffer : NULL);
 
     for (i = 0; i < gPcOptions.shotCount; ++i) {
@@ -283,6 +293,16 @@ void Platform_PC_AfterVBlank(void) {
                 fprintf(stderr, "[PC] Frame %u written to %s\n", (unsigned)sFrame, gPcOptions.shots[i].path);
             else
                 fprintf(stderr, "[PC] Cannot write %s\n", gPcOptions.shots[i].path);
+        }
+    }
+
+    for (i = 0; i < gPcOptions.bottomShotCount; ++i) {
+        if (gPcOptions.bottomShots[i].frame == sFrame) {
+            if (Trace_WritePpmSized(gPcOptions.bottomShots[i].path, sBottomFramebuffer, 320, 240))
+                fprintf(stderr, "[PC] Bottom screen of frame %u written to %s\n", (unsigned)sFrame,
+                        gPcOptions.bottomShots[i].path);
+            else
+                fprintf(stderr, "[PC] Cannot write %s\n", gPcOptions.bottomShots[i].path);
         }
     }
 
@@ -304,8 +324,8 @@ void Platform_PC_AfterVBlank(void) {
     }
     if (sQuit) ExitRun();
 
-    if (sWindow) {
-        PresentWindow();
+    if (sWindowOpen) {
+        Screens_Present(sFramebuffer, Screens_ShowsBottom() ? sBottomFramebuffer : NULL);
         PaceFrame();
     }
 }

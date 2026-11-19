@@ -39,6 +39,15 @@ variable name and their host pointers are rebuilt on load, so a global that
 holds a pointer or a runtime handle may need a rule in
 `platform/3ds/source/port_state_ptrs.c`.
 
+## PC reference build (`platform/pc/`)
+
+A deterministic Linux/Windows build of the same game code (SDL2 window, no audio), built from WSL:
+`make` / `make OS_TARGET=windows` in `platform/pc`. It replays input files and writes a per-frame
+trace; `compare_traces.py` finds the first frame two builds differ. Use it to check a change to
+shared code (`src/`, `port/`) without the console: `make replay-check`, and compare a trace from
+before and after the change. It is the yardstick for the Wii U port (issue #39). See
+`platform/pc/README.md`.
+
 ## Git remotes: `origin` is the one that matters
 
 `origin` is `tinaut1986/mzm` (this project). `upstream` is `metroidret/mzm`, the

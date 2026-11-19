@@ -7,7 +7,7 @@
  * mistaken for a raw GBA address, it gets translated a second time into
  * garbage.
  *
- * Both real build targets (platform/linux and platform/3ds) always define
+ * Both real build targets (platform/pc and platform/3ds) always define
  * MZM_3DS, so this test does too -- it stands in for
  * Platform3DS_IsActiveStackAddress() with a test double instead of linking
  * the real one (ARM/3DS-only). */

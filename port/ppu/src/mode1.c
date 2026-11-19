@@ -14,7 +14,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef MZM_3DS
+#ifdef __3DS__
 #include <3ds.h>
 #endif
 
@@ -2684,7 +2684,7 @@ static void mode1_render_lines(const Mode1RenderLinesContext* context, int first
     }
 }
 
-#ifdef MZM_3DS
+#ifdef __3DS__ /* libctru worker threads */
 typedef struct Mode1Worker {
     LightEvent start;
     LightEvent done;
@@ -2935,7 +2935,7 @@ void virtuappu_mode1_render_frame(const PPUMemory* ppu) {
     const Mode1RenderLinesContext render_context = {
         affine, per_line_io, dispcnt, frame_width, per_line_dispcnt, io_snapshots, aff_ref_x, aff_ref_y,
     };
-#ifdef MZM_3DS
+#ifdef __3DS__
     mode1_render_lines_3ds(&render_context);
 #else
 #pragma omp parallel for schedule(static)

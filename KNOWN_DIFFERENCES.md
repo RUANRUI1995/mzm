@@ -25,7 +25,7 @@ these entries are drawn from.
   This is not emulated or approximated -- it is real hardware audio output.
 - On Linux, by contrast, the whole track-playback engine is stubbed out to
   no-ops (`port/port_audio_stubs.c`, gated by `PORT_NATIVE_AUDIO_STUBS` in
-  `platform/linux/Makefile`) since there's no NDSP/DSP hardware to drive
+  `platform/pc/Makefile`) since there's no NDSP/DSP hardware to drive
   there; the Linux build is silent by design, not a bug.
 - BIOS routines invoked via GBA `swi` calls (`MidiKey2Freq`, `CpuSet`,
   `Div`, `LZ77UnCompVram`/`LZ77UnCompWram`, `Sqrt`, `MultiBoot`) are

@@ -1,0 +1,82 @@
+# New game on file A (EU ROM), then a short walk in the first Brinstar room:
+# right, jump, shoot, left, an enemy hit. Frames 0-1083 tap A every 40
+# frames (what --test does) to get through the title, file select and
+# intro. Samus is in the game (mode 4) from frame 1088 and can be
+# controlled once she leaves the elevator, around frame 1440.
+#
+# frame keys
+0 A
+4 -
+40 A
+44 -
+80 A
+84 -
+120 A
+124 -
+160 A
+164 -
+200 A
+204 -
+240 A
+244 -
+280 A
+284 -
+320 A
+324 -
+360 A
+364 -
+400 A
+404 -
+440 A
+444 -
+480 A
+484 -
+520 A
+524 -
+560 A
+564 -
+600 A
+604 -
+640 A
+644 -
+680 A
+684 -
+720 A
+724 -
+760 A
+764 -
+800 A
+804 -
+840 A
+844 -
+880 A
+884 -
+920 A
+924 -
+960 A
+964 -
+1000 A
+1004 -
+1040 A
+1044 -
+1080 A
+1084 -
+1450 RIGHT
+1570 RIGHT+A
+1595 RIGHT
+1670 -
+1690 B
+1694 -
+1710 B
+1714 -
+1730 LEFT
+1850 LEFT+A
+1880 LEFT
+1950 -
+1970 UP+B
+1974 -
+1990 A
+2020 -
+2050 RIGHT
+2250 -
+2550 -

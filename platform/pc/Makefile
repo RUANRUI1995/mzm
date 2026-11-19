@@ -1,0 +1,207 @@
+# PC reference build of the Metroid: Zero Mission port (32-bit x86), for
+# Linux and Windows. See README.md.
+#
+#   make                         Linux build  -> mzm-linux
+#   make OS_TARGET=windows       Windows build (MinGW cross-compiler, from
+#                                Linux/WSL)   -> mzm-windows.exe + SDL2.dll
+#
+# Deliberately 32-bit: several structs (e.g. struct SoundEntry in
+# include/structs/audio.h) are overlaid directly on raw GBA ROM bytes and
+# contain pointer-typed fields sized for a 32-bit target (GBA/3DS ARM are
+# both 32-bit). On a 64-bit build those fields double in size and desync
+# the whole struct layout from the ROM. Building 32-bit keeps pointer width
+# consistent with the ROM layout, matching the 3DS (ARM32) build.
+
+OS_TARGET ?= linux
+ROOT ?= $(abspath $(CURDIR)/../..)
+
+ifeq ($(OS_TARGET),windows)
+  # The -posix variant: src/sram/sram.c saves from a pthread.
+  CC := i686-w64-mingw32-gcc-posix
+  TARGET := mzm-windows.exe
+  BUILD := $(CURDIR)/build/windows
+  # SDL2's MinGW development package (fetch_sdl2_mingw.sh downloads it).
+  SDL2_VERSION ?= 2.30.12
+  SDL2_MINGW ?= $(HOME)/.cache/mzm/SDL2-$(SDL2_VERSION)/i686-w64-mingw32
+  SDL_CFLAGS := -I$(SDL2_MINGW)/include/SDL2
+  SDL_LIBS := -L$(SDL2_MINGW)/lib -lSDL2
+  # -mno-ms-bitfields: MinGW defaults to the Microsoft bitfield layout, which
+  # packs the OAM attribute structs (include/oam.h) differently from GCC on
+  # Linux, the 3DS and the GBA (sprite priorities came out wrong).
+  ARCH_FLAGS := -mno-ms-bitfields
+  # i686 Windows C symbols carry a leading underscore.
+  SYM_PREFIX := _
+  # The image base must stay out of the GBA address ranges, as on Linux.
+  # -mconsole keeps stdout/stderr working.
+  # winpthreads is linked statically, so SDL2.dll is the only DLL to ship.
+  # --allow-multiple-definition: see the port/generated rule below.
+  # --disable-dynamicbase: with ASLR (MinGW's default) Windows relocated the
+  # image below 0x20000000 and the heap moved around between runs.
+  OS_LDFLAGS := -mconsole -Wl,--image-base=0x20000000 -Wl,--disable-dynamicbase -static-libgcc \
+                -Wl,-Bstatic -lpthread -Wl,-Bdynamic -Wl,--allow-multiple-definition
+else ifeq ($(OS_TARGET),linux)
+  CC ?= gcc
+  TARGET := mzm-linux
+  BUILD := $(CURDIR)/build/linux
+  # The i386 SDL2 (libsdl2-dev:i386); its sdl2-config is the 64-bit one, so
+  # the flags are spelled out.
+  SDL_CFLAGS := -I/usr/include/SDL2 -I/usr/include/i386-linux-gnu/SDL2 -D_REENTRANT
+  SDL_LIBS := -L/usr/lib/i386-linux-gnu -lSDL2
+  ARCH_FLAGS := -m32
+  SYM_PREFIX :=
+  # -Ttext-segment: the default i386 image base, 0x08048000, sits inside the
+  # GBA ROM range (0x08000000-0x09FFFFFF), so port_resolve_addr() took the
+  # program's own data pointers (e.g. the scroll tables built by
+  # Init_sScrollTables) for GBA ROM addresses and translated them into
+  # garbage. 0x20000000 is above every GBA region.
+  OS_LDFLAGS := -no-pie -Wl,-Ttext-segment=0x20000000 -lrt -lpthread
+else
+  $(error OS_TARGET must be linux or windows)
+endif
+
+# No -std: the compiler's default dialect, as in the 3DS build (the port
+# sources use C99+ features). Warning suppressions mirror the 3DS ones.
+CFLAGS := $(ARCH_FLAGS) -O1 -g -fcommon -fno-omit-frame-pointer \
+	-Wno-return-mismatch -Wno-int-conversion -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast \
+	-Wno-maybe-uninitialized -Wno-misleading-indentation -Wno-pointer-sign -Wno-parentheses \
+	-Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function \
+	-Wno-format-overflow -Wno-array-bounds -Wno-address-of-packed-member \
+	-Wno-comment -Wno-strict-aliasing -Wno-implicit-function-declaration \
+	-Wno-implicit-int -Wno-builtin-declaration-mismatch -Wno-discarded-qualifiers
+
+CPPFLAGS := \
+	-DREGION_EU \
+	-DPORT_NATIVE \
+	-DNON_MATCHING=1 \
+	-DPLATFORM_PC \
+	-DMZM_3DS \
+	-DPORT_NATIVE_AUDIO_STUBS \
+	-I$(ROOT) \
+	-I$(ROOT)/port \
+	-I$(ROOT)/port/generated/shadow \
+	-I$(ROOT)/port/generated \
+	-I$(ROOT)/include \
+	-I$(ROOT)/port/ppu/include \
+	-I$(CURDIR)/source
+
+# Extra EWRAM-offset symbols (see ewram_symbols.ld) injected additively via
+# --defsym instead of -T, since a bare -T script (no SECTIONS/INSERT) replaces
+# the default linker script wholesale.
+EWRAM_DEFSYMS := $(shell sed -n 's/^\([A-Za-z0-9_]*\) = \([A-Za-z0-9_]*\)\(.*\);$$/-Wl,--defsym,$(SYM_PREFIX)\1=$(SYM_PREFIX)\2\3/p' $(CURDIR)/ewram_symbols.ld | tr -d ' ')
+
+LDFLAGS := $(OS_LDFLAGS) $(EWRAM_DEFSYMS) $(SDL_LIBS) -lm
+
+# C sources
+SRCS_ROOT := \
+	$(wildcard $(ROOT)/src/*.c) \
+	$(wildcard $(ROOT)/src/cutscenes/*.c) \
+	$(wildcard $(ROOT)/src/menus/*.c) \
+	$(wildcard $(ROOT)/src/sprites_ai/*.c) \
+	$(wildcard $(ROOT)/src/sram/*.c) \
+	$(ROOT)/src/data/shortcut_pointers.c \
+	$(ROOT)/src/data/music_track_data.c \
+	$(ROOT)/src/data/audio.c \
+	$(ROOT)/src/data/color_fading_data.c \
+	$(ROOT)/src/data/cutscenes/cutscenes_data.c \
+	$(ROOT)/src/data/in_game_cutscene_data.c \
+	$(ROOT)/src/data/empty_datatypes.c \
+	$(ROOT)/port/port_gba_symbols.c \
+	$(ROOT)/port/port_rom.c \
+	$(ROOT)/port/port_gba_mem.c \
+	$(ROOT)/port/port_sram_legacy.c \
+	$(ROOT)/port/port_bios.c \
+	$(ROOT)/port/port_audio_stubs.c \
+	$(ROOT)/port/port_debug_log.c \
+	$(ROOT)/port/port_debug_files.c \
+	$(ROOT)/port/port_constructor_init.c \
+	$(ROOT)/port/ppu/src/virtuappu.c \
+	$(ROOT)/port/ppu/src/mode1.c \
+	$(filter-out %_selftest.c %_test.c, $(wildcard $(ROOT)/port/generated/*.c))
+
+SRCS_PC := \
+	$(CURDIR)/source/main_pc.c \
+	$(CURDIR)/source/platform_pc.c \
+	$(CURDIR)/source/port_hooks_pc.c \
+	$(CURDIR)/source/port_trace_pc.c
+
+OBJS_ROOT := $(patsubst $(ROOT)/%.c, $(BUILD)/root/%.o, $(SRCS_ROOT))
+OBJS_PC   := $(patsubst $(CURDIR)/%.c, $(BUILD)/pc/%.o, $(SRCS_PC))
+OBJS := $(OBJS_ROOT) $(OBJS_PC)
+
+UNIT_TEST_TARGET := port_gba_mem_test
+
+.PHONY: all clean test test-unit test-psg replay-check
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	@echo "Linking $(OS_TARGET): $@"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^ $(LDFLAGS)
+ifeq ($(OS_TARGET),windows)
+	@cp $(SDL2_MINGW)/bin/SDL2.dll $(CURDIR)/SDL2.dll
+endif
+	@echo "Build successful: $(CURDIR)/$@"
+
+ifeq ($(OS_TARGET),windows)
+# port/generated defines its ROM pointers as uninitialised weak globals.
+# COFF turns a weak definition into a "weak external" that the MinGW linker
+# does not resolve references from other objects against, so every one of
+# them came out undefined. On Windows they are compiled as ordinary globals
+# ("weak" expands to nothing in __attribute__((weak))). Three of them are
+# defined twice (p_sDoorTransitionTilemap; p_sDma1ControlPointer/Value, also
+# in src/data/audio.c), which ELF settles by weak symbol rules; the linker's
+# --allow-multiple-definition does the same here (first definition wins, and
+# src/ links before port/generated). The Linux build still rejects any real
+# duplicate.
+$(BUILD)/root/port/generated/%.o: CFLAGS += -fno-common -Dweak=
+endif
+
+$(BUILD)/root/%.o: $(ROOT)/%.c
+	@mkdir -p $(dir $@)
+	@echo "CC $<"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+$(BUILD)/pc/%.o: $(CURDIR)/%.c
+	@mkdir -p $(dir $@)
+	@echo "CC $<"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) $(SDL_CFLAGS) -c -o $@ $<
+
+test: $(TARGET)
+	@echo "Running headless automated test..."
+	./$(TARGET) --test 300
+
+# Runs a replay twice and checks both traces match (the build is
+# deterministic). See README.md for comparing two different builds.
+ROM ?= $(ROOT)/mzm_eu_baserom.gba
+REPLAY ?= $(CURDIR)/replays/eu_new_game_walk.txt
+replay-check: $(TARGET)
+	@./$(TARGET) --rom $(ROM) --replay $(REPLAY) --trace $(BUILD)/trace-a.txt --quiet
+	@./$(TARGET) --rom $(ROM) --replay $(REPLAY) --trace $(BUILD)/trace-b.txt --quiet
+	@python3 $(CURDIR)/compare_traces.py $(BUILD)/trace-a.txt $(BUILD)/trace-b.txt
+
+# Fast unit tests for the port translation layer (address resolvers, etc.),
+# independent of the game engine -- no ROM needed. See
+# port/port_gba_mem_test.c for what this covers and why.
+$(BUILD)/$(UNIT_TEST_TARGET): $(ROOT)/port/port_gba_mem_test.c $(ROOT)/port/port_gba_mem.c
+	@mkdir -p $(BUILD)
+	@echo "CC (unit test) $@"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^ $(EWRAM_DEFSYMS) -lm
+
+test-unit: $(BUILD)/$(UNIT_TEST_TARGET)
+	@echo "Running port translation layer unit tests..."
+	@$(BUILD)/$(UNIT_TEST_TARGET)
+
+# Unit tests for the software PSG synthesiser. Also ROM-free and hardware-free;
+# see port/port_psg_synth_test.c for why testing this in isolation matters
+# (every bug in it sounds identical from the outside: silence).
+$(BUILD)/psg-synth-test: $(ROOT)/port/port_psg_synth_test.c $(ROOT)/port/port_psg_synth.c
+	@mkdir -p $(BUILD)
+	@echo "CC (psg test) $@"
+	@$(CC) $(CFLAGS) $(CPPFLAGS) -o $@ $^ -lm
+
+test-psg: $(BUILD)/psg-synth-test
+	@echo "Running PSG synthesiser unit tests..."
+	@$(BUILD)/psg-synth-test
+
+clean:
+	@rm -rf $(BUILD) $(TARGET) $(if $(filter windows,$(OS_TARGET)),$(CURDIR)/SDL2.dll)

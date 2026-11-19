@@ -11,8 +11,9 @@
 extern u8 gIoMem[0x400];       // I/O Memory (0x04000000-0x040003FF)
 extern u8 gEwram[0x40000];     // EWRAM (0x02000000-0x0203FFFF)
 extern u8 gIwram[0x8000];      // IWRAM (0x03000000-0x03007FFF)
-extern u16 gBgPltt[256];       // 0x200 bytes
-extern u16 gObjPltt[256];      // 0x200 bytes
+extern u16 gPaletteRam[512];   // BG + OBJ palettes (0x05000000-0x050003FF)
+extern u16 gBgPltt[256];       // 0x200 bytes, gPaletteRam[0..255] (linker symbol)
+extern u16 gObjPltt[256];      // 0x200 bytes, gPaletteRam[256..511] (linker symbol)
 extern u16 gOamMem[0x400 / 2]; // 0x400 bytes (OAM)
 extern u8 gVram[0x18000];      // 96 KB VRAM GBA (0x06000000-0x06017FFF)
 extern u8 gSramMem[0x10000];    // 64 KB SRAM (0x0E000000-0x0E00FFFF)
@@ -42,10 +43,8 @@ static inline void* gba_TryMemPtr(uint32_t addr) {
         return &gIwram[addr - 0x03000000u];
     if (addr >= 0x04000000u && addr < 0x04000400u)
         return &gIoMem[addr - 0x04000000u];
-    if (addr >= 0x05000000u && addr < 0x05000200u)
-        return &gBgPltt[(addr - 0x05000000u) >> 1];
-    if (addr >= 0x05000200u && addr < 0x05000400u)
-        return &gObjPltt[(addr - 0x05000200u) >> 1];
+    if (addr >= 0x05000000u && addr < 0x05000400u)
+        return &gPaletteRam[(addr - 0x05000000u) >> 1];
     if (addr >= 0x06000000u && addr < 0x06018000u)
         return &gVram[addr - 0x06000000u];
     if (addr >= 0x07000000u && addr < 0x07000400u)

@@ -10,8 +10,13 @@
 u8 gIoMem[0x400];
 u8 gEwram[0x40000];
 u8 gIwram[0x8000];
-u16 gBgPltt[256];
-u16 gObjPltt[256];
+/* BG and OBJ palettes, one block as on the GBA: game code copies and clears
+ * all 0x400 bytes from 0x05000000 in one go (e.g. the title screen fade,
+ * unk_76710). gBgPltt and gObjPltt are its two halves, defined by the linker
+ * (ewram_symbols.ld). As two separate arrays they were only adjacent by luck
+ * of the link order; when they were not, the copy missed the OBJ palette and
+ * the clear overwrote whatever followed gBgPltt. */
+u16 gPaletteRam[512] __attribute__((aligned(4)));
 u16 gOamMem[0x400 / 2];
 u8 gVram[0x18000];
 u8 gSramMem[0x10000];
@@ -41,7 +46,23 @@ void gba_write8(uint32_t addr, uint8_t v) {
     printf("gba_write8: unimplemented for address 0x%08lX\n", (unsigned long)addr);
 }
 
+#if defined(PLATFORM_PC)
+/* The Linux build has no display timing: each read of VCOUNT or DISPSTAT
+ * advances a virtual scanline instead (platform_pc.c), so the game's busy
+ * waits on them end after the same number of reads on every run. */
+/* Weak: the unit test links this file without the platform layer. */
+extern void Platform_PC_ScanlineTick(void) __attribute__((weak));
+#define LINUX_TIMING_READ(addr) \
+    do { \
+        if (((addr) == 0x04000004u || (addr) == 0x04000006u) && Platform_PC_ScanlineTick) \
+            Platform_PC_ScanlineTick(); \
+    } while (0)
+#else
+#define LINUX_TIMING_READ(addr) do { } while (0)
+#endif
+
 u8 gba_read8(uint32_t addr) {
+    LINUX_TIMING_READ(addr);
     if (addr >= 0x02000000u && addr < 0x02040000u)
         return gEwram[addr - 0x02000000u];
     if (addr >= 0x03000000u && addr < 0x03008000u)
@@ -111,6 +132,7 @@ void gba_write16(uint32_t addr, uint16_t v) {
 }
 
 u16 gba_read16(uint32_t addr) {
+    LINUX_TIMING_READ(addr);
     if (addr >= 0x04000000u && addr < 0x040003FFu)
         return gIoMem[addr - 0x04000000u] | (gIoMem[addr - 0x04000000u + 1] << 8);
     if (addr >= 0x02000000u && addr < 0x0203FFFFu) {

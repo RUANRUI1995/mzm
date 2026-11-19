@@ -1046,7 +1046,7 @@ static void WriteBlob(const char* path, const void* data, size_t size) {
     fclose(f);
 }
 
-/* Scene recorder: the debug tools menu (port_bottom_ui_3ds.c) toggles this
+/* Scene recorder: the debug tools menu (port/ui/port_bottom_ui.c) toggles this
  * on/off. Unlike PlatformGpu3DS_DumpScreens' one-shot dump, this samples the
  * emulated GBA state (VRAM/OAM/palettes/IO + a bit of Samus state) at the
  * rate the selected kRecPresets entry picks, appending each sample either

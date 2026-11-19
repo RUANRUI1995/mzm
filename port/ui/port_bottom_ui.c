@@ -1,11 +1,11 @@
-#include "port_bottom_ui_3ds.h"
+#include "port_bottom_ui.h"
 
-#include <3ds.h>
-#include <citro2d.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 
+#include "port_draw2d.h"
+#include "port_ui_platform.h"
 #include "platform_gpu_3ds.h"
 #include "port_debug_tools.h"
 #include "port_debug_log.h"
@@ -177,7 +177,7 @@ static uint32_t sFrameCounter = 0;
 /* Bottom-screen redraw throttle.
  *
  * Every view here is rasterised from scratch each call: the 5x7 bitmap font
- * and DrawAuthenticMapTile both emit one C2D_DrawRectSolid per pixel run,
+ * and DrawAuthenticMapTile both emit one Draw2D_Rect per pixel run,
  * so a text-heavy DEBUG view or a zoomed-out MAP view is several thousand
  * immediate-mode quads assembled on the main thread every frame. With the
  * game frame already sitting on the 16.6ms vsync edge that was enough to
@@ -199,10 +199,10 @@ static bool sBottomUiDirty = true;
 static uint32_t sBottomUiRedrawThrottle = 0;
 
 /* System status shown top-right of the tab bar (clock, battery, wifi).
- * Battery/charge come from ptm:u (an IPC call, polled slowly); wifi
- * strength is a shared-memory read done at draw time. */
-static bool sPtmuReady = false;
-static uint8_t sBattLevel = 5;   /* 0..5 from PTMU_GetBatteryLevel */
+ * Battery/charge come from PortUi_PollBattery (on the 3DS an IPC call,
+ * polled slowly); wifi strength is read at draw time. */
+static bool sBatteryKnown = false;
+static uint8_t sBattLevel = 5;   /* 0..5 from PortUi_PollBattery */
 static bool sBattCharging = false;
 static uint32_t sStatusPollCtr = 0;
 
@@ -266,7 +266,7 @@ static const char* StandingNoticeLine(char* out, size_t cap, int* permille) {
 void Port_BottomUI_ShowNotice(const char* title, const char* body) {
     snprintf(sNoticeTitle, sizeof(sNoticeTitle), "%s", title ? title : "");
     snprintf(sNoticeBody, sizeof(sNoticeBody), "%s", body ? body : "");
-    __atomic_store_n(&sNoticeStartMs, osGetTime(), __ATOMIC_RELEASE);
+    __atomic_store_n(&sNoticeStartMs, PortUi_NowMs(), __ATOMIC_RELEASE);
     sBottomUiDirty = true;
 }
 
@@ -274,7 +274,7 @@ void Port_BottomUI_ShowNotice(const char* title, const char* body) {
 static int NoticeElapsedMs(void) {
     const uint64_t start = __atomic_load_n(&sNoticeStartMs, __ATOMIC_ACQUIRE);
     if (start == 0) return -1;
-    const uint64_t elapsed = osGetTime() - start;
+    const uint64_t elapsed = PortUi_NowMs() - start;
     return elapsed < NOTICE_SHOW_MS ? (int)elapsed : -1;
 }
 
@@ -376,15 +376,10 @@ void Port_BottomUI_FrameTick(void) {
     }
 
     /* Refresh battery ~every 2s; it moves far slower than the UI redraws.
-     * ptm:u may not be up yet the first time Port_BottomUI_Init ran (service
-     * bring-up order), so keep retrying the init here until it takes. */
+     * The service may not be up yet the first time Port_BottomUI_Init ran
+     * (3DS service bring-up order); PortUi_PollBattery keeps retrying. */
     if ((sStatusPollCtr++ % 120u) == 0u) {
-        if (!sPtmuReady && R_SUCCEEDED(ptmuInit())) sPtmuReady = true;
-        if (sPtmuReady) {
-            u8 lvl = 5, chg = 0;
-            if (R_SUCCEEDED(PTMU_GetBatteryLevel(&lvl))) sBattLevel = lvl > 5 ? 5 : lvl;
-            if (R_SUCCEEDED(PTMU_GetBatteryChargeState(&chg))) sBattCharging = (chg != 0);
-        }
+        if (PortUi_PollBattery(&sBattLevel, &sBattCharging)) sBatteryKnown = true;
     }
     /* Save state jobs: redraw when one starts or ends (the "wait" message),
      * hand a freshly read screenshot to the modal that asked for it, and read
@@ -756,7 +751,7 @@ static void DrawRectClipped(float x, float y, float depth, float w, float h, uin
     float y0 = (y < clipY0) ? clipY0 : y;
     float y1 = (y + h > clipY1) ? clipY1 : (y + h);
     if (y1 <= y0) return;
-    C2D_DrawRectSolid(x, y0, depth, w, y1 - y0, color);
+    Draw2D_Rect(x, y0, depth, w, y1 - y0, color);
 }
 
 /* Opens the achievements UI from the OPTIONS tab, picking the entry point:
@@ -1073,7 +1068,7 @@ static void DrawTextClipped(float x, float y, float scale, const char* text, uin
                 }
                 int end = col + 1;
                 while (end < 5 && (rowVal & (1u << (4 - end))) != 0) ++end;
-                C2D_DrawRectSolid(x + (float)col * scale, py, 0.85f,
+                Draw2D_Rect(x + (float)col * scale, py, 0.85f,
                                   (float)(end - col) * scale, scale, color);
                 col = end;
             }
@@ -1106,7 +1101,7 @@ static void DrawTextMaxWClipped(float x, float y, float scale, const char* text,
                 }
                 int end = col + 1;
                 while (end < 5 && (rowVal & (1u << (4 - end))) != 0) ++end;
-                C2D_DrawRectSolid(x + (float)col * scale, py, 0.85f,
+                Draw2D_Rect(x + (float)col * scale, py, 0.85f,
                                   (float)(end - col) * scale, scale, color);
                 col = end;
             }
@@ -1209,15 +1204,15 @@ static bool DrawButtonBox(float x, float y, float w, float h,
     bool pressed = BtnTapFlash(x, y, w, h);
     uint32_t body = bodyCol, border = borderCol, bevel;
     if (pressed) {
-        body   = C2D_Color32(90, 150, 220, 255);
-        border = C2D_Color32(210, 235, 255, 255);
+        body   = Draw2D_Color32(90, 150, 220, 255);
+        border = Draw2D_Color32(210, 235, 255, 255);
         bevel  = border;
     } else {
-        bevel = C2D_Color32(90, 130, 180, 255);
+        bevel = Draw2D_Color32(90, 130, 180, 255);
     }
-    C2D_DrawRectSolid(x, y, 0.90f, w, h, border);
-    C2D_DrawRectSolid(x + 1.0f, y + 1.0f, 0.91f, w - 2.0f, h - 2.0f, body);
-    C2D_DrawRectSolid(x + 1.0f, y + 1.0f, 0.92f, w - 2.0f, 1.0f, bevel);
+    Draw2D_Rect(x, y, 0.90f, w, h, border);
+    Draw2D_Rect(x + 1.0f, y + 1.0f, 0.91f, w - 2.0f, h - 2.0f, body);
+    Draw2D_Rect(x + 1.0f, y + 1.0f, 0.92f, w - 2.0f, 1.0f, bevel);
     return pressed;
 }
 
@@ -1238,17 +1233,17 @@ static void DrawButton(float x, float y, float w, float h, const char* label,
 
 /* Default palette for DrawButton/DrawButtonBox: the same blue the footer
  * CLOSE/BACK boxes have always used. */
-#define BTN_BLUE_BODY   C2D_Color32(20, 70, 130, 255)
-#define BTN_BLUE_BORDER C2D_Color32(70, 130, 210, 255)
+#define BTN_BLUE_BODY   Draw2D_Color32(20, 70, 130, 255)
+#define BTN_BLUE_BORDER Draw2D_Color32(70, 130, 210, 255)
 
 /* Small centred glyph for play/stop toggle controls: a right-pointing
  * triangle when idle, a filled square when something is playing. */
 static void DrawActionGlyph(float cx, float cy, bool playing, uint32_t col) {
     float x = floorf(cx), y = floorf(cy);
     if (playing) {
-        C2D_DrawRectSolid(x - 3.0f, y - 3.0f, 0.95f, 6.0f, 6.0f, col);
+        Draw2D_Rect(x - 3.0f, y - 3.0f, 0.95f, 6.0f, 6.0f, col);
     } else {
-        C2D_DrawTriangle(x - 3.0f, y - 4.0f, col, x - 3.0f, y + 4.0f, col,
+        Draw2D_Triangle(x - 3.0f, y - 4.0f, col, x - 3.0f, y + 4.0f, col,
                          x + 4.0f, y, col, 0.95f);
     }
 }
@@ -1258,7 +1253,7 @@ static inline uint32_t Bgr555ToRgba8(uint16_t bgr, bool transparent) {
     uint32_t r = (bgr & 0x1F) * 255 / 31;
     uint32_t g = ((bgr >> 5) & 0x1F) * 255 / 31;
     uint32_t b = ((bgr >> 10) & 0x1F) * 255 / 31;
-    return C2D_Color32(r, g, b, 255);
+    return Draw2D_Color32(r, g, b, 255);
 }
 
 static float GetTileSizeForZoom(int zoom) {
@@ -1321,7 +1316,7 @@ static void CenterMapOnTile(uint8_t tileX, uint8_t tileY) {
 }
 
 void Port_BottomUI_Init(void) {
-    if (!sPtmuReady && R_SUCCEEDED(ptmuInit())) sPtmuReady = true;
+    if (PortUi_PollBattery(&sBattLevel, &sBattCharging)) sBatteryKnown = true;
     sCurrentTab = BOTTOM_TAB_MAP;
     sFrameCounter = 0;
     sViewArea = 0;
@@ -1397,17 +1392,17 @@ static void DrawStatusDebugButtons(void) {
     for (int i = 0; i < 2; ++i) {
         float bx = kStatusBtnX[i], by = (float)STATUS_BTN_Y;
         bool on = (i == 0) ? sDebugStatsFull : god;
-        C2D_DrawRectSolid(bx, by, 0.9f, (float)STATUS_BTN_W, (float)STATUS_BTN_H,
-                          on ? C2D_Color32(110, 85, 20, 255) : C2D_Color32(24, 34, 52, 255));
-        C2D_DrawRectSolid(bx, by, 0.91f, (float)STATUS_BTN_W, 1.0f, C2D_Color32(60, 90, 140, 255));
+        Draw2D_Rect(bx, by, 0.9f, (float)STATUS_BTN_W, (float)STATUS_BTN_H,
+                          on ? Draw2D_Color32(110, 85, 20, 255) : Draw2D_Color32(24, 34, 52, 255));
+        Draw2D_Rect(bx, by, 0.91f, (float)STATUS_BTN_W, 1.0f, Draw2D_Color32(60, 90, 140, 255));
         float mx = bx + STATUS_BTN_W * 0.5f, my = by + STATUS_BTN_H * 0.5f;
-        uint32_t c = on ? C2D_Color32(255, 220, 90, 255) : C2D_Color32(150, 190, 230, 255);
+        uint32_t c = on ? Draw2D_Color32(255, 220, 90, 255) : Draw2D_Color32(150, 190, 230, 255);
         if (i == 0) {
-            C2D_DrawTriangle(mx - 4.0f, my - 1.5f, c, mx + 4.0f, my - 1.5f, c, mx, my - 6.0f, c, 0.92f);
-            C2D_DrawTriangle(mx - 4.0f, my + 1.5f, c, mx + 4.0f, my + 1.5f, c, mx, my + 6.0f, c, 0.92f);
+            Draw2D_Triangle(mx - 4.0f, my - 1.5f, c, mx + 4.0f, my - 1.5f, c, mx, my - 6.0f, c, 0.92f);
+            Draw2D_Triangle(mx - 4.0f, my + 1.5f, c, mx + 4.0f, my + 1.5f, c, mx, my + 6.0f, c, 0.92f);
         } else {
-            C2D_DrawTriangle(mx, my - 6.0f, c, mx - 6.0f, my, c, mx + 6.0f, my, c, 0.92f);
-            C2D_DrawTriangle(mx, my + 6.0f, c, mx - 6.0f, my, c, mx + 6.0f, my, c, 0.92f);
+            Draw2D_Triangle(mx, my - 6.0f, c, mx - 6.0f, my, c, mx + 6.0f, my, c, 0.92f);
+            Draw2D_Triangle(mx, my + 6.0f, c, mx - 6.0f, my, c, mx + 6.0f, my, c, 0.92f);
         }
     }
 }
@@ -2283,7 +2278,7 @@ static int BottomTabLayout(BottomTabSlot slots[BOTTOM_TAB_SLOT_MAX]) {
 static void DrawTabIcon(int icon, float cx, float cy, uint32_t col, uint32_t bg) {
     const float x = floorf(cx), y = floorf(cy);
     (void)bg;
-    #define R(dx, dy, w, h) C2D_DrawRectSolid(x + (dx), y + (dy), 0.6f, (w), (h), col)
+    #define R(dx, dy, w, h) Draw2D_Rect(x + (dx), y + (dy), 0.6f, (w), (h), col)
     switch (icon) {
     case 0: /* room grid (floor-plan ring: 3x3 cells, hollow centre) */
         R(-7.0f, -7.0f, 4.0f, 4.0f); R(-2.0f, -7.0f, 4.0f, 4.0f); R(3.0f, -7.0f, 4.0f, 4.0f);
@@ -2335,48 +2330,48 @@ static void DrawTabIcon(int icon, float cx, float cy, uint32_t col, uint32_t bg)
 
 /* Clock (HH:MM), wifi bars and a battery gauge, right-aligned in the bar. */
 static void DrawSystemStatus(void) {
-    const uint32_t frameCol = C2D_Color32(120, 132, 158, 255);
-    const uint32_t dimCol   = C2D_Color32(58, 66, 84, 255);
-    const uint32_t textCol  = C2D_Color32(210, 220, 235, 255);
+    const uint32_t frameCol = Draw2D_Color32(120, 132, 158, 255);
+    const uint32_t dimCol   = Draw2D_Color32(58, 66, 84, 255);
+    const uint32_t textCol  = Draw2D_Color32(210, 220, 235, 255);
     const float cy = 13.0f;
 
     /* Battery, at the far right. 15x8 shell + a 2x4 nub. */
     float bx = 299.0f, by = cy - 4.0f;
-    C2D_DrawRectSolid(bx, by, 0.6f, 15.0f, 1.0f, frameCol);
-    C2D_DrawRectSolid(bx, by + 7.0f, 0.6f, 15.0f, 1.0f, frameCol);
-    C2D_DrawRectSolid(bx, by, 0.6f, 1.0f, 8.0f, frameCol);
-    C2D_DrawRectSolid(bx + 14.0f, by, 0.6f, 1.0f, 8.0f, frameCol);
-    C2D_DrawRectSolid(bx + 15.0f, by + 2.0f, 0.6f, 2.0f, 4.0f, frameCol);
-    if (sPtmuReady) {
+    Draw2D_Rect(bx, by, 0.6f, 15.0f, 1.0f, frameCol);
+    Draw2D_Rect(bx, by + 7.0f, 0.6f, 15.0f, 1.0f, frameCol);
+    Draw2D_Rect(bx, by, 0.6f, 1.0f, 8.0f, frameCol);
+    Draw2D_Rect(bx + 14.0f, by, 0.6f, 1.0f, 8.0f, frameCol);
+    Draw2D_Rect(bx + 15.0f, by + 2.0f, 0.6f, 2.0f, 4.0f, frameCol);
+    if (sBatteryKnown) {
         int lvl = sBattLevel; if (lvl > 5) lvl = 5;
         /* Interior is cols bx+1..bx+13 / rows by+1..by+6; inset the fill 1px on
          * every side (max width 11, so a full gauge still shows a right margin). */
         float fillW = (float)lvl * (11.0f / 5.0f);
-        uint32_t fc = sBattCharging      ? C2D_Color32(90, 210, 120, 255)
-                    : lvl <= 1           ? C2D_Color32(230, 80, 60, 255)
-                    : lvl == 2           ? C2D_Color32(235, 190, 70, 255)
-                                         : C2D_Color32(110, 205, 130, 255);
-        if (fillW > 0.0f) C2D_DrawRectSolid(bx + 2.0f, by + 2.0f, 0.61f, fillW, 4.0f, fc);
+        uint32_t fc = sBattCharging      ? Draw2D_Color32(90, 210, 120, 255)
+                    : lvl <= 1           ? Draw2D_Color32(230, 80, 60, 255)
+                    : lvl == 2           ? Draw2D_Color32(235, 190, 70, 255)
+                                         : Draw2D_Color32(110, 205, 130, 255);
+        if (fillW > 0.0f) Draw2D_Rect(bx + 2.0f, by + 2.0f, 0.61f, fillW, 4.0f, fc);
         if (sBattCharging) {
             /* small bolt, dark so it reads on the light-green charging fill */
-            const uint32_t boltCol = C2D_Color32(15, 60, 30, 255);
-            C2D_DrawTriangle(bx + 8.0f, by + 1.0f, boltCol, bx + 5.0f, by + 5.0f, boltCol,
+            const uint32_t boltCol = Draw2D_Color32(15, 60, 30, 255);
+            Draw2D_Triangle(bx + 8.0f, by + 1.0f, boltCol, bx + 5.0f, by + 5.0f, boltCol,
                              bx + 8.0f, by + 5.0f, boltCol, 0.63f);
-            C2D_DrawTriangle(bx + 7.0f, by + 3.0f, boltCol, bx + 10.0f, by + 3.0f, boltCol,
+            Draw2D_Triangle(bx + 7.0f, by + 3.0f, boltCol, bx + 10.0f, by + 3.0f, boltCol,
                              bx + 7.0f, by + 6.0f, boltCol, 0.63f);
         }
     } else {
-        C2D_DrawRectSolid(bx + 5.0f, by + 3.0f, 0.61f, 4.0f, 2.0f, dimCol);
+        Draw2D_Rect(bx + 5.0f, by + 3.0f, 0.61f, 4.0f, 2.0f, dimCol);
     }
 
     /* Wifi: three rising bars, lit up to the current strength (0..3). */
-    int wifi = (int)osGetWifiStrength();      /* 0..3 */
+    int wifi = PortUi_WifiStrength();          /* 0..3 */
     float wx = bx - 16.0f;
     for (int i = 0; i < 3; ++i) {
         float h = 3.0f + (float)i * 2.0f;
         /* Bottom-aligned to the battery shell's lower edge (by + 8 == cy + 4)
          * so the whole cluster shares one baseline. */
-        C2D_DrawRectSolid(wx + (float)i * 4.0f, cy + 4.0f - h, 0.6f, 2.0f, h,
+        Draw2D_Rect(wx + (float)i * 4.0f, cy + 4.0f - h, 0.6f, 2.0f, h,
                           (i < wifi) ? frameCol : dimCol);
     }
 
@@ -2384,7 +2379,7 @@ static void DrawSystemStatus(void) {
     time_t t = time(NULL);
     struct tm lt;
     char buf[8] = "--:--";
-    if (t != (time_t)-1 && localtime_r(&t, &lt))
+    if (t != (time_t)-1 && PortUi_LocalTime(t, &lt))
         snprintf(buf, sizeof(buf), "%02d:%02d", lt.tm_hour, lt.tm_min);
     DrawText(wx - 4.0f - 5.0f * 6.0f, cy - 3.0f, 1.0f, buf, textCol);
 }
@@ -2408,30 +2403,30 @@ static void RenderTabBar(void) {
 
         if (warnRed) {
             if (blinkOn) {
-                bg = active ? C2D_Color32(140, 28, 22, 255) : C2D_Color32(60, 18, 16, 255);
-                border = active ? C2D_Color32(230, 55, 40, 255) : C2D_Color32(100, 30, 24, 255);
+                bg = active ? Draw2D_Color32(140, 28, 22, 255) : Draw2D_Color32(60, 18, 16, 255);
+                border = active ? Draw2D_Color32(230, 55, 40, 255) : Draw2D_Color32(100, 30, 24, 255);
             } else {
-                bg = active ? C2D_Color32(80, 18, 18, 255) : C2D_Color32(35, 12, 12, 255);
-                border = active ? C2D_Color32(160, 38, 30, 255) : C2D_Color32(65, 22, 18, 255);
+                bg = active ? Draw2D_Color32(80, 18, 18, 255) : Draw2D_Color32(35, 12, 12, 255);
+                border = active ? Draw2D_Color32(160, 38, 30, 255) : Draw2D_Color32(65, 22, 18, 255);
             }
-            iconColor = active ? C2D_Color32(255, 200, 190, 255) : C2D_Color32(200, 120, 110, 255);
+            iconColor = active ? Draw2D_Color32(255, 200, 190, 255) : Draw2D_Color32(200, 120, 110, 255);
         } else if (warnYellow) {
             if (blinkOn) {
-                bg = active ? C2D_Color32(130, 100, 24, 255) : C2D_Color32(55, 44, 16, 255);
-                border = active ? C2D_Color32(230, 180, 45, 255) : C2D_Color32(100, 80, 28, 255);
+                bg = active ? Draw2D_Color32(130, 100, 24, 255) : Draw2D_Color32(55, 44, 16, 255);
+                border = active ? Draw2D_Color32(230, 180, 45, 255) : Draw2D_Color32(100, 80, 28, 255);
             } else {
-                bg = active ? C2D_Color32(90, 70, 18, 255) : C2D_Color32(38, 32, 12, 255);
-                border = active ? C2D_Color32(170, 130, 35, 255) : C2D_Color32(70, 58, 22, 255);
+                bg = active ? Draw2D_Color32(90, 70, 18, 255) : Draw2D_Color32(38, 32, 12, 255);
+                border = active ? Draw2D_Color32(170, 130, 35, 255) : Draw2D_Color32(70, 58, 22, 255);
             }
-            iconColor = active ? C2D_Color32(255, 245, 200, 255) : C2D_Color32(200, 175, 110, 255);
+            iconColor = active ? Draw2D_Color32(255, 245, 200, 255) : Draw2D_Color32(200, 175, 110, 255);
         } else {
-            bg = active ? C2D_Color32(18, 70, 130, 255) : C2D_Color32(26, 30, 42, 255);
-            border = active ? C2D_Color32(45, 150, 240, 255) : C2D_Color32(50, 56, 75, 255);
-            iconColor = active ? C2D_Color32(255, 255, 255, 255) : C2D_Color32(140, 150, 175, 255);
+            bg = active ? Draw2D_Color32(18, 70, 130, 255) : Draw2D_Color32(26, 30, 42, 255);
+            border = active ? Draw2D_Color32(45, 150, 240, 255) : Draw2D_Color32(50, 56, 75, 255);
+            iconColor = active ? Draw2D_Color32(255, 255, 255, 255) : Draw2D_Color32(140, 150, 175, 255);
         }
 
-        C2D_DrawRectSolid(slots[i].x, 3.0f, 0.4f, slots[i].w, 20.0f, border);
-        C2D_DrawRectSolid(slots[i].x + 1.0f, 4.0f, 0.5f, slots[i].w - 2.0f, 18.0f, bg);
+        Draw2D_Rect(slots[i].x, 3.0f, 0.4f, slots[i].w, 20.0f, border);
+        Draw2D_Rect(slots[i].x + 1.0f, 4.0f, 0.5f, slots[i].w - 2.0f, 18.0f, bg);
         DrawTabIcon(slots[i].icon, slots[i].x + slots[i].w / 2.0f, 13.0f, iconColor, bg);
     }
 
@@ -2465,8 +2460,8 @@ static void DrawAuthenticMapTile(float dstX, float dstY, float tileSize, uint16_
         float rx1 = (dstX + tileSize) > clipX1 ? clipX1 : (dstX + tileSize);
         float ry1 = (dstY + tileSize) > clipY1 ? clipY1 : (dstY + tileSize);
         if (rx1 > rx0 && ry1 > ry0) {
-            uint32_t fbCol = (palId == 1) ? C2D_Color32(30, 140, 60, 255) : C2D_Color32(20, 50, 110, 255);
-            C2D_DrawRectSolid(rx0, ry0, zDepth, rx1 - rx0, ry1 - ry0, fbCol);
+            uint32_t fbCol = (palId == 1) ? Draw2D_Color32(30, 140, 60, 255) : Draw2D_Color32(20, 50, 110, 255);
+            Draw2D_Rect(rx0, ry0, zDepth, rx1 - rx0, ry1 - ry0, fbCol);
         }
         return;
     }
@@ -2511,60 +2506,60 @@ static void DrawAuthenticMapTile(float dstX, float dstY, float tileSize, uint16_
             float drawY1 = py1 > clipY1 ? clipY1 : py1;
 
             uint32_t color = Bgr555ToRgba8(palette[colorIdx], false);
-            C2D_DrawRectSolid(drawX0, drawY0, zDepth, drawX1 - drawX0, drawY1 - drawY0, color);
+            Draw2D_Rect(drawX0, drawY0, zDepth, drawX1 - drawX0, drawY1 - drawY0, color);
         }
     }
 }
 
 /* Authentic HUD Item Sprites */
 static void DrawEnergyIcon(float x, float y) {
-    C2D_DrawRectSolid(x, y, 0.6f, 14.0f, 10.0f, C2D_Color32(30, 45, 70, 255));
-    C2D_DrawRectSolid(x + 1.0f, y + 1.0f, 0.65f, 12.0f, 8.0f, C2D_Color32(10, 20, 35, 255));
-    C2D_DrawRectSolid(x, y + 2.0f, 0.7f, 2.0f, 6.0f, C2D_Color32(180, 195, 220, 255));
-    C2D_DrawRectSolid(x + 12.0f, y + 2.0f, 0.7f, 2.0f, 6.0f, C2D_Color32(180, 195, 220, 255));
-    C2D_DrawRectSolid(x + 4.0f, y + 2.0f, 0.75f, 6.0f, 2.0f, C2D_Color32(255, 60, 140, 255));
-    C2D_DrawRectSolid(x + 4.0f, y + 4.0f, 0.75f, 4.0f, 2.0f, C2D_Color32(255, 120, 180, 255));
-    C2D_DrawRectSolid(x + 4.0f, y + 6.0f, 0.75f, 6.0f, 2.0f, C2D_Color32(255, 60, 140, 255));
-    C2D_DrawRectSolid(x + 3.0f, y + 2.0f, 0.75f, 2.0f, 6.0f, C2D_Color32(255, 200, 220, 255));
+    Draw2D_Rect(x, y, 0.6f, 14.0f, 10.0f, Draw2D_Color32(30, 45, 70, 255));
+    Draw2D_Rect(x + 1.0f, y + 1.0f, 0.65f, 12.0f, 8.0f, Draw2D_Color32(10, 20, 35, 255));
+    Draw2D_Rect(x, y + 2.0f, 0.7f, 2.0f, 6.0f, Draw2D_Color32(180, 195, 220, 255));
+    Draw2D_Rect(x + 12.0f, y + 2.0f, 0.7f, 2.0f, 6.0f, Draw2D_Color32(180, 195, 220, 255));
+    Draw2D_Rect(x + 4.0f, y + 2.0f, 0.75f, 6.0f, 2.0f, Draw2D_Color32(255, 60, 140, 255));
+    Draw2D_Rect(x + 4.0f, y + 4.0f, 0.75f, 4.0f, 2.0f, Draw2D_Color32(255, 120, 180, 255));
+    Draw2D_Rect(x + 4.0f, y + 6.0f, 0.75f, 6.0f, 2.0f, Draw2D_Color32(255, 60, 140, 255));
+    Draw2D_Rect(x + 3.0f, y + 2.0f, 0.75f, 2.0f, 6.0f, Draw2D_Color32(255, 200, 220, 255));
 }
 
 static void DrawMissileIcon(float x, float y) {
-    C2D_DrawRectSolid(x + 1.0f, y + 3.0f, 0.6f, 3.0f, 4.0f, C2D_Color32(220, 230, 240, 255));
-    C2D_DrawRectSolid(x + 3.0f, y + 2.0f, 0.65f, 2.0f, 6.0f, C2D_Color32(160, 180, 200, 255));
-    C2D_DrawRectSolid(x + 5.0f, y + 2.0f, 0.6f, 7.0f, 6.0f, C2D_Color32(230, 35, 35, 255));
-    C2D_DrawRectSolid(x + 6.0f, y + 3.0f, 0.65f, 5.0f, 2.0f, C2D_Color32(255, 120, 120, 255));
-    C2D_DrawRectSolid(x + 10.0f, y, 0.6f, 3.0f, 2.0f, C2D_Color32(180, 195, 215, 255));
-    C2D_DrawRectSolid(x + 10.0f, y + 8.0f, 0.6f, 3.0f, 2.0f, C2D_Color32(180, 195, 215, 255));
+    Draw2D_Rect(x + 1.0f, y + 3.0f, 0.6f, 3.0f, 4.0f, Draw2D_Color32(220, 230, 240, 255));
+    Draw2D_Rect(x + 3.0f, y + 2.0f, 0.65f, 2.0f, 6.0f, Draw2D_Color32(160, 180, 200, 255));
+    Draw2D_Rect(x + 5.0f, y + 2.0f, 0.6f, 7.0f, 6.0f, Draw2D_Color32(230, 35, 35, 255));
+    Draw2D_Rect(x + 6.0f, y + 3.0f, 0.65f, 5.0f, 2.0f, Draw2D_Color32(255, 120, 120, 255));
+    Draw2D_Rect(x + 10.0f, y, 0.6f, 3.0f, 2.0f, Draw2D_Color32(180, 195, 215, 255));
+    Draw2D_Rect(x + 10.0f, y + 8.0f, 0.6f, 3.0f, 2.0f, Draw2D_Color32(180, 195, 215, 255));
 }
 
 static void DrawSuperMissileIcon(float x, float y) {
-    C2D_DrawRectSolid(x + 1.0f, y + 3.0f, 0.6f, 3.0f, 4.0f, C2D_Color32(240, 255, 220, 255));
-    C2D_DrawRectSolid(x + 3.0f, y + 2.0f, 0.65f, 2.0f, 6.0f, C2D_Color32(180, 220, 160, 255));
-    C2D_DrawRectSolid(x + 5.0f, y + 2.0f, 0.6f, 7.0f, 6.0f, C2D_Color32(30, 210, 60, 255));
-    C2D_DrawRectSolid(x + 6.0f, y + 3.0f, 0.65f, 5.0f, 2.0f, C2D_Color32(140, 255, 160, 255));
-    C2D_DrawRectSolid(x + 10.0f, y, 0.6f, 3.0f, 2.0f, C2D_Color32(20, 140, 45, 255));
-    C2D_DrawRectSolid(x + 10.0f, y + 8.0f, 0.6f, 3.0f, 2.0f, C2D_Color32(20, 140, 45, 255));
+    Draw2D_Rect(x + 1.0f, y + 3.0f, 0.6f, 3.0f, 4.0f, Draw2D_Color32(240, 255, 220, 255));
+    Draw2D_Rect(x + 3.0f, y + 2.0f, 0.65f, 2.0f, 6.0f, Draw2D_Color32(180, 220, 160, 255));
+    Draw2D_Rect(x + 5.0f, y + 2.0f, 0.6f, 7.0f, 6.0f, Draw2D_Color32(30, 210, 60, 255));
+    Draw2D_Rect(x + 6.0f, y + 3.0f, 0.65f, 5.0f, 2.0f, Draw2D_Color32(140, 255, 160, 255));
+    Draw2D_Rect(x + 10.0f, y, 0.6f, 3.0f, 2.0f, Draw2D_Color32(20, 140, 45, 255));
+    Draw2D_Rect(x + 10.0f, y + 8.0f, 0.6f, 3.0f, 2.0f, Draw2D_Color32(20, 140, 45, 255));
 }
 
 static void DrawPowerBombIcon(float x, float y) {
-    C2D_DrawRectSolid(x + 2.0f, y, 0.6f, 8.0f, 10.0f, C2D_Color32(255, 180, 0, 255));
-    C2D_DrawRectSolid(x, y + 2.0f, 0.6f, 12.0f, 6.0f, C2D_Color32(255, 180, 0, 255));
-    C2D_DrawRectSolid(x + 2.0f, y + 2.0f, 0.65f, 8.0f, 6.0f, C2D_Color32(255, 240, 80, 255));
-    C2D_DrawRectSolid(x + 4.0f, y + 3.0f, 0.7f, 4.0f, 4.0f, C2D_Color32(255, 100, 0, 255));
-    C2D_DrawRectSolid(x + 5.0f, y + 4.0f, 0.75f, 2.0f, 2.0f, C2D_Color32(255, 255, 255, 255));
+    Draw2D_Rect(x + 2.0f, y, 0.6f, 8.0f, 10.0f, Draw2D_Color32(255, 180, 0, 255));
+    Draw2D_Rect(x, y + 2.0f, 0.6f, 12.0f, 6.0f, Draw2D_Color32(255, 180, 0, 255));
+    Draw2D_Rect(x + 2.0f, y + 2.0f, 0.65f, 8.0f, 6.0f, Draw2D_Color32(255, 240, 80, 255));
+    Draw2D_Rect(x + 4.0f, y + 3.0f, 0.7f, 4.0f, 4.0f, Draw2D_Color32(255, 100, 0, 255));
+    Draw2D_Rect(x + 5.0f, y + 4.0f, 0.75f, 2.0f, 2.0f, Draw2D_Color32(255, 255, 255, 255));
 }
 
 /* Thin remaining-ammo/health gauge: a sunk dark track with a 1px top edge
  * and a tinted fill for cur/max. 3px tall so it tucks under the number
  * inside the status header card. */
 static void DrawResourceBar(float x, float y, float w, uint32_t fillCol, unsigned cur, unsigned max) {
-    C2D_DrawRectSolid(x, y, 0.47f, w, 3.0f, C2D_Color32(8, 12, 20, 255));
-    C2D_DrawRectSolid(x, y, 0.475f, w, 1.0f, C2D_Color32(46, 56, 78, 255));
+    Draw2D_Rect(x, y, 0.47f, w, 3.0f, Draw2D_Color32(8, 12, 20, 255));
+    Draw2D_Rect(x, y, 0.475f, w, 1.0f, Draw2D_Color32(46, 56, 78, 255));
     if (max > 0 && cur > 0) {
         float fw = w * (float)cur / (float)max;
         if (fw < 1.0f) fw = 1.0f;
         if (fw > w) fw = w;
-        C2D_DrawRectSolid(x, y, 0.48f, fw, 3.0f, fillCol);
+        Draw2D_Rect(x, y, 0.48f, fw, 3.0f, fillCol);
     }
 }
 
@@ -2776,8 +2771,8 @@ static void GetGlobalItemStats(struct AreaItemStats* outStats) {
 
 /* Render Collectibles Per-Area Breakdown Modal */
 static void RenderCollectiblesModal(int lang) {
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 252));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 252));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
     /* Hardcore mode or Hide Spoilers: only show what has already been collected -- never totals
      * or remaining counts (that would leak achievement-relevant info / spoilers). */
@@ -2798,19 +2793,19 @@ static void RenderCollectiblesModal(int lang) {
         snprintf(globTitle, sizeof(globTitle), "%s: %u/%u (%u%%)", collTitles[lang],
                  globalStats.totalObtained, globalStats.totalItems, pct);
     }
-    DrawText(18.0f, 32.0f, 1.0f, globTitle, C2D_Color32(255, 215, 0, 255));
+    DrawText(18.0f, 32.0f, 1.0f, globTitle, Draw2D_Color32(255, 215, 0, 255));
 
     /* Table Headers */
     static const char* const areaHeaderTitles[7] = {
         "AREA", "AREA", "AREA",
         "GEBIET", "REGION", "AREA", "ZONA"
     };
-    DrawText(18.0f, 48.0f, 1.0f, areaHeaderTitles[lang], C2D_Color32(100, 220, 255, 255));
+    DrawText(18.0f, 48.0f, 1.0f, areaHeaderTitles[lang], Draw2D_Color32(100, 220, 255, 255));
     DrawEnergyIcon(108.0f, 46.0f);
     DrawMissileIcon(148.0f, 46.0f);
     DrawSuperMissileIcon(193.0f, 46.0f);
     DrawPowerBombIcon(233.0f, 46.0f);
-    if (!hideSpoilers) DrawText(272.0f, 48.0f, 1.0f, "TOT", C2D_Color32(255, 255, 255, 255));
+    if (!hideSpoilers) DrawText(272.0f, 48.0f, 1.0f, "TOT", Draw2D_Color32(255, 255, 255, 255));
 
     for (int a = 0; a < 7; ++a) {
         struct AreaItemStats aStats;
@@ -2818,47 +2813,47 @@ static void RenderCollectiblesModal(int lang) {
         float py = 64.0f + (float)a * 19.0f;
 
         bool hl = (a == sCollectiblesHighlightArea);
-        C2D_DrawRectSolid(16.0f, py, 0.88f, 288.0f, 17.0f,
-                          hl ? C2D_Color32(28, 54, 44, 255)
-                             : (a % 2 == 0) ? C2D_Color32(20, 26, 40, 255) : C2D_Color32(14, 18, 30, 255));
+        Draw2D_Rect(16.0f, py, 0.88f, 288.0f, 17.0f,
+                          hl ? Draw2D_Color32(28, 54, 44, 255)
+                             : (a % 2 == 0) ? Draw2D_Color32(20, 26, 40, 255) : Draw2D_Color32(14, 18, 30, 255));
         if (hl) {
-            C2D_DrawRectSolid(16.0f, py, 0.885f, 288.0f, 1.0f, C2D_Color32(90, 220, 150, 255));
-            C2D_DrawRectSolid(16.0f, py + 16.0f, 0.885f, 288.0f, 1.0f, C2D_Color32(90, 220, 150, 255));
-            C2D_DrawRectSolid(16.0f, py, 0.885f, 1.0f, 17.0f, C2D_Color32(90, 220, 150, 255));
-            C2D_DrawRectSolid(303.0f, py, 0.885f, 1.0f, 17.0f, C2D_Color32(90, 220, 150, 255));
+            Draw2D_Rect(16.0f, py, 0.885f, 288.0f, 1.0f, Draw2D_Color32(90, 220, 150, 255));
+            Draw2D_Rect(16.0f, py + 16.0f, 0.885f, 288.0f, 1.0f, Draw2D_Color32(90, 220, 150, 255));
+            Draw2D_Rect(16.0f, py, 0.885f, 1.0f, 17.0f, Draw2D_Color32(90, 220, 150, 255));
+            Draw2D_Rect(303.0f, py, 0.885f, 1.0f, 17.0f, Draw2D_Color32(90, 220, 150, 255));
         }
 
         DrawText(20.0f, py + 5.0f, 1.0f, AreaName(a),
-                 hl ? C2D_Color32(180, 255, 210, 255) : C2D_Color32(220, 235, 255, 255));
+                 hl ? Draw2D_Color32(180, 255, 210, 255) : Draw2D_Color32(220, 235, 255, 255));
 
         char cBuf[16];
         if (hideSpoilers) {
             snprintf(cBuf, sizeof(cBuf), "%u", aStats.energyObtained);
-            DrawText(115.0f, py + 5.0f, 1.0f, cBuf, aStats.energyObtained > 0 ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(90, 100, 120, 255));
+            DrawText(115.0f, py + 5.0f, 1.0f, cBuf, aStats.energyObtained > 0 ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(90, 100, 120, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u", aStats.missileObtained);
-            DrawText(155.0f, py + 5.0f, 1.0f, cBuf, aStats.missileObtained > 0 ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(90, 100, 120, 255));
+            DrawText(155.0f, py + 5.0f, 1.0f, cBuf, aStats.missileObtained > 0 ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(90, 100, 120, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u", aStats.superObtained);
-            DrawText(200.0f, py + 5.0f, 1.0f, cBuf, aStats.superObtained > 0 ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(90, 100, 120, 255));
+            DrawText(200.0f, py + 5.0f, 1.0f, cBuf, aStats.superObtained > 0 ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(90, 100, 120, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u", aStats.powerBombObtained);
-            DrawText(240.0f, py + 5.0f, 1.0f, cBuf, aStats.powerBombObtained > 0 ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(90, 100, 120, 255));
+            DrawText(240.0f, py + 5.0f, 1.0f, cBuf, aStats.powerBombObtained > 0 ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(90, 100, 120, 255));
         } else {
             snprintf(cBuf, sizeof(cBuf), "%u/%u", aStats.energyObtained, aStats.energyTotal);
-            DrawText(105.0f, py + 5.0f, 1.0f, cBuf, aStats.energyObtained == aStats.energyTotal ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 215, 0, 255));
+            DrawText(105.0f, py + 5.0f, 1.0f, cBuf, aStats.energyObtained == aStats.energyTotal ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 215, 0, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u/%u", aStats.missileObtained, aStats.missileTotal);
-            DrawText(145.0f, py + 5.0f, 1.0f, cBuf, aStats.missileObtained == aStats.missileTotal ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 140, 140, 255));
+            DrawText(145.0f, py + 5.0f, 1.0f, cBuf, aStats.missileObtained == aStats.missileTotal ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 140, 140, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u/%u", aStats.superObtained, aStats.superTotal);
-            DrawText(190.0f, py + 5.0f, 1.0f, cBuf, aStats.superObtained == aStats.superTotal ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(100, 255, 140, 255));
+            DrawText(190.0f, py + 5.0f, 1.0f, cBuf, aStats.superObtained == aStats.superTotal ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(100, 255, 140, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u/%u", aStats.powerBombObtained, aStats.powerBombTotal);
-            DrawText(230.0f, py + 5.0f, 1.0f, cBuf, aStats.powerBombObtained == aStats.powerBombTotal ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 225, 80, 255));
+            DrawText(230.0f, py + 5.0f, 1.0f, cBuf, aStats.powerBombObtained == aStats.powerBombTotal ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 225, 80, 255));
 
             snprintf(cBuf, sizeof(cBuf), "%u/%u", aStats.totalObtained, aStats.totalItems);
-            DrawText(268.0f, py + 5.0f, 1.0f, cBuf, aStats.totalObtained == aStats.totalItems ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 255, 255, 255));
+            DrawText(268.0f, py + 5.0f, 1.0f, cBuf, aStats.totalObtained == aStats.totalItems ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 255, 255, 255));
         }
     }
 
@@ -2867,7 +2862,7 @@ static void RenderCollectiblesModal(int lang) {
         "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR"
     };
     DrawButton(116.0f, 204.0f, 88.0f, 20.0f, closeCollectiblesLabels[lang],
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 static const char* AchSortLabel(int lang) {
@@ -2892,7 +2887,7 @@ static void DrawAchSettingsButton(int lang) {
         "OPTIONEN", "REGLAGES", "OPZIONI", "AJUSTES"
     };
     DrawButton((float)ACH_SETTINGS_BTN_X, 204.0f, (float)ACH_SETTINGS_BTN_W, 20.0f, labels[lang],
-               C2D_Color32(120, 255, 175, 255), C2D_Color32(16, 50, 32, 255), C2D_Color32(55, 150, 95, 255));
+               Draw2D_Color32(120, 255, 175, 255), Draw2D_Color32(16, 50, 32, 255), Draw2D_Color32(55, 150, 95, 255));
 }
 
 /* Pack chooser: one card per set plus an "all sets" entry at the top. */
@@ -2904,14 +2899,14 @@ static void RenderAchPacksModal(int lang) {
     const float clipY0 = ACH_LIST_CLIP_Y0;
     const float clipY1 = ACH_LIST_CLIP_Y1;
 
-    C2D_DrawRectSolid(mX, mY, 0.85f, mW, mH, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(mX, mY, 0.84f, mW, mH, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(mX, mY, 0.85f, mW, mH, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(mX, mY, 0.84f, mW, mH, Draw2D_Color32(40, 70, 120, 255));
 
     static const char* titles[7] = {
         "ACHIEVEMENT SETS", "ACHIEVEMENT SETS", "ACHIEVEMENT SETS",
         "ERFOLGSSAETZE", "SERIES DE SUCCES", "SERIE DI OBIETTIVI", "SERIES DE LOGROS"
     };
-    DrawText(20.0f, 32.0f, 1.0f, titles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 32.0f, 1.0f, titles[lang], Draw2D_Color32(255, 215, 0, 255));
 
     static const char* allLabels[7] = {
         "ALL SETS", "ALL SETS", "ALL SETS",
@@ -2943,13 +2938,13 @@ static void RenderAchPacksModal(int lang) {
         }
 
         bool complete = (total > 0u && unlocked >= total);
-        uint32_t borderCol = complete ? C2D_Color32(160, 130, 30, 255) : C2D_Color32(35, 45, 65, 255);
-        uint32_t bgCol = complete ? C2D_Color32(40, 36, 16, 255) : C2D_Color32(18, 22, 34, 255);
+        uint32_t borderCol = complete ? Draw2D_Color32(160, 130, 30, 255) : Draw2D_Color32(35, 45, 65, 255);
+        uint32_t bgCol = complete ? Draw2D_Color32(40, 36, 16, 255) : Draw2D_Color32(18, 22, 34, 255);
         DrawRectClipped(16.0f, py, 0.88f, 284.0f, ACH_PACK_CARD_H - 4.0f, borderCol, clipY0, clipY1);
         DrawRectClipped(17.0f, py + 1.0f, 0.89f, 282.0f, ACH_PACK_CARD_H - 6.0f, bgCol, clipY0, clipY1);
 
         DrawTextMaxWClipped(24.0f, py + 6.0f, 1.0f, name,
-                            complete ? C2D_Color32(255, 225, 80, 255) : C2D_Color32(220, 235, 255, 255),
+                            complete ? Draw2D_Color32(255, 225, 80, 255) : Draw2D_Color32(220, 235, 255, 255),
                             clipY0, clipY1, 270.0f);
 
         char progressBuf[48];
@@ -2960,7 +2955,7 @@ static void RenderAchPacksModal(int lang) {
             snprintf(progressBuf, sizeof(progressBuf), "%u/%u", (unsigned)unlocked, (unsigned)total);
         }
         DrawTextMaxWClipped(24.0f, py + 20.0f, 1.0f, progressBuf,
-                            complete ? C2D_Color32(255, 215, 0, 255) : C2D_Color32(80, 255, 120, 255),
+                            complete ? Draw2D_Color32(255, 215, 0, 255) : Draw2D_Color32(80, 255, 120, 255),
                             clipY0, clipY1, 270.0f);
     }
 
@@ -2968,8 +2963,8 @@ static void RenderAchPacksModal(int lang) {
         float trackH = (clipY1 - clipY0);
         float thumbH = 30.0f;
         float thumbY = clipY0 + (sAchPacksScrollY / maxScroll) * (trackH - thumbH);
-        C2D_DrawRectSolid(306.0f, clipY0, 0.92f, 2.0f, trackH, C2D_Color32(255, 35, 55, 255));
-        C2D_DrawRectSolid(306.0f, thumbY, 0.94f, 2.0f, thumbH, C2D_Color32(80, 160, 240, 255));
+        Draw2D_Rect(306.0f, clipY0, 0.92f, 2.0f, trackH, Draw2D_Color32(255, 35, 55, 255));
+        Draw2D_Rect(306.0f, thumbY, 0.94f, 2.0f, thumbH, Draw2D_Color32(80, 160, 240, 255));
     }
 
     DrawAchSettingsButton(lang);
@@ -2978,10 +2973,10 @@ static void RenderAchPacksModal(int lang) {
 /* Colour RA uses for each special achievement type. */
 static uint32_t AchTypeColor(RetroAchievementType type) {
     switch (type) {
-        case RA_ACH_TYPE_MISSABLE:      return C2D_Color32(255, 140, 40, 255);
-        case RA_ACH_TYPE_PROGRESSION:   return C2D_Color32(90, 160, 255, 255);
-        case RA_ACH_TYPE_WIN_CONDITION: return C2D_Color32(210, 120, 255, 255);
-        default:                        return C2D_Color32(150, 170, 200, 255);
+        case RA_ACH_TYPE_MISSABLE:      return Draw2D_Color32(255, 140, 40, 255);
+        case RA_ACH_TYPE_PROGRESSION:   return Draw2D_Color32(90, 160, 255, 255);
+        case RA_ACH_TYPE_WIN_CONDITION: return Draw2D_Color32(210, 120, 255, 255);
+        default:                        return Draw2D_Color32(150, 170, 200, 255);
     }
 }
 
@@ -3022,9 +3017,9 @@ static void DrawAchTypeIcon(float x, float y, RetroAchievementType type, bool di
     uint32_t col = AchTypeColor(type);
     if (dim) {
         uint32_t r = (col & 0xFF), g = (col >> 8) & 0xFF, b = (col >> 16) & 0xFF;
-        col = C2D_Color32((uint8_t)(r / 2 + 30), (uint8_t)(g / 2 + 30), (uint8_t)(b / 2 + 30), 255);
+        col = Draw2D_Color32((uint8_t)(r / 2 + 30), (uint8_t)(g / 2 + 30), (uint8_t)(b / 2 + 30), 255);
     }
-    uint32_t bg = C2D_Color32(12, 16, 24, 255);
+    uint32_t bg = Draw2D_Color32(12, 16, 24, 255);
     float d2 = depth + 0.005f;
 
     if (type == RA_ACH_TYPE_MISSABLE) {
@@ -3058,8 +3053,8 @@ static void RenderAchievementsModal(int lang) {
     const float clipY0 = ACH_LIST_CLIP_Y0;
     const float clipY1 = ACH_LIST_CLIP_Y1;
 
-    C2D_DrawRectSolid(mX, mY, 0.85f, mW, mH, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(mX, mY, 0.84f, mW, mH, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(mX, mY, 0.85f, mW, mH, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(mX, mY, 0.84f, mW, mH, Draw2D_Color32(40, 70, 120, 255));
 
     /* Header: the set's name when the list is filtered to one, the generic
      * title when it is showing everything. */
@@ -3075,7 +3070,7 @@ static void RenderAchievementsModal(int lang) {
             if (subset && subset->id == filter) { header = subset->title; break; }
         }
     }
-    DrawTextMaxWClipped(20.0f, 32.0f, 1.0f, header, C2D_Color32(255, 215, 0, 255), 26.0f, 46.0f, 130.0f);
+    DrawTextMaxWClipped(20.0f, 32.0f, 1.0f, header, Draw2D_Color32(255, 215, 0, 255), 26.0f, 46.0f, 130.0f);
 
     /* Counters follow the filter, so a set's card and its list agree. */
     uint32_t count = Port_RA_GetViewCount();
@@ -3094,7 +3089,7 @@ static void RenderAchievementsModal(int lang) {
     } else {
         snprintf(summaryBuf, sizeof(summaryBuf), "%u/%u (%u/%u PTS)", (unsigned)unlocked, (unsigned)count, (unsigned)unlPts, (unsigned)totalPts);
     }
-    DrawText(156.0f, 32.0f, 1.0f, summaryBuf, hardcore > 0 ? C2D_Color32(255, 215, 0, 255) : C2D_Color32(80, 255, 120, 255));
+    DrawText(156.0f, 32.0f, 1.0f, summaryBuf, hardcore > 0 ? Draw2D_Color32(255, 215, 0, 255) : Draw2D_Color32(80, 255, 120, 255));
 
     float cardH = ACH_CARD_H;
     float maxAchScroll = AchievementsMaxScroll();
@@ -3108,10 +3103,10 @@ static void RenderAchievementsModal(int lang) {
         if (py + cardH <= clipY0 || py >= clipY1) continue;
 
         /* Card background */
-        uint32_t bgCol = ach->hardcoreUnlocked ? C2D_Color32(40, 36, 16, 255) :
-                         (ach->unlocked ? C2D_Color32(16, 38, 26, 255) : C2D_Color32(18, 22, 34, 255));
-        uint32_t borderCol = ach->hardcoreUnlocked ? C2D_Color32(160, 130, 30, 255) :
-                             (ach->unlocked ? C2D_Color32(35, 120, 65, 255) : C2D_Color32(35, 45, 65, 255));
+        uint32_t bgCol = ach->hardcoreUnlocked ? Draw2D_Color32(40, 36, 16, 255) :
+                         (ach->unlocked ? Draw2D_Color32(16, 38, 26, 255) : Draw2D_Color32(18, 22, 34, 255));
+        uint32_t borderCol = ach->hardcoreUnlocked ? Draw2D_Color32(160, 130, 30, 255) :
+                             (ach->unlocked ? Draw2D_Color32(35, 120, 65, 255) : Draw2D_Color32(35, 45, 65, 255));
 
         DrawRectClipped(16.0f, py, 0.88f, 284.0f, cardH - 2.0f, borderCol, clipY0, clipY1);
         DrawRectClipped(17.0f, py + 1.0f, 0.89f, 282.0f, cardH - 4.0f, bgCol, clipY0, clipY1);
@@ -3120,10 +3115,10 @@ static void RenderAchievementsModal(int lang) {
         float iconX = 19.0f;
         float iconY = py + 3.0f;
         if (iconY + 24.0f > clipY0 && iconY < clipY1) {
-            uint32_t iconBorder = ach->hardcoreUnlocked ? C2D_Color32(255, 215, 0, 255) :
-                                  (ach->unlocked ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(60, 75, 100, 255));
+            uint32_t iconBorder = ach->hardcoreUnlocked ? Draw2D_Color32(255, 215, 0, 255) :
+                                  (ach->unlocked ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(60, 75, 100, 255));
             DrawRectClipped(iconX, iconY, 0.91f, 24.0f, 24.0f, iconBorder, clipY0, clipY1);
-            DrawRectClipped(iconX + 1.0f, iconY + 1.0f, 0.92f, 22.0f, 22.0f, C2D_Color32(12, 16, 24, 255), clipY0, clipY1);
+            DrawRectClipped(iconX + 1.0f, iconY + 1.0f, 0.92f, 22.0f, 22.0f, Draw2D_Color32(12, 16, 24, 255), clipY0, clipY1);
 
             const uint32_t* badgePixels = Port_RA_GetBadgePixels(ach->badgeName);
             if (badgePixels) {
@@ -3139,21 +3134,21 @@ static void RenderAchievementsModal(int lang) {
                             uint32_t g = (pColor >> 8) & 0xFF;
                             uint32_t b = (pColor >> 16) & 0xFF;
                             uint32_t gray = (r * 30 + g * 59 + b * 11) / 250;
-                            pColor = C2D_Color32((uint8_t)gray, (uint8_t)gray, (uint8_t)gray, 255);
+                            pColor = Draw2D_Color32((uint8_t)gray, (uint8_t)gray, (uint8_t)gray, 255);
                         }
-                        C2D_DrawRectSolid(badgeX + (float)bx, rY, 0.93f, 1.0f, 1.0f, pColor);
+                        Draw2D_Rect(badgeX + (float)bx, rY, 0.93f, 1.0f, 1.0f, pColor);
                     }
                 }
             } else {
                 if (ach->hardcoreUnlocked) {
-                    DrawRectClipped(iconX + 4.0f, iconY + 4.0f, 0.93f, 14.0f, 14.0f, C2D_Color32(255, 200, 50, 255), clipY0, clipY1);
-                    DrawTextMaxWClipped(iconX + 8.0f, iconY + 7.0f, 1.0f, "H", C2D_Color32(20, 20, 20, 255), clipY0, clipY1, 8.0f);
+                    DrawRectClipped(iconX + 4.0f, iconY + 4.0f, 0.93f, 14.0f, 14.0f, Draw2D_Color32(255, 200, 50, 255), clipY0, clipY1);
+                    DrawTextMaxWClipped(iconX + 8.0f, iconY + 7.0f, 1.0f, "H", Draw2D_Color32(20, 20, 20, 255), clipY0, clipY1, 8.0f);
                 } else if (ach->unlocked) {
-                    DrawRectClipped(iconX + 4.0f, iconY + 4.0f, 0.93f, 14.0f, 14.0f, C2D_Color32(60, 200, 100, 255), clipY0, clipY1);
-                    DrawTextMaxWClipped(iconX + 8.0f, iconY + 7.0f, 1.0f, "*", C2D_Color32(255, 255, 255, 255), clipY0, clipY1, 8.0f);
+                    DrawRectClipped(iconX + 4.0f, iconY + 4.0f, 0.93f, 14.0f, 14.0f, Draw2D_Color32(60, 200, 100, 255), clipY0, clipY1);
+                    DrawTextMaxWClipped(iconX + 8.0f, iconY + 7.0f, 1.0f, "*", Draw2D_Color32(255, 255, 255, 255), clipY0, clipY1, 8.0f);
                 } else {
-                    DrawRectClipped(iconX + 4.0f, iconY + 4.0f, 0.93f, 14.0f, 14.0f, C2D_Color32(40, 50, 70, 255), clipY0, clipY1);
-                    DrawTextMaxWClipped(iconX + 8.0f, iconY + 7.0f, 1.0f, "?", C2D_Color32(120, 140, 170, 255), clipY0, clipY1, 8.0f);
+                    DrawRectClipped(iconX + 4.0f, iconY + 4.0f, 0.93f, 14.0f, 14.0f, Draw2D_Color32(40, 50, 70, 255), clipY0, clipY1);
+                    DrawTextMaxWClipped(iconX + 8.0f, iconY + 7.0f, 1.0f, "?", Draw2D_Color32(120, 140, 170, 255), clipY0, clipY1, 8.0f);
                 }
             }
         }
@@ -3164,14 +3159,14 @@ static void RenderAchievementsModal(int lang) {
         if (statY + 8.0f > clipY0 && statY < clipY1) {
             if (ach->hardcoreUnlocked) {
                 /* Hardcore Mini Crown (Gold) */
-                uint32_t cGold = C2D_Color32(255, 215, 0, 255);
+                uint32_t cGold = Draw2D_Color32(255, 215, 0, 255);
                 DrawRectClipped(statX, statY + 3.0f, 0.93f, 8.0f, 4.0f, cGold, clipY0, clipY1);
                 DrawRectClipped(statX + 1.0f, statY + 1.0f, 0.93f, 2.0f, 2.0f, cGold, clipY0, clipY1);
                 DrawRectClipped(statX + 3.0f, statY, 0.93f, 2.0f, 2.0f, cGold, clipY0, clipY1);
                 DrawRectClipped(statX + 5.0f, statY + 1.0f, 0.93f, 2.0f, 2.0f, cGold, clipY0, clipY1);
             } else if (ach->unlocked) {
                 /* Softcore Unlocked Mini Padlock Open / Checkmark (Green) */
-                uint32_t cGreen = C2D_Color32(80, 255, 120, 255);
+                uint32_t cGreen = Draw2D_Color32(80, 255, 120, 255);
                 /* Open shackle */
                 DrawRectClipped(statX + 3.0f, statY, 0.93f, 4.0f, 1.0f, cGreen, clipY0, clipY1);
                 DrawRectClipped(statX + 6.0f, statY + 1.0f, 0.93f, 1.0f, 2.0f, cGreen, clipY0, clipY1);
@@ -3179,7 +3174,7 @@ static void RenderAchievementsModal(int lang) {
                 DrawRectClipped(statX + 1.0f, statY + 3.0f, 0.93f, 6.0f, 4.0f, cGreen, clipY0, clipY1);
             } else {
                 /* Locked Mini Padlock Closed (Slate Gray) */
-                uint32_t cLock = C2D_Color32(110, 130, 160, 255);
+                uint32_t cLock = Draw2D_Color32(110, 130, 160, 255);
                 /* Closed shackle */
                 DrawRectClipped(statX + 2.0f, statY, 0.93f, 4.0f, 1.0f, cLock, clipY0, clipY1);
                 DrawRectClipped(statX + 2.0f, statY + 1.0f, 0.93f, 1.0f, 2.0f, cLock, clipY0, clipY1);
@@ -3192,16 +3187,16 @@ static void RenderAchievementsModal(int lang) {
         /* 3. Title on the top line, full width now that the points have moved
          * off it -- a long title no longer has to fight the "(NNP)" suffix for
          * the last few pixels. */
-        uint32_t titleCol = ach->hardcoreUnlocked ? C2D_Color32(255, 225, 80, 255) :
-                            (ach->unlocked ? C2D_Color32(140, 240, 170, 255) : C2D_Color32(220, 235, 255, 255));
+        uint32_t titleCol = ach->hardcoreUnlocked ? Draw2D_Color32(255, 225, 80, 255) :
+                            (ach->unlocked ? Draw2D_Color32(140, 240, 170, 255) : Draw2D_Color32(220, 235, 255, 255));
         DrawTextMaxWClipped(48.0f, py + 4.0f, 1.0f, ach->title, titleCol, clipY0, clipY1, 236.0f);
 
         /* 4. Points, bottom-left: directly under the title and beside the
          * badge, in the space that was otherwise empty. */
         char ptsBuf[16];
         snprintf(ptsBuf, sizeof(ptsBuf), "%uP", (unsigned)ach->points);
-        uint32_t ptsCol = ach->hardcoreUnlocked ? C2D_Color32(255, 215, 0, 255) :
-                          (ach->unlocked ? C2D_Color32(120, 255, 160, 255) : C2D_Color32(140, 160, 190, 255));
+        uint32_t ptsCol = ach->hardcoreUnlocked ? Draw2D_Color32(255, 215, 0, 255) :
+                          (ach->unlocked ? Draw2D_Color32(120, 255, 160, 255) : Draw2D_Color32(140, 160, 190, 255));
         if (py + 18.0f + 7.0f > clipY0 && py + 18.0f < clipY1) {
             DrawTextClipped(48.0f, py + 18.0f, 1.0f, ptsBuf, ptsCol, clipY0, clipY1);
         }
@@ -3219,8 +3214,8 @@ static void RenderAchievementsModal(int lang) {
         float trackH = (clipY1 - clipY0);
         float thumbH = 30.0f;
         float thumbY = clipY0 + (sAchievementsScrollY / maxAchScroll) * (trackH - thumbH);
-        C2D_DrawRectSolid(306.0f, clipY0, 0.92f, 2.0f, trackH, C2D_Color32(255, 35, 55, 255));
-        C2D_DrawRectSolid(306.0f, thumbY, 0.94f, 2.0f, thumbH, C2D_Color32(80, 160, 240, 255));
+        Draw2D_Rect(306.0f, clipY0, 0.92f, 2.0f, trackH, Draw2D_Color32(255, 35, 55, 255));
+        Draw2D_Rect(306.0f, thumbY, 0.94f, 2.0f, thumbH, Draw2D_Color32(80, 160, 240, 255));
     }
 
     DrawAchSettingsButton(lang);
@@ -3231,7 +3226,7 @@ static void RenderAchievementsModal(int lang) {
             "ZURUECK", "RETOUR", "INDIETRO", "VOLVER"
         };
         DrawButton(116.0f, 204.0f, 88.0f, 20.0f, backLabels[lang],
-                   C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+                   Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
     }
 
     /* Sort cycler plus its direction arrow, on the footer bar beside BACK so
@@ -3240,22 +3235,22 @@ static void RenderAchievementsModal(int lang) {
      * the caption clipped the top. The value alone plus the arrow next to it
      * says enough. */
     DrawButton(206.0f, 204.0f, 78.0f, 20.0f, AchSortLabel(lang),
-               C2D_Color32(190, 220, 255, 255),
-               C2D_Color32(24, 40, 70, 255), C2D_Color32(70, 110, 170, 255));
+               Draw2D_Color32(190, 220, 255, 255),
+               Draw2D_Color32(24, 40, 70, 255), Draw2D_Color32(70, 110, 170, 255));
 
     /* Direction toggle: a chevron pointing down for descending (Z-A, most
      * points first, newest first) and up for ascending. Drawn as stacked
      * rows because this UI has no glyph for it. */
     bool descending = Port_RA_GetListDescending();
     DrawButtonBox(288.0f, 204.0f, 18.0f, 20.0f,
-                  C2D_Color32(24, 40, 70, 255), C2D_Color32(70, 110, 170, 255));
+                  Draw2D_Color32(24, 40, 70, 255), Draw2D_Color32(70, 110, 170, 255));
     for (int row = 0; row < 4; ++row) {
         /* Widest row at the flat end, narrowest at the point. */
         int step = descending ? (3 - row) : row;
         float w = 2.0f + (float)step * 2.0f;
         float px = 297.0f - w * 0.5f;
         float py = 210.0f + (float)row * 2.0f;
-        C2D_DrawRectSolid(px, py, 0.97f, w, 2.0f, C2D_Color32(150, 200, 255, 255));
+        Draw2D_Rect(px, py, 0.97f, w, 2.0f, Draw2D_Color32(150, 200, 255, 255));
     }
 }
 
@@ -3267,16 +3262,16 @@ static void RenderAchievementDetailModal(int lang) {
     const float pX = 6.0f, pY = 20.0f, pW = 308.0f, pH = 214.0f;
     const float clip0 = pY, clip1 = pY + pH;
 
-    C2D_DrawRectSolid(pX, pY, 0.975f, pW, pH, C2D_Color32(255, 215, 0, 255));
-    C2D_DrawRectSolid(pX + 2.0f, pY + 2.0f, 0.978f, pW - 4.0f, pH - 4.0f, C2D_Color32(8, 11, 20, 252));
+    Draw2D_Rect(pX, pY, 0.975f, pW, pH, Draw2D_Color32(255, 215, 0, 255));
+    Draw2D_Rect(pX + 2.0f, pY + 2.0f, 0.978f, pW - 4.0f, pH - 4.0f, Draw2D_Color32(8, 11, 20, 252));
 
     /* Badge, nearest-neighbour scaled x4. Greyed while still locked, matching
      * the list. */
     const float px = 4.0f;
     float bX = pX + 12.0f, bY = pY + 12.0f;
     bool locked = !a->unlocked && !a->hardcoreUnlocked;
-    C2D_DrawRectSolid(bX - 2.0f, bY - 2.0f, 0.979f, 20.0f * px + 4.0f, 20.0f * px + 4.0f,
-                      C2D_Color32(60, 75, 100, 255));
+    Draw2D_Rect(bX - 2.0f, bY - 2.0f, 0.979f, 20.0f * px + 4.0f, 20.0f * px + 4.0f,
+                      Draw2D_Color32(60, 75, 100, 255));
     const uint32_t* badge = Port_RA_GetBadgePixels(a->badgeName);
     if (badge) {
         for (int y = 0; y < 20; ++y) {
@@ -3285,23 +3280,23 @@ static void RenderAchievementDetailModal(int lang) {
                 if (locked) {
                     uint32_t r = c & 0xFF, g = (c >> 8) & 0xFF, b = (c >> 16) & 0xFF;
                     uint32_t gray = (r * 30 + g * 59 + b * 11) / 250;
-                    c = C2D_Color32((uint8_t)gray, (uint8_t)gray, (uint8_t)gray, 255);
+                    c = Draw2D_Color32((uint8_t)gray, (uint8_t)gray, (uint8_t)gray, 255);
                 }
-                C2D_DrawRectSolid(bX + (float)x * px, bY + (float)y * px, 0.98f, px, px, c);
+                Draw2D_Rect(bX + (float)x * px, bY + (float)y * px, 0.98f, px, px, c);
             }
         }
     } else {
-        C2D_DrawRectSolid(bX, bY, 0.98f, 20.0f * px, 20.0f * px, C2D_Color32(20, 26, 40, 255));
+        Draw2D_Rect(bX, bY, 0.98f, 20.0f * px, 20.0f * px, Draw2D_Color32(20, 26, 40, 255));
     }
 
     float tX = bX + 20.0f * px + 10.0f;
     float tW = pX + pW - 12.0f - tX;
     DrawWrappedTextClipped(tX, pY + 12.0f, 1.0f, a->title, tW, 11.0f,
-                           C2D_Color32(255, 230, 120, 255), clip0, clip1);
+                           Draw2D_Color32(255, 230, 120, 255), clip0, clip1);
 
     char buf[96];
     snprintf(buf, sizeof(buf), "%u PTS", (unsigned)a->points);
-    DrawText(tX, pY + 46.0f, 1.0f, buf, C2D_Color32(120, 255, 160, 255));
+    DrawText(tX, pY + 46.0f, 1.0f, buf, Draw2D_Color32(120, 255, 160, 255));
 
     static const char* const stHardcore[7] = {
         "UNLOCKED (HARDCORE)", "UNLOCKED (HARDCORE)", "UNLOCKED (HARDCORE)",
@@ -3318,16 +3313,16 @@ static void RenderAchievementDetailModal(int lang) {
     };
     const char* stTxt;
     uint32_t stCol;
-    if (a->hardcoreUnlocked)  { stTxt = stHardcore[lang]; stCol = C2D_Color32(255, 215, 0, 255); }
-    else if (a->unlocked)     { stTxt = stUnlocked[lang]; stCol = C2D_Color32(80, 255, 120, 255); }
-    else                      { stTxt = stLocked[lang];   stCol = C2D_Color32(150, 170, 200, 255); }
+    if (a->hardcoreUnlocked)  { stTxt = stHardcore[lang]; stCol = Draw2D_Color32(255, 215, 0, 255); }
+    else if (a->unlocked)     { stTxt = stUnlocked[lang]; stCol = Draw2D_Color32(80, 255, 120, 255); }
+    else                      { stTxt = stLocked[lang];   stCol = Draw2D_Color32(150, 170, 200, 255); }
     DrawText(tX, pY + 60.0f, 1.0f, stTxt, stCol);
 
     if (!locked && a->unlockTime != 0) {
         time_t t = (time_t)a->unlockTime;
         struct tm* tmv = gmtime(&t);
         if (tmv && strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M UTC", tmv) > 0) {
-            DrawText(tX, pY + 74.0f, 1.0f, buf, C2D_Color32(150, 180, 210, 255));
+            DrawText(tX, pY + 74.0f, 1.0f, buf, Draw2D_Color32(150, 180, 210, 255));
         }
     }
 
@@ -3341,21 +3336,21 @@ static void RenderAchievementDetailModal(int lang) {
 
     DrawWrappedTextClipped(pX + 12.0f, pY + 118.0f, 1.0f,
                            a->description[0] ? a->description : "(NO DESCRIPTION)",
-                           pW - 24.0f, 12.0f, C2D_Color32(220, 235, 255, 255), clip0, clip1 - 26.0f);
+                           pW - 24.0f, 12.0f, Draw2D_Color32(220, 235, 255, 255), clip0, clip1 - 26.0f);
 
     {
         static const char* backLabels[7] = {
             "BACK", "BACK", "BACK", "ZURUECK", "RETOUR", "INDIETRO", "VOLVER"
         };
         DrawButton(116.0f, 208.0f, 88.0f, 20.0f, backLabels[lang],
-                   C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+                   Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
     }
 }
 
 /* Render Confirmation Dialog (hardcore enable / restart game) */
 static void RenderConfirmModal(int lang) {
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
     static const char* const restartTitles[7] = {
         "RESTART GAME", "RESTART GAME", "RESTART GAME",
@@ -3366,7 +3361,7 @@ static void RenderConfirmModal(int lang) {
         "HARDCORE-MODUS", "MODE HARDCORE", "MODO HARDCORE", "MODO HARDCORE"
     };
     const char* title = sConfirmIsRestart ? restartTitles[lang] : hcTitles[lang];
-    DrawTextCentered(160.0f, 60.0f, 1.0f, title, C2D_Color32(255, 215, 0, 255));
+    DrawTextCentered(160.0f, 60.0f, 1.0f, title, Draw2D_Color32(255, 215, 0, 255));
 
     static const char* const restartMsgs[7] = {
         "THE GAME WILL BE RESTARTED. ALL UNSAVED PROGRESS WILL BE LOST. CONTINUE?",
@@ -3387,23 +3382,23 @@ static void RenderConfirmModal(int lang) {
         "AL ACTIVAR EL MODO HARDCORE LA PARTIDA SE REINICIARA DESDE EL PRINCIPIO. CONTINUAR?"
     };
     const char* msg = sConfirmIsRestart ? restartMsgs[lang] : hcMsgs[lang];
-    DrawWrappedTextClipped(30.0f, 84.0f, 1.0f, msg, 260.0f, 11.0f, C2D_Color32(220, 235, 255, 255), 50.0f, 136.0f);
+    DrawWrappedTextClipped(30.0f, 84.0f, 1.0f, msg, 260.0f, 11.0f, Draw2D_Color32(220, 235, 255, 255), 50.0f, 136.0f);
 
     /* ACCEPT button */
     static const char* const acceptLabels[7] = {
         "ACCEPT", "ACCEPT", "ACCEPT",
         "JA", "ACCEPTER", "ACCETTA", "ACEPTAR"
     };
-    DrawButton(40.0f, 140.0f, 110.0f, 28.0f, acceptLabels[lang], C2D_Color32(255, 255, 255, 255),
-               C2D_Color32(20, 90, 45, 255), C2D_Color32(70, 180, 100, 255));
+    DrawButton(40.0f, 140.0f, 110.0f, 28.0f, acceptLabels[lang], Draw2D_Color32(255, 255, 255, 255),
+               Draw2D_Color32(20, 90, 45, 255), Draw2D_Color32(70, 180, 100, 255));
 
     /* CANCEL button */
     static const char* const cancelModalLabels[7] = {
         "CANCEL", "CANCEL", "CANCEL",
         "NEIN", "ANNULER", "ANNULLA", "CANCELAR"
     };
-    DrawButton(170.0f, 140.0f, 110.0f, 28.0f, cancelModalLabels[lang], C2D_Color32(255, 255, 255, 255),
-               C2D_Color32(110, 30, 30, 255), C2D_Color32(200, 80, 80, 255));
+    DrawButton(170.0f, 140.0f, 110.0f, 28.0f, cancelModalLabels[lang], Draw2D_Color32(255, 255, 255, 255),
+               Draw2D_Color32(110, 30, 30, 255), Draw2D_Color32(200, 80, 80, 255));
 }
 
 /* Two-column grid for the DISPLAY modal. Same geometry as the debug-tools
@@ -3423,8 +3418,8 @@ static void DispCell(int index, const char* label, const char* value, uint32_t v
     float x = (index & 1) ? (float)DISP_COL_R_X : (float)DISP_COL_L_X;
     float y = (float)(DISP_GRID_Y0 + (index >> 1) * DISP_GRID_PITCH);
     DrawButtonBox(x, y, (float)DISP_COL_W, (float)DISP_CELL_H,
-                  C2D_Color32(24, 32, 50, 255), C2D_Color32(50, 80, 130, 255));
-    DrawTextMaxWClipped(x + 6.0f, y + 4.0f, 1.0f, label, C2D_Color32(255, 255, 255, 255),
+                  Draw2D_Color32(24, 32, 50, 255), Draw2D_Color32(50, 80, 130, 255));
+    DrawTextMaxWClipped(x + 6.0f, y + 4.0f, 1.0f, label, Draw2D_Color32(255, 255, 255, 255),
                         0.0f, 240.0f, (float)DISP_COL_W - 12.0f);
     if (value) DrawTextMaxWClipped(x + 6.0f, y + 14.0f, 1.0f, value, valueCol,
                                    0.0f, 240.0f, (float)DISP_COL_W - 12.0f);
@@ -3458,19 +3453,19 @@ static const char* GbaFxLevelName(int lang, int level) {
 /* Render Display Settings Modal -- two-column grid so the GBA-look effect
  * toggles fit alongside the existing rows without scrolling. */
 static void RenderDisplayModal(int lang) {
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
     static const char* const titles[7] = {
         "DISPLAY SETTINGS", "DISPLAY SETTINGS", "DISPLAY SETTINGS",
         "BILDSCHIRMEINSTELLUNGEN", "PARAMETRES D'AFFICHAGE", "IMPOSTAZIONI SCHERMO", "CONFIGURACION DE PANTALLA"
     };
-    DrawText(20.0f, 30.0f, 1.0f, titles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 30.0f, 1.0f, titles[lang], Draw2D_Color32(255, 215, 0, 255));
 
-    const uint32_t valCol  = C2D_Color32(255, 215, 0, 255);
-    const uint32_t onCol   = C2D_Color32(80, 255, 120, 255);
-    const uint32_t offCol  = C2D_Color32(255, 100, 100, 255);
-    const uint32_t idleCol = C2D_Color32(150, 150, 150, 255);
+    const uint32_t valCol  = Draw2D_Color32(255, 215, 0, 255);
+    const uint32_t onCol   = Draw2D_Color32(80, 255, 120, 255);
+    const uint32_t offCol  = Draw2D_Color32(255, 100, 100, 255);
+    const uint32_t idleCol = Draw2D_Color32(150, 150, 150, 255);
 
     const char* onTxt  = (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "EIN" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ON")));
     const char* offTxt = (lang == 6) ? "DESACT." : ((lang == 3) ? "AUS" : ((lang == 4) ? "DESACT." : ((lang == 5) ? "DISATT." : "OFF")));
@@ -3544,26 +3539,26 @@ static void RenderDisplayModal(int lang) {
         "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR"
     };
     DrawButton(116.0f, 206.0f, 88.0f, 22.0f, closeLabels[lang],
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 /* Render RetroAchievements Settings Modal */
 static void RenderRASettingsModal(int lang) {
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
     const char* raTitles[7] = {
         "RETROACHIEVEMENTS SETTINGS", "RETROACHIEVEMENTS SETTINGS", "RETROACHIEVEMENTS SETTINGS",
         "RETROACHIEVEMENTS EINSTELLUNGEN", "PARAMETRES RETROACHIEVEMENTS", "IMPOSTAZIONI RETROACHIEVEMENTS", "AJUSTES DE RETROACHIEVEMENTS"
     };
-    DrawText(20.0f, 32.0f, 1.0f, raTitles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 32.0f, 1.0f, raTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
     /* Status indicator text top-right */
-    uint32_t statusCol = C2D_Color32(140, 160, 190, 255);
+    uint32_t statusCol = Draw2D_Color32(140, 160, 190, 255);
     switch (Port_RA_GetStatus()) {
-        case RA_STATUS_CONNECTED: statusCol = C2D_Color32(80, 255, 120, 255); break;
-        case RA_STATUS_CONNECTING: statusCol = C2D_Color32(255, 220, 80, 255); break;
-        case RA_STATUS_ERROR: statusCol = C2D_Color32(255, 90, 90, 255); break;
+        case RA_STATUS_CONNECTED: statusCol = Draw2D_Color32(80, 255, 120, 255); break;
+        case RA_STATUS_CONNECTING: statusCol = Draw2D_Color32(255, 220, 80, 255); break;
+        case RA_STATUS_ERROR: statusCol = Draw2D_Color32(255, 90, 90, 255); break;
         default: break;
     }
     DrawText(200.0f, 32.0f, 1.0f, Port_RA_GetStatusString(lang), statusCol);
@@ -3571,8 +3566,8 @@ static void RenderRASettingsModal(int lang) {
     /* All four rows share one geometry: a button-styled box, the label at
      * x+8, the value at x=170, both vertically centred. Row 3 also carries a
      * square play sub-button flush to the right edge. */
-    const uint32_t rowBody = C2D_Color32(24, 32, 50, 255);
-    const uint32_t rowBorder = C2D_Color32(60, 90, 130, 255);
+    const uint32_t rowBody = Draw2D_Color32(24, 32, 50, 255);
+    const uint32_t rowBorder = Draw2D_Color32(60, 90, 130, 255);
 
     /* Row 1: User Login (Y: 56 to 80) */
     DrawButtonBox(16.0f, 56.0f, 288.0f, 24.0f, rowBody, rowBorder);
@@ -3580,16 +3575,16 @@ static void RenderRASettingsModal(int lang) {
         "USER:", "USER:", "USER:",
         "BENUTZER:", "UTILISATEUR:", "UTENTE:", "USUARIO:"
     };
-    DrawText(24.0f, 65.0f, 1.0f, userLabels[lang], C2D_Color32(255, 255, 255, 255));
+    DrawText(24.0f, 65.0f, 1.0f, userLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     const char* user = Port_RA_GetUsername();
     if (user && user[0] != '\0') {
-        DrawText(170.0f, 65.0f, 1.0f, user, C2D_Color32(255, 215, 0, 255));
+        DrawText(170.0f, 65.0f, 1.0f, user, Draw2D_Color32(255, 215, 0, 255));
     } else {
         const char* loginLabels[7] = {
             "LOGIN", "LOGIN", "LOGIN",
             "ANMELDEN", "CONNEXION", "ACCEDI", "INICIAR SESION"
         };
-        DrawText(170.0f, 65.0f, 1.0f, loginLabels[lang], C2D_Color32(255, 140, 80, 255));
+        DrawText(170.0f, 65.0f, 1.0f, loginLabels[lang], Draw2D_Color32(255, 140, 80, 255));
     }
 
     /* Row 2: Enable / Disable (Y: 84 to 108) */
@@ -3598,12 +3593,12 @@ static void RenderRASettingsModal(int lang) {
         "ACHIEVEMENTS SYS:", "ACHIEVEMENTS SYS:", "ACHIEVEMENTS SYS:",
         "ERFOLGE-SYSTEM:", "SYSTEME SUCCES:", "SISTEMA OBIETTIVI:", "SISTEMA LOGROS:"
     };
-    DrawText(24.0f, 93.0f, 1.0f, sysLabels[lang], C2D_Color32(255, 255, 255, 255));
+    DrawText(24.0f, 93.0f, 1.0f, sysLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     bool raEn = Port_RA_IsEnabled();
     const char* onStr = (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "AKTIVIERT" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ENABLED")));
     const char* offStr = (lang == 6) ? "DESACTIVADO" : ((lang == 3) ? "DEAKTIVIERT" : ((lang == 4) ? "DESACTIVE" : ((lang == 5) ? "DISATTIVO" : "DISABLED")));
     DrawText(170.0f, 93.0f, 1.0f, raEn ? onStr : offStr,
-             raEn ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 100, 100, 255));
+             raEn ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 100, 100, 255));
 
     /* Row 3: Toast notification screen -- bottom or top (Y: 112 to 136).
      * This slot used to be the Hardcore Mode toggle; hardcore is forced off
@@ -3614,15 +3609,15 @@ static void RenderRASettingsModal(int lang) {
         "NOTIFY SCREEN:", "NOTIFY SCREEN:", "NOTIFY SCREEN:",
         "MELDUNG:", "ECRAN NOTIF:", "SCHERMO:", "PANTALLA AVISO:"
     };
-    DrawText(24.0f, 121.0f, 1.0f, scrLabels[lang], C2D_Color32(255, 255, 255, 255));
+    DrawText(24.0f, 121.0f, 1.0f, scrLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     bool notifTop = Port_RA_GetNotifyOnTopScreen();
     const char* topLabels[7] = { "TOP", "TOP", "TOP", "OBEN", "HAUT", "ALTO", "SUPERIOR" };
     const char* botLabels[7] = { "BOTTOM", "BOTTOM", "BOTTOM", "UNTEN", "BAS", "BASSO", "INFERIOR" };
     DrawText(170.0f, 121.0f, 1.0f, notifTop ? topLabels[lang] : botLabels[lang],
-             C2D_Color32(120, 200, 255, 255));
+             Draw2D_Color32(120, 200, 255, 255));
     {
         bool pp = DrawButtonBox(276.0f, 114.0f, 28.0f, 20.0f, BTN_BLUE_BODY, BTN_BLUE_BORDER);
-        DrawActionGlyph(290.0f, 124.0f + (pp ? 1.0f : 0.0f), false, C2D_Color32(255, 255, 255, 255));
+        DrawActionGlyph(290.0f, 124.0f + (pp ? 1.0f : 0.0f), false, Draw2D_Color32(255, 255, 255, 255));
     }
 
     /* Row 4: Achievement Notification Sound (Y: 140 to 164) */
@@ -3631,11 +3626,11 @@ static void RenderRASettingsModal(int lang) {
         "ACHIEVEMENT SOUND:", "ACHIEVEMENT SOUND:", "ACHIEVEMENT SOUND:",
         "ERFOLG-TON:", "SON NOTIFICATION:", "SUONO NOTIFICA:", "SONIDO LOGRO:"
     };
-    DrawText(24.0f, 149.0f, 1.0f, sndLabels[lang], C2D_Color32(255, 255, 255, 255));
+    DrawText(24.0f, 149.0f, 1.0f, sndLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     bool snd = Port_RA_GetNotificationSound();
     DrawText(170.0f, 149.0f, 1.0f, snd ? ((lang == 6) ? "ACTIVADO" : ((lang == 3) ? "EIN" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ON"))))
                                        : ((lang == 6) ? "DESACTIVADO" : ((lang == 3) ? "AUS" : ((lang == 4) ? "DESACTIVE" : ((lang == 5) ? "DISATTIVO" : "OFF")))),
-             snd ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 100, 100, 255));
+             snd ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 100, 100, 255));
 
     /* Close button */
     const char* closeRALabels[7] = {
@@ -3643,7 +3638,7 @@ static void RenderRASettingsModal(int lang) {
         "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR"
     };
     DrawButton(116.0f, 206.0f, 88.0f, 22.0f, closeRALabels[lang],
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 /* "What's new" viewer: plain wrapped text, "== vX.Y.Z ==" lines drawn as
@@ -3652,10 +3647,10 @@ static void RenderNotesModal(int lang) {
     const bool es = (lang == 6);
     const float maxScroll = NotesMaxScroll();
 
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
-    DrawText(20.0f, 32.0f, 1.0f, es ? "NOVEDADES" : "WHAT'S NEW", C2D_Color32(255, 215, 0, 255));
-    DrawText(170.0f, 32.0f, 1.0f, Port_Updater_GetRemoteTag(), C2D_Color32(140, 160, 190, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
+    DrawText(20.0f, 32.0f, 1.0f, es ? "NOVEDADES" : "WHAT'S NEW", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(170.0f, 32.0f, 1.0f, Port_Updater_GetRemoteTag(), Draw2D_Color32(140, 160, 190, 255));
 
     if (sNotesScrollY > maxScroll) sNotesScrollY = maxScroll;
     for (int i = 0; i < sNotesLineCount; ++i) {
@@ -3667,25 +3662,25 @@ static void RenderNotesModal(int lang) {
             snprintf(head, sizeof(head), "%s", t + 3);
             size_t n = strlen(head);
             if (n >= 3) head[n - 3] = '\0'; /* trailing " ==" */
-            DrawTextClipped(18.0f, y, 1.0f, head, C2D_Color32(255, 215, 0, 255), NOTES_VIEW_Y0, NOTES_VIEW_Y1);
+            DrawTextClipped(18.0f, y, 1.0f, head, Draw2D_Color32(255, 215, 0, 255), NOTES_VIEW_Y0, NOTES_VIEW_Y1);
         } else {
-            DrawTextClipped(18.0f, y, 1.0f, t, C2D_Color32(220, 235, 255, 255), NOTES_VIEW_Y0, NOTES_VIEW_Y1);
+            DrawTextClipped(18.0f, y, 1.0f, t, Draw2D_Color32(220, 235, 255, 255), NOTES_VIEW_Y0, NOTES_VIEW_Y1);
         }
     }
     if (sNotesLineCount == 0) {
-        DrawText(18.0f, NOTES_VIEW_Y0, 1.0f, es ? "AUN SIN DATOS. BUSCA ACTUALIZACION." : "NOTHING YET. CHECK NOW FIRST.", C2D_Color32(140, 160, 190, 255));
+        DrawText(18.0f, NOTES_VIEW_Y0, 1.0f, es ? "AUN SIN DATOS. BUSCA ACTUALIZACION." : "NOTHING YET. CHECK NOW FIRST.", Draw2D_Color32(140, 160, 190, 255));
     }
 
     if (maxScroll > 0.0f) {
         float trackH = NOTES_VIEW_Y1 - NOTES_VIEW_Y0;
         float thumbH = 30.0f;
         float thumbY = NOTES_VIEW_Y0 + (sNotesScrollY / maxScroll) * (trackH - thumbH);
-        C2D_DrawRectSolid(306.0f, NOTES_VIEW_Y0, 0.92f, 2.0f, trackH, C2D_Color32(255, 35, 55, 255));
-        C2D_DrawRectSolid(306.0f, thumbY, 0.94f, 2.0f, thumbH, C2D_Color32(80, 160, 240, 255));
+        Draw2D_Rect(306.0f, NOTES_VIEW_Y0, 0.92f, 2.0f, trackH, Draw2D_Color32(255, 35, 55, 255));
+        Draw2D_Rect(306.0f, thumbY, 0.94f, 2.0f, thumbH, Draw2D_Color32(80, 160, 240, 255));
     }
 
     DrawButton(116.0f, 206.0f, 88.0f, 22.0f, es ? "CERRAR" : "CLOSE",
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 /* Self-update modal: auto-update + channel toggles, a status line and one
@@ -3693,17 +3688,17 @@ static void RenderNotesModal(int lang) {
 static void RenderUpdateModal(int lang) {
     const bool es = (lang == 6);
     const UpdaterState us = Port_Updater_GetState();
-    const uint32_t rowBody = C2D_Color32(16, 24, 40, 255);
-    const uint32_t rowBorder = C2D_Color32(50, 80, 130, 255);
-    const uint32_t white = C2D_Color32(255, 255, 255, 255);
-    const uint32_t green = C2D_Color32(80, 255, 120, 255);
-    const uint32_t red = C2D_Color32(255, 100, 100, 255);
+    const uint32_t rowBody = Draw2D_Color32(16, 24, 40, 255);
+    const uint32_t rowBorder = Draw2D_Color32(50, 80, 130, 255);
+    const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
+    const uint32_t green = Draw2D_Color32(80, 255, 120, 255);
+    const uint32_t red = Draw2D_Color32(255, 100, 100, 255);
     char line[64];
 
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
-    DrawText(20.0f, 32.0f, 1.0f, es ? "ACTUALIZACIONES" : "UPDATES", C2D_Color32(255, 215, 0, 255));
-    DrawText(170.0f, 32.0f, 1.0f, MZM_PORT_VERSION_LABEL, C2D_Color32(140, 160, 190, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
+    DrawText(20.0f, 32.0f, 1.0f, es ? "ACTUALIZACIONES" : "UPDATES", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(170.0f, 32.0f, 1.0f, MZM_PORT_VERSION_LABEL, Draw2D_Color32(140, 160, 190, 255));
 
     DrawButtonBox(16.0f, 56.0f, 288.0f, 24.0f, rowBody, rowBorder);
     DrawText(24.0f, 65.0f, 1.0f, es ? "AUTOACTUALIZAR:" : "AUTO UPDATE:", white);
@@ -3715,23 +3710,23 @@ static void RenderUpdateModal(int lang) {
     DrawText(24.0f, 93.0f, 1.0f, es ? "CANAL:" : "CHANNEL:", white);
     DrawText(170.0f, 93.0f, 1.0f,
              Port_Updater_GetBeta() ? (es ? "RELEASES + BETAS" : "RELEASES + BETAS") : (es ? "SOLO RELEASES" : "RELEASES ONLY"),
-             C2D_Color32(120, 200, 255, 255));
+             Draw2D_Color32(120, 200, 255, 255));
 
     /* Status (not tappable) */
     DrawButtonBox(16.0f, 112.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    uint32_t statusCol = C2D_Color32(140, 160, 190, 255);
+    uint32_t statusCol = Draw2D_Color32(140, 160, 190, 255);
     switch (us) {
-        case UPDATER_CHECKING:    snprintf(line, sizeof(line), "%s", es ? "BUSCANDO..." : "CHECKING..."); statusCol = C2D_Color32(255, 220, 80, 255); break;
+        case UPDATER_CHECKING:    snprintf(line, sizeof(line), "%s", es ? "BUSCANDO..." : "CHECKING..."); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
         case UPDATER_UP_TO_DATE:  snprintf(line, sizeof(line), "%s", es ? "YA ESTAS AL DIA" : "UP TO DATE"); statusCol = green; break;
-        case UPDATER_AVAILABLE:   snprintf(line, sizeof(line), "%s %s", es ? "NUEVA:" : "NEW:", Port_Updater_GetRemoteTag()); statusCol = C2D_Color32(255, 220, 80, 255); break;
-        case UPDATER_DOWNLOADING: snprintf(line, sizeof(line), "%s %d%%", es ? "INSTALANDO" : "INSTALLING", Port_Updater_GetProgress()); statusCol = C2D_Color32(255, 220, 80, 255); break;
+        case UPDATER_AVAILABLE:   snprintf(line, sizeof(line), "%s %s", es ? "NUEVA:" : "NEW:", Port_Updater_GetRemoteTag()); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
+        case UPDATER_DOWNLOADING: snprintf(line, sizeof(line), "%s %d%%", es ? "INSTALANDO" : "INSTALLING", Port_Updater_GetProgress()); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
         case UPDATER_INSTALLED:   snprintf(line, sizeof(line), "%s %s", es ? "INSTALADA" : "INSTALLED", Port_Updater_GetRemoteTag()); statusCol = green; break;
         case UPDATER_ERROR:       snprintf(line, sizeof(line), "%s", Port_Updater_GetMessage()); statusCol = red; break;
         default:                  snprintf(line, sizeof(line), "%s", es ? "SIN COMPROBAR" : "NOT CHECKED"); break;
     }
     DrawText(24.0f, 121.0f, 1.0f, line, statusCol);
     if (us == UPDATER_DOWNLOADING) {
-        C2D_DrawRectSolid(16.0f, 132.0f, 0.9f, 288.0f * (float)Port_Updater_GetProgress() / 100.0f, 4.0f, green);
+        Draw2D_Rect(16.0f, 132.0f, 0.9f, 288.0f * (float)Port_Updater_GetProgress() / 100.0f, 4.0f, green);
     }
 
     /* Action button */
@@ -3741,7 +3736,7 @@ static void RenderUpdateModal(int lang) {
         case UPDATER_AVAILABLE:   actionLabel = es ? "INSTALAR AHORA" : "INSTALL NOW"; break;
         case UPDATER_INSTALLED:   actionLabel = es ? "REINICIAR AHORA" : "RESTART NOW"; break;
         case UPDATER_CHECKING:
-        case UPDATER_DOWNLOADING: actionLabel = "..."; actionBody = C2D_Color32(30, 34, 44, 255); actionBorder = C2D_Color32(70, 76, 90, 255); break;
+        case UPDATER_DOWNLOADING: actionLabel = "..."; actionBody = Draw2D_Color32(30, 34, 44, 255); actionBorder = Draw2D_Color32(70, 76, 90, 255); break;
         default:                  actionLabel = es ? "BUSCAR ACTUALIZACION" : "CHECK NOW"; break;
     }
     DrawButton(16.0f, 142.0f, 288.0f, 28.0f, actionLabel, white, actionBody, actionBorder);
@@ -3749,7 +3744,7 @@ static void RenderUpdateModal(int lang) {
     /* Always there: with an update waiting it lists what the update brings, and
      * otherwise the latest published changes (empty until a check has run). */
     DrawButton(16.0f, 176.0f, 288.0f, 24.0f, es ? "NOVEDADES" : "WHAT'S NEW",
-               C2D_Color32(255, 225, 120, 255), C2D_Color32(46, 36, 12, 255), C2D_Color32(170, 130, 60, 255));
+               Draw2D_Color32(255, 225, 120, 255), Draw2D_Color32(46, 36, 12, 255), Draw2D_Color32(170, 130, 60, 255));
 
     DrawButton(116.0f, 206.0f, 88.0f, 22.0f, es ? "CERRAR" : "CLOSE", white, BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
@@ -3758,8 +3753,8 @@ static void RenderUpdateModal(int lang) {
 static void RenderUpdatePrompt(int lang) {
     const UpdaterPrompt pr = Port_Updater_GetPrompt();
     const bool es = (lang == 6);
-    const uint32_t white = C2D_Color32(255, 255, 255, 255);
-    const uint32_t gold = C2D_Color32(255, 215, 0, 255);
+    const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
+    const uint32_t gold = Draw2D_Color32(255, 215, 0, 255);
     const char* title = "";
     const char* question = "";
     char line[64];
@@ -3770,9 +3765,9 @@ static void RenderUpdatePrompt(int lang) {
     const bool hasNotes = (pr == UPDATER_PROMPT_ASK_INSTALL && Port_Updater_CopyNotes(probe, sizeof(probe)) > 0);
     const float extra = hasNotes ? 28.0f : 0.0f;
 
-    C2D_DrawRectSolid(0.0f, 0.0f, 0.97f, 320.0f, 240.0f, C2D_Color32(0, 0, 0, 170));
-    C2D_DrawRectSolid(20.0f, 58.0f, 0.98f, 280.0f, 122.0f + extra, C2D_Color32(40, 70, 120, 255));
-    C2D_DrawRectSolid(22.0f, 60.0f, 0.99f, 276.0f, 118.0f + extra, C2D_Color32(10, 14, 24, 255));
+    Draw2D_Rect(0.0f, 0.0f, 0.97f, 320.0f, 240.0f, Draw2D_Color32(0, 0, 0, 170));
+    Draw2D_Rect(20.0f, 58.0f, 0.98f, 280.0f, 122.0f + extra, Draw2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(22.0f, 60.0f, 0.99f, 276.0f, 118.0f + extra, Draw2D_Color32(10, 14, 24, 255));
 
     switch (pr) {
         case UPDATER_PROMPT_ASK_INSTALL:
@@ -3795,28 +3790,28 @@ static void RenderUpdatePrompt(int lang) {
             break;
     }
     DrawTextCentered(160.0f, 70.0f, 1.0f, title, gold);
-    DrawTextCentered(160.0f, 94.0f, 1.0f, line, C2D_Color32(150, 200, 255, 255));
+    DrawTextCentered(160.0f, 94.0f, 1.0f, line, Draw2D_Color32(150, 200, 255, 255));
     if (question[0]) DrawTextCentered(160.0f, 114.0f, 1.0f, question, white);
     if (pr == UPDATER_PROMPT_ERROR && Port_Updater_KeptCia()) {
         DrawTextCentered(160.0f, 112.0f, 1.0f, es ? "CIA EN SD: mzm-update.cia" : "CIA KEPT: sdmc:/mzm-update.cia",
-                         C2D_Color32(255, 220, 80, 255));
+                         Draw2D_Color32(255, 220, 80, 255));
     }
 
     if (pr == UPDATER_PROMPT_PROGRESS) {
-        C2D_DrawRectSolid(40.0f, 132.0f, 0.99f, 240.0f, 8.0f, C2D_Color32(30, 40, 60, 255));
-        C2D_DrawRectSolid(40.0f, 132.0f, 1.0f, 240.0f * (float)Port_Updater_GetProgress() / 100.0f, 8.0f,
-                          C2D_Color32(80, 255, 120, 255));
+        Draw2D_Rect(40.0f, 132.0f, 0.99f, 240.0f, 8.0f, Draw2D_Color32(30, 40, 60, 255));
+        Draw2D_Rect(40.0f, 132.0f, 1.0f, 240.0f * (float)Port_Updater_GetProgress() / 100.0f, 8.0f,
+                          Draw2D_Color32(80, 255, 120, 255));
     } else if (pr == UPDATER_PROMPT_ERROR) {
         DrawButton(116.0f, (float)UPD_BTN_Y0, 88.0f, 28.0f, es ? "ACEPTAR" : "OK", white, BTN_BLUE_BODY, BTN_BLUE_BORDER);
     } else {
         DrawButton((float)UPD_YES_X0, (float)UPD_BTN_Y0, (float)(UPD_YES_X1 - UPD_YES_X0), 28.0f,
-                   es ? "SI" : "YES", white, C2D_Color32(16, 60, 32, 255), C2D_Color32(55, 150, 95, 255));
+                   es ? "SI" : "YES", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
         DrawButton((float)UPD_NO_X0, (float)UPD_BTN_Y0, (float)(UPD_NO_X1 - UPD_NO_X0), 28.0f,
-                   "NO", white, C2D_Color32(64, 22, 22, 255), C2D_Color32(180, 60, 60, 255));
+                   "NO", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
         if (hasNotes) {
             DrawButton((float)UPD_YES_X0, (float)UPD_NOTES_Y0, (float)(UPD_NO_X1 - UPD_YES_X0),
                        (float)(UPD_NOTES_Y1 - UPD_NOTES_Y0), es ? "NOVEDADES" : "WHAT'S NEW",
-                       C2D_Color32(255, 225, 120, 255), C2D_Color32(46, 36, 12, 255), C2D_Color32(170, 130, 60, 255));
+                       Draw2D_Color32(255, 225, 120, 255), Draw2D_Color32(46, 36, 12, 255), Draw2D_Color32(170, 130, 60, 255));
         }
     }
 }
@@ -3829,8 +3824,8 @@ static void RenderUpdatePrompt(int lang) {
 static void RenderWideAiQuestion(int lang) {
     if (!Port_Config_WideAiQuestionDue() || Port_Updater_GetPrompt() != UPDATER_PROMPT_NONE) return;
     const bool es = (lang == 6);
-    const uint32_t white = C2D_Color32(255, 255, 255, 255);
-    const uint32_t text = C2D_Color32(190, 210, 235, 255);
+    const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
+    const uint32_t text = Draw2D_Color32(190, 210, 235, 255);
     /* The UI font has no comma. */
     static const char* const linesEn[] = {
         "SOME SCENES HAVE NO PICTURE BEYOND THE",
@@ -3848,23 +3843,23 @@ static void RenderWideAiQuestion(int lang) {
     };
     const char* const* lines = es ? linesEs : linesEn;
 
-    C2D_DrawRectSolid(0.0f, 0.0f, 0.97f, 320.0f, 240.0f, C2D_Color32(0, 0, 0, 170));
-    C2D_DrawRectSolid(14.0f, (float)WAI_BOX_Y0, 0.98f, 292.0f, (float)WAI_BOX_H, C2D_Color32(40, 70, 120, 255));
-    C2D_DrawRectSolid(16.0f, (float)WAI_BOX_Y0 + 2.0f, 0.99f, 288.0f, (float)WAI_BOX_H - 4.0f,
-                      C2D_Color32(10, 14, 24, 255));
+    Draw2D_Rect(0.0f, 0.0f, 0.97f, 320.0f, 240.0f, Draw2D_Color32(0, 0, 0, 170));
+    Draw2D_Rect(14.0f, (float)WAI_BOX_Y0, 0.98f, 292.0f, (float)WAI_BOX_H, Draw2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(16.0f, (float)WAI_BOX_Y0 + 2.0f, 0.99f, 288.0f, (float)WAI_BOX_H - 4.0f,
+                      Draw2D_Color32(10, 14, 24, 255));
     DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 10.0f, 1.0f, es ? "PANTALLA AMPLIA" : "WIDE SCREEN",
-                     C2D_Color32(255, 215, 0, 255));
+                     Draw2D_Color32(255, 215, 0, 255));
     for (int i = 0; i < 5; ++i)
         DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 32.0f + 14.0f * (float)i, 1.0f, lines[i], text);
     DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 108.0f, 1.0f, es ? "QUIERES VER ESOS BORDES?" : "SHOW THESE EDGES?",
                      white);
     DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 124.0f, 1.0f,
                      es ? "(SE CAMBIA EN PANTALLA > ASPECTO)" : "(CHANGE IT IN DISPLAY > ASPECT)",
-                     C2D_Color32(130, 140, 160, 255));
+                     Draw2D_Color32(130, 140, 160, 255));
     DrawButton((float)UPD_YES_X0, (float)WAI_BTN_Y0, (float)(UPD_YES_X1 - UPD_YES_X0), 28.0f,
-               es ? "SI" : "YES", white, C2D_Color32(16, 60, 32, 255), C2D_Color32(55, 150, 95, 255));
+               es ? "SI" : "YES", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
     DrawButton((float)UPD_NO_X0, (float)WAI_BTN_Y0, (float)(UPD_NO_X1 - UPD_NO_X0), 28.0f,
-               "NO", white, C2D_Color32(64, 22, 22, 255), C2D_Color32(180, 60, 60, 255));
+               "NO", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
 }
 
 /* A button with the pad key it answers to in a round badge at its left ("A" / "B"), as in the
@@ -3873,8 +3868,8 @@ static void DrawKeyButton(float x, float y, float w, float h, char key, const ch
                           uint32_t textCol, uint32_t bodyCol, uint32_t borderCol) {
     const bool pressed = DrawButtonBox(x, y, w, h, bodyCol, borderCol);
     const float cx = x + 15.0f, cy = y + h * 0.5f + (pressed ? 1.0f : 0.0f);
-    C2D_DrawCircleSolid(cx, cy, 0.93f, 9.0f, textCol);
-    C2D_DrawCircleSolid(cx, cy, 0.94f, 7.5f, bodyCol);
+    Draw2D_Circle(cx, cy, 0.93f, 9.0f, textCol);
+    Draw2D_Circle(cx, cy, 0.94f, 7.5f, bodyCol);
     const char k[2] = { key, 0 };
     DrawTextCentered(cx + 0.5f, cy - 3.0f, 1.0f, k, textCol);
     if (!label || !*label) return;
@@ -3887,17 +3882,17 @@ static void RenderDspFirmQuestion(int lang) {
     const int state = Port_DspFirm_State();
     if (state == DSPFIRM_PROMPT_NONE) return;
     const bool es = (lang == 6);
-    const uint32_t white = C2D_Color32(255, 255, 255, 255);
-    const uint32_t text = C2D_Color32(190, 210, 235, 255);
+    const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
+    const uint32_t text = Draw2D_Color32(190, 210, 235, 255);
     const float z = 0.994f;
 
-    C2D_DrawRectSolid(0.0f, 0.0f, z, 320.0f, 240.0f, C2D_Color32(0, 0, 0, 200));
-    C2D_DrawRectSolid(14.0f, (float)WAI_BOX_Y0, z + 0.001f, 292.0f, (float)WAI_BOX_H, C2D_Color32(40, 70, 120, 255));
-    C2D_DrawRectSolid(16.0f, (float)WAI_BOX_Y0 + 2.0f, z + 0.002f, 288.0f, (float)WAI_BOX_H - 4.0f,
-                      C2D_Color32(10, 14, 24, 255));
+    Draw2D_Rect(0.0f, 0.0f, z, 320.0f, 240.0f, Draw2D_Color32(0, 0, 0, 200));
+    Draw2D_Rect(14.0f, (float)WAI_BOX_Y0, z + 0.001f, 292.0f, (float)WAI_BOX_H, Draw2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(16.0f, (float)WAI_BOX_Y0 + 2.0f, z + 0.002f, 288.0f, (float)WAI_BOX_H - 4.0f,
+                      Draw2D_Color32(10, 14, 24, 255));
     const float y0 = (float)WAI_BOX_Y0;
     DrawTextCentered(160.0f, y0 + 10.0f, 1.0f, es ? "FALTA EL FIRMWARE DE SONIDO" : "SOUND FIRMWARE NEEDED",
-                     C2D_Color32(255, 215, 0, 255));
+                     Draw2D_Color32(255, 215, 0, 255));
     if (state == DSPFIRM_PROMPT_ASK) {
         const bool missing = Port_DspFirm_Missing();
         DrawTextCentered(160.0f, y0 + 36.0f, 1.0f,
@@ -3905,14 +3900,14 @@ static void RenderDspFirmQuestion(int lang) {
                             : (missing ? "THE DSP FIRMWARE IS NOT ON THE SD CARD." : "THE DSP FIRMWARE ON THE SD CARD IS DAMAGED."),
                          text);
         DrawTextCentered(160.0f, y0 + 62.0f, 1.0f, es ? "SIN ELLO EL JUEGO FUNCIONA SIN SONIDO." : "WITHOUT IT THE GAME RUNS BUT SILENT.",
-                         C2D_Color32(255, 170, 90, 255));
+                         Draw2D_Color32(255, 170, 90, 255));
         DrawTextCentered(160.0f, y0 + 82.0f, 1.0f, es ? "PARA JUGAR CON SONIDO EXTRAELO AHORA." : "TO PLAY WITH SOUND EXTRACT IT NOW.", text);
         DrawTextCentered(160.0f, y0 + 108.0f, 1.0f, es ? "(SE COPIA DE LA PROPIA CONSOLA)" : "(IT IS COPIED FROM THIS CONSOLE)",
-                         C2D_Color32(130, 140, 160, 255));
+                         Draw2D_Color32(130, 140, 160, 255));
         DrawKeyButton((float)UPD_YES_X0, (float)WAI_BTN_Y0, (float)(UPD_YES_X1 - UPD_YES_X0), 28.0f, 'A',
-                   es ? "EXTRAER" : "EXTRACT", white, C2D_Color32(16, 60, 32, 255), C2D_Color32(55, 150, 95, 255));
+                   es ? "EXTRAER" : "EXTRACT", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
         DrawKeyButton((float)UPD_NO_X0, (float)WAI_BTN_Y0, (float)(UPD_NO_X1 - UPD_NO_X0), 28.0f, 'B',
-                   es ? "SIN SONIDO" : "NO SOUND", white, C2D_Color32(64, 22, 22, 255), C2D_Color32(180, 60, 60, 255));
+                   es ? "SIN SONIDO" : "NO SOUND", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
     } else if (state == DSPFIRM_PROMPT_WORKING) {
         DrawTextCentered(160.0f, y0 + 76.0f, 1.0f, es ? "EXTRAYENDO..." : "EXTRACTING...", white);
     } else {
@@ -3920,9 +3915,9 @@ static void RenderDspFirmQuestion(int lang) {
         DrawTextCentered(160.0f, y0 + 50.0f, 1.0f,
                          ok ? (es ? "LISTO. EL SONIDO FUNCIONARA." : "DONE. THE SOUND WILL WORK.")
                             : (es ? "NO SE PUDO EXTRAER." : "COULD NOT EXTRACT IT."),
-                         ok ? C2D_Color32(120, 255, 160, 255) : C2D_Color32(255, 110, 110, 255));
-        if (!ok) DrawTextCentered(160.0f, y0 + 76.0f, 1.0f, Port_DspFirm_Failure(), C2D_Color32(130, 140, 160, 255));
-        DrawKeyButton(116.0f, (float)WAI_BTN_Y0, 88.0f, 28.0f, 'A', "OK", white, C2D_Color32(24, 40, 70, 255), C2D_Color32(90, 130, 180, 255));
+                         ok ? Draw2D_Color32(120, 255, 160, 255) : Draw2D_Color32(255, 110, 110, 255));
+        if (!ok) DrawTextCentered(160.0f, y0 + 76.0f, 1.0f, Port_DspFirm_Failure(), Draw2D_Color32(130, 140, 160, 255));
+        DrawKeyButton(116.0f, (float)WAI_BTN_Y0, 88.0f, 28.0f, 'A', "OK", white, Draw2D_Color32(24, 40, 70, 255), Draw2D_Color32(90, 130, 180, 255));
     }
 }
 
@@ -3931,8 +3926,8 @@ static void RenderRemapSelectModal(int lang) {
     if (sRemapSelectButtonIdx < 0 || sRemapSelectButtonIdx >= 10) return;
 
     /* Dark semi-transparent background overlay */
-    C2D_DrawRectSolid(12.0f, 28.0f, 0.96f, 296.0f, 204.0f, C2D_Color32(8, 12, 20, 252));
-    C2D_DrawRectSolid(12.0f, 28.0f, 0.95f, 296.0f, 204.0f, C2D_Color32(40, 80, 140, 255));
+    Draw2D_Rect(12.0f, 28.0f, 0.96f, 296.0f, 204.0f, Draw2D_Color32(8, 12, 20, 252));
+    Draw2D_Rect(12.0f, 28.0f, 0.95f, 296.0f, 204.0f, Draw2D_Color32(40, 80, 140, 255));
 
     static const char* const btnNames[7][10] = {
         { "BUTTON A", "BUTTON B", "BUTTON X", "BUTTON Y", "BUTTON L", "BUTTON R", "BUTTON ZL", "BUTTON ZR", "START", "SELECT" },
@@ -3950,7 +3945,7 @@ static void RenderRemapSelectModal(int lang) {
         "AKTION WAEHLEN (%s)", "CHOISIR ACTION (%s)", "SELEZIONA AZIONE (%s)", "SELECCIONAR ACCION (%s)"
     };
     snprintf(header, sizeof(header), selectActionTitles[lang], btnNames[lang][sRemapSelectButtonIdx]);
-    DrawTextCentered(160.0f, 32.0f, 1.0f, header, C2D_Color32(255, 215, 0, 255));
+    DrawTextCentered(160.0f, 32.0f, 1.0f, header, Draw2D_Color32(255, 215, 0, 255));
 
     int currentAct = Port_Config_GetButtonMapping(sRemapSelectButtonIdx);
 
@@ -3973,47 +3968,47 @@ static void RenderRemapSelectModal(int lang) {
         uint32_t bgCol, bdrCol, textCol;
 
         if (isDisabled) {
-            bgCol = C2D_Color32(16, 20, 28, 255);
-            bdrCol = C2D_Color32(35, 42, 55, 255);
-            textCol = C2D_Color32(80, 90, 110, 255);
+            bgCol = Draw2D_Color32(16, 20, 28, 255);
+            bdrCol = Draw2D_Color32(35, 42, 55, 255);
+            textCol = Draw2D_Color32(80, 90, 110, 255);
         } else if (isCur) {
-            bgCol = C2D_Color32(30, 80, 140, 255);
-            bdrCol = C2D_Color32(80, 180, 255, 255);
-            textCol = C2D_Color32(255, 255, 255, 255);
+            bgCol = Draw2D_Color32(30, 80, 140, 255);
+            bdrCol = Draw2D_Color32(80, 180, 255, 255);
+            textCol = Draw2D_Color32(255, 255, 255, 255);
         } else {
-            bgCol = C2D_Color32(20, 28, 44, 255);
-            bdrCol = C2D_Color32(45, 58, 85, 255);
-            textCol = C2D_Color32(180, 200, 225, 255);
+            bgCol = Draw2D_Color32(20, 28, 44, 255);
+            bdrCol = Draw2D_Color32(45, 58, 85, 255);
+            textCol = Draw2D_Color32(180, 200, 225, 255);
         }
 
-        C2D_DrawRectSolid(bx, by, 0.97f, bw, bh, bdrCol);
-        C2D_DrawRectSolid(bx + 1.0f, by + 1.0f, 0.98f, bw - 2.0f, bh - 2.0f, bgCol);
+        Draw2D_Rect(bx, by, 0.97f, bw, bh, bdrCol);
+        Draw2D_Rect(bx + 1.0f, by + 1.0f, 0.98f, bw - 2.0f, bh - 2.0f, bgCol);
         DrawTextCentered(bx + bw / 2.0f, by + 9.0f, 1.0f, Port_Config_GetActionName(act, lang), textCol);
     }
 
     /* Cancel button in col 1, row 4 */
     float cx = 162.0f;
     float cy = 48.0f + 4.0f * 28.0f;
-    C2D_DrawRectSolid(cx, cy, 0.97f, 140.0f, 24.0f, C2D_Color32(100, 30, 30, 255));
-    C2D_DrawRectSolid(cx + 1.0f, cy + 1.0f, 0.98f, 138.0f, 22.0f, C2D_Color32(60, 20, 20, 255));
+    Draw2D_Rect(cx, cy, 0.97f, 140.0f, 24.0f, Draw2D_Color32(100, 30, 30, 255));
+    Draw2D_Rect(cx + 1.0f, cy + 1.0f, 0.98f, 138.0f, 22.0f, Draw2D_Color32(60, 20, 20, 255));
     const char* cancelLabels[7] = {
         "CANCEL", "CANCEL", "CANCEL",
         "ABBRECHEN", "ANNULER", "ANNULLA", "CANCELAR"
     };
-    DrawTextCentered(cx + 70.0f, cy + 9.0f, 1.0f, cancelLabels[lang], C2D_Color32(255, 140, 140, 255));
+    DrawTextCentered(cx + 70.0f, cy + 9.0f, 1.0f, cancelLabels[lang], Draw2D_Color32(255, 140, 140, 255));
 }
 
 static void RenderRemapModal(int lang) {
     /* Background overlay */
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
     /* Title at top */
     const char* remapTitles[7] = {
         "BUTTON REMAPPING (TAP TO CHANGE)", "BUTTON REMAPPING (TAP TO CHANGE)", "BUTTON REMAPPING (TAP TO CHANGE)",
         "TASTENBELEGUNG (ZUM AENDERN TIPPEN)", "RECONFIGURATION TOUCHES (TOUCHER)", "CONFIGURAZIONE TASTI (TOCCA)", "REASIGNAR BOTONES (TOCA PARA CAMBIAR)"
     };
-    DrawText(20.0f, 31.0f, 1.0f, remapTitles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 31.0f, 1.0f, remapTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
     /* Viewable / scrollable region: Y 44 to 202 (158px) */
     const float viewY0 = 44.0f;
@@ -4043,16 +4038,16 @@ static void RenderRemapModal(int lang) {
         float rY0 = (py < viewY0) ? viewY0 : py;
         float rY1 = (py + 24.0f > viewY1) ? viewY1 : (py + 24.0f);
         if (rY1 > rY0) {
-            C2D_DrawRectSolid(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, C2D_Color32(24, 32, 50, 255));
-            C2D_DrawRectSolid(16.0f, rY0, 0.89f, 284.0f, 1.0f, C2D_Color32(45, 60, 90, 255));
+            Draw2D_Rect(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, Draw2D_Color32(24, 32, 50, 255));
+            Draw2D_Rect(16.0f, rY0, 0.89f, 284.0f, 1.0f, Draw2D_Color32(45, 60, 90, 255));
         }
 
         DrawTextClipped(24.0f, py + 9.0f, 1.0f,
             btnRowNames[lang][i],
-            C2D_Color32(255, 255, 255, 255), viewY0, viewY1);
+            Draw2D_Color32(255, 255, 255, 255), viewY0, viewY1);
         int act = Port_Config_GetButtonMapping(i);
         bool actDisabled = ((act == 1 || act == 2) && hcActive);
-        uint32_t actCol = actDisabled ? C2D_Color32(110, 120, 140, 255) : C2D_Color32(255, 215, 0, 255);
+        uint32_t actCol = actDisabled ? Draw2D_Color32(110, 120, 140, 255) : Draw2D_Color32(255, 215, 0, 255);
         DrawTextClipped(150.0f, py + 9.0f, 1.0f,
             Port_Config_GetActionName(act, lang),
             actCol, viewY0, viewY1);
@@ -4064,13 +4059,13 @@ static void RenderRemapModal(int lang) {
         float rY0 = (cstickY < viewY0) ? viewY0 : cstickY;
         float rY1 = (cstickY + 24.0f > viewY1) ? viewY1 : (cstickY + 24.0f);
         if (rY1 > rY0) {
-            C2D_DrawRectSolid(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, C2D_Color32(28, 40, 60, 255));
-            C2D_DrawRectSolid(16.0f, rY0, 0.89f, 284.0f, 1.0f, C2D_Color32(50, 80, 120, 255));
+            Draw2D_Rect(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, Draw2D_Color32(28, 40, 60, 255));
+            Draw2D_Rect(16.0f, rY0, 0.89f, 284.0f, 1.0f, Draw2D_Color32(50, 80, 120, 255));
         }
 
         DrawTextClipped(24.0f, cstickY + 9.0f, 1.0f,
             "C-STICK:",
-            C2D_Color32(255, 255, 255, 255), viewY0, viewY1);
+            Draw2D_Color32(255, 255, 255, 255), viewY0, viewY1);
         int cmode = Port_Config_GetCstickMode();
         static const char* const cstickModeNames[7][4] = {
             { "OFF", "AIM ONLY", "MOVEMENT ONLY", "ALL" },
@@ -4083,7 +4078,7 @@ static void RenderRemapModal(int lang) {
         };
         DrawTextClipped(150.0f, cstickY + 9.0f, 1.0f,
             cstickModeNames[lang][cmode],
-            C2D_Color32(255, 215, 0, 255), viewY0, viewY1);
+            Draw2D_Color32(255, 215, 0, 255), viewY0, viewY1);
     }
 
     /* Items 12 to 14: AUTO BOMB JUMP (port_auto_bomb.c), AUTO SPACE JUMP (port_auto_space_jump.c)
@@ -4103,17 +4098,17 @@ static void RenderRemapModal(int lang) {
             float rY0 = (rowY < viewY0) ? viewY0 : rowY;
             float rY1 = (rowY + 24.0f > viewY1) ? viewY1 : (rowY + 24.0f);
             if (rY1 > rY0) {
-                C2D_DrawRectSolid(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, C2D_Color32(24, 32, 50, 255));
-                C2D_DrawRectSolid(16.0f, rY0, 0.89f, 284.0f, 1.0f, C2D_Color32(45, 60, 90, 255));
+                Draw2D_Rect(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, Draw2D_Color32(24, 32, 50, 255));
+                Draw2D_Rect(16.0f, rY0, 0.89f, 284.0f, 1.0f, Draw2D_Color32(45, 60, 90, 255));
             }
             DrawTextClipped(24.0f, rowY + 9.0f, 1.0f, names[i][lang == 6 ? 1 : 0],
-                            C2D_Color32(255, 255, 255, 255), viewY0, viewY1);
+                            Draw2D_Color32(255, 255, 255, 255), viewY0, viewY1);
             const bool on = values[i];
             const char* txt = hcActive ? ((lang == 6) ? "NO EN HARDCORE" : "NOT IN HARDCORE")
                                        : (on ? ((lang == 6) ? "ACTIVADO" : "ON") : ((lang == 6) ? "DESACT." : "OFF"));
             DrawTextClipped(150.0f, rowY + 9.0f, 1.0f, txt,
-                            hcActive ? C2D_Color32(110, 120, 140, 255)
-                                     : (on ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(255, 100, 100, 255)),
+                            hcActive ? Draw2D_Color32(110, 120, 140, 255)
+                                     : (on ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 100, 100, 255)),
                             viewY0, viewY1);
         }
     }
@@ -4123,18 +4118,18 @@ static void RenderRemapModal(int lang) {
         float trackH = viewY1 - viewY0;
         float thumbH = 30.0f;
         float thumbY = viewY0 + (sRemapScrollY / maxScroll) * (trackH - thumbH);
-        C2D_DrawRectSolid(304.0f, viewY0, 0.91f, 3.0f, trackH, C2D_Color32(20, 28, 44, 255));
-        C2D_DrawRectSolid(304.0f, thumbY, 0.93f, 3.0f, thumbH, C2D_Color32(80, 160, 240, 255));
+        Draw2D_Rect(304.0f, viewY0, 0.91f, 3.0f, trackH, Draw2D_Color32(20, 28, 44, 255));
+        Draw2D_Rect(304.0f, thumbY, 0.93f, 3.0f, thumbH, Draw2D_Color32(80, 160, 240, 255));
     }
 
     /* Bottom buttons (Fixed at bottom): RESTABLECER (Left) + CERRAR (Right) */
     /* Reset Defaults Button (X: 16 to 156, W: 140) */
     DrawButton(16.0f, 206.0f, 140.0f, 22.0f, (lang == 6) ? "RESTABLECER" : "RESET DEFAULTS",
-               C2D_Color32(255, 170, 170, 255), C2D_Color32(90, 35, 35, 255), C2D_Color32(190, 80, 80, 255));
+               Draw2D_Color32(255, 170, 170, 255), Draw2D_Color32(90, 35, 35, 255), Draw2D_Color32(190, 80, 80, 255));
 
     /* Close button (X: 164 to 304, W: 140) */
     DrawButton(164.0f, 206.0f, 140.0f, 22.0f, (lang == 6) ? "CERRAR" : "CLOSE",
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 
     /* Render action picker popup if active */
     if (sRemapSelectButtonIdx >= 0) {
@@ -4158,14 +4153,14 @@ static void RenderMapView(void) {
 
     /* 1. Sub-header bar controls (Y: 26 to 45) */
     /* Area selector [ < ] AreaName [ > ] */
-    C2D_DrawRectSolid(4.0f, 26.0f, 0.4f, 16.0f, 18.0f, C2D_Color32(30, 40, 60, 255));
-    DrawTextCentered(12.0f, 31.0f, 1.0f, "<", C2D_Color32(100, 220, 255, 255));
+    Draw2D_Rect(4.0f, 26.0f, 0.4f, 16.0f, 18.0f, Draw2D_Color32(30, 40, 60, 255));
+    DrawTextCentered(12.0f, 31.0f, 1.0f, "<", Draw2D_Color32(100, 220, 255, 255));
 
-    C2D_DrawRectSolid(22.0f, 26.0f, 0.4f, 70.0f, 18.0f, sFollowSamus ? C2D_Color32(16, 50, 95, 255) : C2D_Color32(26, 32, 48, 255));
-    DrawTextCentered(57.0f, 31.0f, 1.0f, AreaName(sViewArea), sFollowSamus ? C2D_Color32(255, 255, 255, 255) : C2D_Color32(180, 205, 235, 255));
+    Draw2D_Rect(22.0f, 26.0f, 0.4f, 70.0f, 18.0f, sFollowSamus ? Draw2D_Color32(16, 50, 95, 255) : Draw2D_Color32(26, 32, 48, 255));
+    DrawTextCentered(57.0f, 31.0f, 1.0f, AreaName(sViewArea), sFollowSamus ? Draw2D_Color32(255, 255, 255, 255) : Draw2D_Color32(180, 205, 235, 255));
 
-    C2D_DrawRectSolid(94.0f, 26.0f, 0.4f, 16.0f, 18.0f, C2D_Color32(30, 40, 60, 255));
-    DrawTextCentered(102.0f, 31.0f, 1.0f, ">", C2D_Color32(100, 220, 255, 255));
+    Draw2D_Rect(94.0f, 26.0f, 0.4f, 16.0f, 18.0f, Draw2D_Color32(30, 40, 60, 255));
+    DrawTextCentered(102.0f, 31.0f, 1.0f, ">", Draw2D_Color32(100, 220, 255, 255));
 
     /* Area Items Badge (Shows e.g. "5/12"; totals hidden in RA hardcore mode or if hide spoilers enabled) */
     char itemBadge[24];
@@ -4175,19 +4170,19 @@ static void RenderMapView(void) {
     } else {
         snprintf(itemBadge, sizeof(itemBadge), "%u/%u", areaStats.totalObtained, areaStats.totalItems);
     }
-    C2D_DrawRectSolid(112.0f, 26.0f, 0.4f, 44.0f, 18.0f, C2D_Color32(20, 45, 35, 255));
-    C2D_DrawRectSolid(113.0f, 27.0f, 0.45f, 42.0f, 16.0f, C2D_Color32(12, 28, 20, 255));
-    DrawTextCentered(134.0f, 31.0f, 1.0f, itemBadge, C2D_Color32(120, 255, 160, 255));
+    Draw2D_Rect(112.0f, 26.0f, 0.4f, 44.0f, 18.0f, Draw2D_Color32(20, 45, 35, 255));
+    Draw2D_Rect(113.0f, 27.0f, 0.45f, 42.0f, 16.0f, Draw2D_Color32(12, 28, 20, 255));
+    DrawTextCentered(134.0f, 31.0f, 1.0f, itemBadge, Draw2D_Color32(120, 255, 160, 255));
 
     /* Zoom Toggle Button */
     const char* zoomLabels[] = { "1X", "2X", "3X" };
-    C2D_DrawRectSolid(156.0f, 26.0f, 0.4f, 40.0f, 18.0f, C2D_Color32(24, 45, 75, 255));
-    C2D_DrawRectSolid(157.0f, 27.0f, 0.45f, 38.0f, 16.0f, C2D_Color32(14, 25, 45, 255));
-    DrawTextCentered(176.0f, 31.0f, 1.0f, zoomLabels[sZoomLevel], C2D_Color32(255, 215, 0, 255));
+    Draw2D_Rect(156.0f, 26.0f, 0.4f, 40.0f, 18.0f, Draw2D_Color32(24, 45, 75, 255));
+    Draw2D_Rect(157.0f, 27.0f, 0.45f, 38.0f, 16.0f, Draw2D_Color32(14, 25, 45, 255));
+    DrawTextCentered(176.0f, 31.0f, 1.0f, zoomLabels[sZoomLevel], Draw2D_Color32(255, 215, 0, 255));
 
     /* Center on Samus Button */
-    C2D_DrawRectSolid(198.0f, 26.0f, 0.4f, 52.0f, 18.0f, sFollowSamus ? C2D_Color32(20, 80, 140, 255) : C2D_Color32(26, 35, 55, 255));
-    DrawTextCentered(224.0f, 31.0f, 1.0f, "SAMUS", sFollowSamus ? C2D_Color32(255, 255, 255, 255) : C2D_Color32(140, 160, 190, 255));
+    Draw2D_Rect(198.0f, 26.0f, 0.4f, 52.0f, 18.0f, sFollowSamus ? Draw2D_Color32(20, 80, 140, 255) : Draw2D_Color32(26, 35, 55, 255));
+    DrawTextCentered(224.0f, 31.0f, 1.0f, "SAMUS", sFollowSamus ? Draw2D_Color32(255, 255, 255, 255) : Draw2D_Color32(140, 160, 190, 255));
 
     /* Chozo Objective / Coords Badge */
     uint8_t targetArea = 0, targetX = 0, targetY = 0;
@@ -4196,15 +4191,15 @@ static void RenderMapView(void) {
     if (hasTarget) {
         bool inViewArea = (targetArea == sViewArea);
         uint32_t targetBg = inViewArea
-            ? (((sFrameCounter % 20) < 10) ? C2D_Color32(200, 40, 40, 255) : C2D_Color32(160, 120, 0, 255))
-            : C2D_Color32(80, 60, 20, 255);
-        C2D_DrawRectSolid(252.0f, 26.0f, 0.4f, 64.0f, 18.0f, targetBg);
-        DrawTextCentered(284.0f, 31.0f, 1.0f, objLabel, C2D_Color32(255, 255, 255, 255));
+            ? (((sFrameCounter % 20) < 10) ? Draw2D_Color32(200, 40, 40, 255) : Draw2D_Color32(160, 120, 0, 255))
+            : Draw2D_Color32(80, 60, 20, 255);
+        Draw2D_Rect(252.0f, 26.0f, 0.4f, 64.0f, 18.0f, targetBg);
+        DrawTextCentered(284.0f, 31.0f, 1.0f, objLabel, Draw2D_Color32(255, 255, 255, 255));
     } else {
-        C2D_DrawRectSolid(252.0f, 26.0f, 0.4f, 64.0f, 18.0f, C2D_Color32(20, 25, 38, 255));
+        Draw2D_Rect(252.0f, 26.0f, 0.4f, 64.0f, 18.0f, Draw2D_Color32(20, 25, 38, 255));
         char pBuf[16];
         snprintf(pBuf, sizeof(pBuf), "%02u,%02u", gMinimapX, gMinimapY);
-        DrawTextCentered(284.0f, 31.0f, 1.0f, pBuf, C2D_Color32(140, 160, 190, 255));
+        DrawTextCentered(284.0f, 31.0f, 1.0f, pBuf, Draw2D_Color32(140, 160, 190, 255));
     }
 
     /* 2. Full-height Map Canvas (Y: 48 to 236, X: 4 to 316, W: 312, H: 188) */
@@ -4222,13 +4217,13 @@ static void RenderMapView(void) {
     /* Armed tap-to-warp: a warning border, since the next tap on this canvas
      * teleports instead of panning. */
     if (sDebugMapWarpArmed) {
-        C2D_DrawRectSolid(canvasX - 3.0f, canvasY - 3.0f, 0.28f, canvasW + 6.0f, canvasH + 6.0f,
-                          ((sFrameCounter & 0x10) != 0) ? C2D_Color32(255, 200, 60, 255)
-                                                        : C2D_Color32(120, 90, 20, 255));
+        Draw2D_Rect(canvasX - 3.0f, canvasY - 3.0f, 0.28f, canvasW + 6.0f, canvasH + 6.0f,
+                          ((sFrameCounter & 0x10) != 0) ? Draw2D_Color32(255, 200, 60, 255)
+                                                        : Draw2D_Color32(120, 90, 20, 255));
     }
 #endif
-    C2D_DrawRectSolid(canvasX - 1.0f, canvasY - 1.0f, 0.3f, canvasW + 2.0f, canvasH + 2.0f, C2D_Color32(35, 50, 75, 255));
-    C2D_DrawRectSolid(canvasX, canvasY, 0.35f, canvasW, canvasH, C2D_Color32(6, 10, 18, 255));
+    Draw2D_Rect(canvasX - 1.0f, canvasY - 1.0f, 0.3f, canvasW + 2.0f, canvasH + 2.0f, Draw2D_Color32(35, 50, 75, 255));
+    Draw2D_Rect(canvasX, canvasY, 0.35f, canvasW, canvasH, Draw2D_Color32(6, 10, 18, 255));
 
     /* Prepare map tiles */
     uint16_t* mapTiles = NULL;
@@ -4283,15 +4278,15 @@ static void RenderMapView(void) {
 
         if (tx + tileSize >= clipX0 && tx <= clipX1 &&
             ty + tileSize >= clipY0 && ty <= clipY1) {
-            uint32_t targetColor = ((sFrameCounter % 20) < 10) ? C2D_Color32(255, 50, 50, 255) : C2D_Color32(255, 220, 0, 255);
+            uint32_t targetColor = ((sFrameCounter % 20) < 10) ? Draw2D_Color32(255, 50, 50, 255) : Draw2D_Color32(255, 220, 0, 255);
             float cx0 = tx < clipX0 ? clipX0 : tx;
             float cx1 = (tx + tileSize) > clipX1 ? clipX1 : (tx + tileSize);
             float cy0 = ty < clipY0 ? clipY0 : ty;
             float cy1 = (ty + tileSize) > clipY1 ? clipY1 : (ty + tileSize);
 
             if (cx1 > cx0 && cy1 > cy0) {
-                C2D_DrawRectSolid(cx0, ty + (tileSize / 2.0f) - 1.0f, 0.75f, cx1 - cx0, 2.0f, targetColor);
-                C2D_DrawRectSolid(tx + (tileSize / 2.0f) - 1.0f, cy0, 0.75f, 2.0f, cy1 - cy0, targetColor);
+                Draw2D_Rect(cx0, ty + (tileSize / 2.0f) - 1.0f, 0.75f, cx1 - cx0, 2.0f, targetColor);
+                Draw2D_Rect(tx + (tileSize / 2.0f) - 1.0f, cy0, 0.75f, 2.0f, cy1 - cy0, targetColor);
             }
         }
     }
@@ -4307,18 +4302,18 @@ static void RenderMapView(void) {
             float ex = startDrawX + ((float)elevX + 0.5f) * tileSize;
             float ey = startDrawY + ((float)elevY + 0.5f) * tileSize;
             if (ex >= clipX0 && ex <= clipX1 && ey >= clipY0 && ey <= clipY1) {
-                uint32_t col = ((sFrameCounter % 20) < 10) ? C2D_Color32(255, 50, 50, 255)
-                                                           : C2D_Color32(255, 220, 0, 255);
+                uint32_t col = ((sFrameCounter % 20) < 10) ? Draw2D_Color32(255, 50, 50, 255)
+                                                           : Draw2D_Color32(255, 220, 0, 255);
                 float s = tileSize * 0.55f;
                 if (s < 4.0f) s = 4.0f;
                 if (s > 9.0f) s = 9.0f;
                 float apexY = ey + (dir > 0 ? s : -s);
                 float baseY = ey - (dir > 0 ? s : -s) * 0.35f;
                 /* stem */
-                C2D_DrawRectSolid(ex - 1.0f, (baseY < apexY ? baseY : apexY), 0.78f,
+                Draw2D_Rect(ex - 1.0f, (baseY < apexY ? baseY : apexY), 0.78f,
                                   2.0f, (baseY < apexY ? apexY - baseY : baseY - apexY), col);
                 /* head */
-                C2D_DrawTriangle(ex - s * 0.8f, baseY, col,
+                Draw2D_Triangle(ex - s * 0.8f, baseY, col,
                                  ex + s * 0.8f, baseY, col,
                                  ex,            apexY, col, 0.79f);
             }
@@ -4345,8 +4340,8 @@ static void RenderMapView(void) {
             if (fx < clipX0 || fx > clipX1 || fy < clipY0 || fy > clipY1) continue;
 
             bool purple = (t->startIcon >= 12 /* TARGET_OAM_PURPLE_FLAME_SPAWNING */);
-            uint32_t core = purple ? C2D_Color32(200, 90, 255, 255) : C2D_Color32(80, 255, 120, 255);
-            uint32_t tip  = purple ? C2D_Color32(255, 210, 255, 255) : C2D_Color32(220, 255, 220, 255);
+            uint32_t core = purple ? Draw2D_Color32(200, 90, 255, 255) : Draw2D_Color32(80, 255, 120, 255);
+            uint32_t tip  = purple ? Draw2D_Color32(255, 210, 255, 255) : Draw2D_Color32(220, 255, 220, 255);
 
             float flick = (float)((sFrameCounter >> 2) & 3) * 0.12f;       /* 0..0.36 */
             float h = tileSize * (0.95f + flick);
@@ -4357,13 +4352,13 @@ static void RenderMapView(void) {
             float lean = ((sFrameCounter >> 3) & 1) ? w * 0.12f : -w * 0.12f;
 
             /* outer flame */
-            C2D_DrawTriangle(fx - w * 0.5f, baseY, core,
+            Draw2D_Triangle(fx - w * 0.5f, baseY, core,
                              fx + w * 0.5f, baseY, core,
                              fx + lean,     fy - h * 0.58f, core, 0.80f);
             /* base fill so the bottom is not a sharp point */
-            C2D_DrawRectSolid(fx - w * 0.34f, baseY - h * 0.16f, 0.80f, w * 0.68f, h * 0.18f, core);
+            Draw2D_Rect(fx - w * 0.34f, baseY - h * 0.16f, 0.80f, w * 0.68f, h * 0.18f, core);
             /* inner bright tongue */
-            C2D_DrawTriangle(fx - w * 0.24f, baseY - h * 0.05f, tip,
+            Draw2D_Triangle(fx - w * 0.24f, baseY - h * 0.05f, tip,
                              fx + w * 0.24f, baseY - h * 0.05f, tip,
                              fx + lean * 1.5f, fy - h * 0.30f, tip, 0.81f);
         }
@@ -4377,9 +4372,9 @@ static void RenderMapView(void) {
         if (px + tileSize >= clipX0 && px <= clipX1 &&
             py + tileSize >= clipY0 && py <= clipY1) {
             if ((sFrameCounter % 40) < 26) {
-                C2D_DrawRectSolid(px - 1.0f, py - 1.0f, 0.8f, tileSize + 2.0f, tileSize + 2.0f, C2D_Color32(255, 220, 0, 255));
-                C2D_DrawRectSolid(px, py, 0.9f, tileSize, tileSize, C2D_Color32(255, 40, 20, 255));
-                C2D_DrawRectSolid(px + (tileSize * 0.25f), py + (tileSize * 0.25f), 0.95f, tileSize * 0.5f, tileSize * 0.5f, C2D_Color32(255, 255, 255, 255));
+                Draw2D_Rect(px - 1.0f, py - 1.0f, 0.8f, tileSize + 2.0f, tileSize + 2.0f, Draw2D_Color32(255, 220, 0, 255));
+                Draw2D_Rect(px, py, 0.9f, tileSize, tileSize, Draw2D_Color32(255, 40, 20, 255));
+                Draw2D_Rect(px + (tileSize * 0.25f), py + (tileSize * 0.25f), 0.95f, tileSize * 0.5f, tileSize * 0.5f, Draw2D_Color32(255, 255, 255, 255));
             }
         }
     }
@@ -4390,9 +4385,9 @@ static void RenderMapView(void) {
         char pctBuf[16];
         snprintf(pctBuf, sizeof(pctBuf), "%d%%", PortPpuMzm_DebugAreaMapPercent((int)sViewArea));
         float bw = (float)(Utf8CharCount(pctBuf) * 6 + 8);
-        C2D_DrawRectSolid(canvasX + 3.0f, canvasY + 3.0f, 0.9f, bw, 12.0f, C2D_Color32(10, 16, 26, 220));
-        C2D_DrawRectSolid(canvasX + 3.0f, canvasY + 3.0f, 0.91f, bw, 1.0f, C2D_Color32(60, 90, 140, 255));
-        DrawText(canvasX + 7.0f, canvasY + 5.0f, 1.0f, pctBuf, C2D_Color32(120, 220, 255, 255));
+        Draw2D_Rect(canvasX + 3.0f, canvasY + 3.0f, 0.9f, bw, 12.0f, Draw2D_Color32(10, 16, 26, 220));
+        Draw2D_Rect(canvasX + 3.0f, canvasY + 3.0f, 0.91f, bw, 1.0f, Draw2D_Color32(60, 90, 140, 255));
+        DrawText(canvasX + 7.0f, canvasY + 5.0f, 1.0f, pctBuf, Draw2D_Color32(120, 220, 255, 255));
     }
 
     /* Persistent Tap-to-Warp toggle button on the map canvas. Sized to the
@@ -4402,17 +4397,17 @@ static void RenderMapView(void) {
     const float warpBtnX = 312.0f - warpBtnW;
     const float warpBtnY = 232.0f - warpBtnH;
     uint32_t warpBtnBg = sDebugMapWarpArmed
-        ? (((sFrameCounter & 0x10) != 0) ? C2D_Color32(190, 140, 15, 255) : C2D_Color32(140, 95, 10, 255))
-        : C2D_Color32(16, 24, 40, 230);
+        ? (((sFrameCounter & 0x10) != 0) ? Draw2D_Color32(190, 140, 15, 255) : Draw2D_Color32(140, 95, 10, 255))
+        : Draw2D_Color32(16, 24, 40, 230);
     uint32_t warpBtnBorder = sDebugMapWarpArmed
-        ? C2D_Color32(255, 220, 50, 255)
-        : C2D_Color32(45, 65, 95, 255);
+        ? Draw2D_Color32(255, 220, 50, 255)
+        : Draw2D_Color32(45, 65, 95, 255);
     uint32_t warpBtnTextCol = sDebugMapWarpArmed
-        ? C2D_Color32(255, 255, 255, 255)
-        : C2D_Color32(140, 160, 190, 255);
+        ? Draw2D_Color32(255, 255, 255, 255)
+        : Draw2D_Color32(140, 160, 190, 255);
 
-    C2D_DrawRectSolid(warpBtnX - 1.0f, warpBtnY - 1.0f, 0.94f, warpBtnW + 2.0f, warpBtnH + 2.0f, warpBtnBorder);
-    C2D_DrawRectSolid(warpBtnX, warpBtnY, 0.95f, warpBtnW, warpBtnH, warpBtnBg);
+    Draw2D_Rect(warpBtnX - 1.0f, warpBtnY - 1.0f, 0.94f, warpBtnW + 2.0f, warpBtnH + 2.0f, warpBtnBorder);
+    Draw2D_Rect(warpBtnX, warpBtnY, 0.95f, warpBtnW, warpBtnH, warpBtnBg);
     DrawTextCentered(warpBtnX + warpBtnW / 2.0f, warpBtnY + (warpBtnH - 8.0f) / 2.0f, 1.0f,
                      sDebugMapWarpArmed ? "WARP: ON" : "WARP: OFF", warpBtnTextCol);
 #endif
@@ -4428,8 +4423,8 @@ static void RenderStatusView(void) {
     /* In RA hardcore mode or if hide spoilers enabled, unobtained equipment is hidden as "----" (no spoilers) */
     bool hcStatus = Port_RA_IsHardcore() || Port_Config_GetHideSpoilers();
 
-    C2D_DrawRectSolid(4.0f, 26.0f, 0.4f, 312.0f, 210.0f, C2D_Color32(12, 16, 26, 255));
-    C2D_DrawRectSolid(4.0f, 26.0f, 0.35f, 312.0f, 210.0f, C2D_Color32(35, 50, 75, 255));
+    Draw2D_Rect(4.0f, 26.0f, 0.4f, 312.0f, 210.0f, Draw2D_Color32(12, 16, 26, 255));
+    Draw2D_Rect(4.0f, 26.0f, 0.35f, 312.0f, 210.0f, Draw2D_Color32(35, 50, 75, 255));
 
     const char* titles[7] = {
         "SAMUS ARAN - STATUS & EQUIPMENT",
@@ -4440,27 +4435,27 @@ static void RenderStatusView(void) {
         "SAMUS ARAN - STATO ED EQUIPAGGIAMENTO",
         "SAMUS ARAN - ESTADO Y EQUIPAMIENTO"
     };
-    DrawText(12.0f, 30.0f, 1.0f, titles[lang], C2D_Color32(100, 220, 255, 255));
+    DrawText(12.0f, 30.0f, 1.0f, titles[lang], Draw2D_Color32(100, 220, 255, 255));
 
 #ifdef PORT_DEBUG_TOOLS_ACTIVE
     if (Port_BottomUI_DebugTabVisible()) DrawStatusDebugButtons();
 #endif
 
     /* 1. Header Resource Card (X: 8, Y: 44 to 72, W: 304, H: 28) */
-    C2D_DrawRectSolid(8.0f, 44.0f, 0.45f, 304.0f, 30.0f, C2D_Color32(20, 26, 40, 255));
+    Draw2D_Rect(8.0f, 44.0f, 0.45f, 304.0f, 30.0f, Draw2D_Color32(20, 26, 40, 255));
 
     /* Health — color shifts with life level (only during real gameplay) */
     DrawEnergyIcon(14.0f, 55.0f);
     char eBuf[32];
     snprintf(eBuf, sizeof(eBuf), "%02u/%02u", gEquipment.currentEnergy, gEquipment.maxEnergy);
     bool inRealGameplay = ((uint8_t)gMainGameMode == 4 /* GM_INGAME */);
-    uint32_t energyCol = C2D_Color32(255, 215, 0, 255); /* normal gold */
+    uint32_t energyCol = Draw2D_Color32(255, 215, 0, 255); /* normal gold */
     if (inRealGameplay && gEquipment.currentEnergy < 30)
-        energyCol = C2D_Color32(255, 70, 50, 255);       /* critical red */
+        energyCol = Draw2D_Color32(255, 70, 50, 255);       /* critical red */
     else if (inRealGameplay && gEquipment.currentEnergy < 60)
-        energyCol = C2D_Color32(255, 200, 50, 255);      /* warning yellow */
+        energyCol = Draw2D_Color32(255, 200, 50, 255);      /* warning yellow */
     DrawText(31.0f, 56.0f, 1.0f, eBuf, energyCol);
-    DrawResourceBar(14.0f, 67.0f, 66.0f, C2D_Color32(255, 200, 60, 255),
+    DrawResourceBar(14.0f, 67.0f, 66.0f, Draw2D_Color32(255, 200, 60, 255),
                     gEquipment.currentEnergy, gEquipment.maxEnergy);
 
     /* Missiles — icon/number/bar only when owned; box highlights when selected.
@@ -4470,15 +4465,15 @@ static void RenderStatusView(void) {
         bool normSelected = (gSamusWeaponInfo.missilesSelected == 0);
         if (gEquipment.maxMissiles > 0) {
             if (normSelected) {
-                C2D_DrawRectSolid(86.0f, 50.0f, 0.46f, 74.0f, 22.0f, C2D_Color32(30, 50, 90, 255));
-                C2D_DrawRectSolid(86.0f, 50.0f, 0.47f, 74.0f, 1.0f, C2D_Color32(80, 180, 255, 255));
-                C2D_DrawRectSolid(86.0f, 71.0f, 0.47f, 74.0f, 1.0f, C2D_Color32(80, 180, 255, 255));
+                Draw2D_Rect(86.0f, 50.0f, 0.46f, 74.0f, 22.0f, Draw2D_Color32(30, 50, 90, 255));
+                Draw2D_Rect(86.0f, 50.0f, 0.47f, 74.0f, 1.0f, Draw2D_Color32(80, 180, 255, 255));
+                Draw2D_Rect(86.0f, 71.0f, 0.47f, 74.0f, 1.0f, Draw2D_Color32(80, 180, 255, 255));
             }
             DrawMissileIcon(90.0f, 55.0f);
             char mBuf[32];
             snprintf(mBuf, sizeof(mBuf), "%03u/%03u", gEquipment.currentMissiles, gEquipment.maxMissiles);
-            DrawText(107.0f, 56.0f, 1.0f, mBuf, normSelected ? C2D_Color32(255, 200, 200, 255) : C2D_Color32(255, 140, 140, 255));
-            DrawResourceBar(90.0f, 67.0f, 66.0f, C2D_Color32(232, 84, 84, 255),
+            DrawText(107.0f, 56.0f, 1.0f, mBuf, normSelected ? Draw2D_Color32(255, 200, 200, 255) : Draw2D_Color32(255, 140, 140, 255));
+            DrawResourceBar(90.0f, 67.0f, 66.0f, Draw2D_Color32(232, 84, 84, 255),
                             gEquipment.currentMissiles, gEquipment.maxMissiles);
         }
     }
@@ -4488,15 +4483,15 @@ static void RenderStatusView(void) {
         bool superSelected = (gSamusWeaponInfo.missilesSelected != 0);
         if (gEquipment.maxSuperMissiles > 0) {
             if (superSelected) {
-                C2D_DrawRectSolid(162.0f, 50.0f, 0.46f, 74.0f, 22.0f, C2D_Color32(20, 50, 30, 255));
-                C2D_DrawRectSolid(162.0f, 50.0f, 0.47f, 74.0f, 1.0f, C2D_Color32(80, 255, 140, 255));
-                C2D_DrawRectSolid(162.0f, 71.0f, 0.47f, 74.0f, 1.0f, C2D_Color32(80, 255, 140, 255));
+                Draw2D_Rect(162.0f, 50.0f, 0.46f, 74.0f, 22.0f, Draw2D_Color32(20, 50, 30, 255));
+                Draw2D_Rect(162.0f, 50.0f, 0.47f, 74.0f, 1.0f, Draw2D_Color32(80, 255, 140, 255));
+                Draw2D_Rect(162.0f, 71.0f, 0.47f, 74.0f, 1.0f, Draw2D_Color32(80, 255, 140, 255));
             }
             DrawSuperMissileIcon(166.0f, 55.0f);
             char smBuf[32];
             snprintf(smBuf, sizeof(smBuf), "%02u/%02u", gEquipment.currentSuperMissiles, gEquipment.maxSuperMissiles);
-            DrawText(183.0f, 56.0f, 1.0f, smBuf, superSelected ? C2D_Color32(160, 255, 200, 255) : C2D_Color32(100, 255, 140, 255));
-            DrawResourceBar(166.0f, 67.0f, 66.0f, C2D_Color32(96, 224, 136, 255),
+            DrawText(183.0f, 56.0f, 1.0f, smBuf, superSelected ? Draw2D_Color32(160, 255, 200, 255) : Draw2D_Color32(100, 255, 140, 255));
+            DrawResourceBar(166.0f, 67.0f, 66.0f, Draw2D_Color32(96, 224, 136, 255),
                             gEquipment.currentSuperMissiles, gEquipment.maxSuperMissiles);
         }
     }
@@ -4506,18 +4501,18 @@ static void RenderStatusView(void) {
         DrawPowerBombIcon(238.0f, 55.0f);
         char pbBuf[32];
         snprintf(pbBuf, sizeof(pbBuf), "%02u/%02u", gEquipment.currentPowerBombs, gEquipment.maxPowerBombs);
-        DrawText(254.0f, 56.0f, 1.0f, pbBuf, C2D_Color32(255, 225, 80, 255));
-        DrawResourceBar(242.0f, 67.0f, 62.0f, C2D_Color32(255, 196, 72, 255),
+        DrawText(254.0f, 56.0f, 1.0f, pbBuf, Draw2D_Color32(255, 225, 80, 255));
+        DrawResourceBar(242.0f, 67.0f, 62.0f, Draw2D_Color32(255, 196, 72, 255),
                         gEquipment.currentPowerBombs, gEquipment.maxPowerBombs);
     }
 
     /* 2. Beams & Weapons Column (X: 8, W: 148, Y: 76 to 164) */
-    C2D_DrawRectSolid(8.0f, 76.0f, 0.45f, 148.0f, 88.0f, C2D_Color32(18, 22, 34, 255));
+    Draw2D_Rect(8.0f, 76.0f, 0.45f, 148.0f, 88.0f, Draw2D_Color32(18, 22, 34, 255));
     const char* beamColTitles[7] = {
         "BEAMS & BOMBS", "BEAMS & BOMBS", "BEAMS & BOMBS",
         "BEAMS & BOMBEN", "RAYONS & BOMBES", "RAGGI E BOMBE", "RAYOS Y BOMBAS"
     };
-    DrawText(14.0f, 80.0f, 1.0f, beamColTitles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(14.0f, 80.0f, 1.0f, beamColTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
     const char* unknownNames[7] = {
         "UNKNOWN ITEM", "UNKNOWN ITEM", "UNKNOWN ITEM", "UNBEKANNT", "OBJET INCONNU", "OGGETTO SCONOSCIUTO", "OBJETO DESCONOCIDO"
@@ -4545,14 +4540,14 @@ static void RenderStatusView(void) {
         float py = 92.0f + (float)i * 11.0f;
         if (isSuitless) {
             if (i == 0) {
-                DrawText(14.0f, py, 1.0f, pistolNames[lang], C2D_Color32(80, 255, 120, 255));
-                DrawText(130.0f, py, 1.0f, "OK", C2D_Color32(80, 255, 120, 255));
+                DrawText(14.0f, py, 1.0f, pistolNames[lang], Draw2D_Color32(80, 255, 120, 255));
+                DrawText(130.0f, py, 1.0f, "OK", Draw2D_Color32(80, 255, 120, 255));
             } else {
                 bool gotSuitless = (gEquipment.suitMisc & beams[i].flag) != 0;
                 DrawText(14.0f, py, 1.0f,
                          (hcStatus && !gotSuitless) ? "----" : beams[i].name[lang],
-                         C2D_Color32(75, 85, 105, 255));
-                DrawText(130.0f, py, 1.0f, "--", C2D_Color32(75, 85, 105, 255));
+                         Draw2D_Color32(75, 85, 105, 255));
+                DrawText(130.0f, py, 1.0f, "--", Draw2D_Color32(75, 85, 105, 255));
             }
             continue;
         }
@@ -4564,18 +4559,18 @@ static void RenderStatusView(void) {
         const char* label = (unknown && hcStatus) ? unknownNames[lang] : beams[i].name[lang];
         if (hcStatus && !has) label = "----";
         const char* statusStr = "--";
-        uint32_t col = C2D_Color32(75, 85, 105, 255);
+        uint32_t col = Draw2D_Color32(75, 85, 105, 255);
 
         if (has) {
             if (unknown) {
                 statusStr = "??";
-                col = C2D_Color32(255, 180, 50, 255);
+                col = Draw2D_Color32(255, 180, 50, 255);
             } else if (active) {
                 statusStr = "OK";
-                col = C2D_Color32(80, 255, 120, 255);
+                col = Draw2D_Color32(80, 255, 120, 255);
             } else {
                 statusStr = "OFF";
-                col = C2D_Color32(220, 160, 60, 255);
+                col = Draw2D_Color32(220, 160, 60, 255);
             }
         }
 
@@ -4584,12 +4579,12 @@ static void RenderStatusView(void) {
     }
 
     /* 3. Suits & Movement Column (X: 164, W: 148, Y: 76 to 164) */
-    C2D_DrawRectSolid(164.0f, 76.0f, 0.45f, 148.0f, 88.0f, C2D_Color32(18, 22, 34, 255));
+    Draw2D_Rect(164.0f, 76.0f, 0.45f, 148.0f, 88.0f, Draw2D_Color32(18, 22, 34, 255));
     const char* suitColTitles[7] = {
         "SUITS & MISC", "SUITS & MISC", "SUITS & MISC",
         "ANZUEGE & ITEMS", "COMBINAISONS", "TUTE E OGGETTI", "TRAJES Y EQUIPO"
     };
-    DrawText(170.0f, 80.0f, 1.0f, suitColTitles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(170.0f, 80.0f, 1.0f, suitColTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
     struct {
         const char* name[7];
@@ -4612,11 +4607,11 @@ static void RenderStatusView(void) {
         if (isSuitless) {
             bool hasSuitlessItem = (flag == (1 << 6) || flag == (1 << 7)) && ((gEquipment.suitMisc & flag) != 0);
             if (hasSuitlessItem) {
-                DrawText(170.0f, py, 1.0f, suits[i].name[lang], C2D_Color32(80, 255, 120, 255));
-                DrawText(286.0f, py, 1.0f, "OK", C2D_Color32(80, 255, 120, 255));
+                DrawText(170.0f, py, 1.0f, suits[i].name[lang], Draw2D_Color32(80, 255, 120, 255));
+                DrawText(286.0f, py, 1.0f, "OK", Draw2D_Color32(80, 255, 120, 255));
             } else {
-                DrawText(170.0f, py, 1.0f, suits[i].name[lang], C2D_Color32(75, 85, 105, 255));
-                DrawText(286.0f, py, 1.0f, "--", C2D_Color32(75, 85, 105, 255));
+                DrawText(170.0f, py, 1.0f, suits[i].name[lang], Draw2D_Color32(75, 85, 105, 255));
+                DrawText(286.0f, py, 1.0f, "--", Draw2D_Color32(75, 85, 105, 255));
             }
             continue;
         }
@@ -4628,26 +4623,26 @@ static void RenderStatusView(void) {
         const char* label = (unknown && hcStatus) ? unknownNames[lang] : suits[i].name[lang];
         if (hcStatus && !has) label = "----";
         const char* statusStr = "--";
-        uint32_t col = C2D_Color32(75, 85, 105, 255);
+        uint32_t col = Draw2D_Color32(75, 85, 105, 255);
 
         if (has) {
             if (unknown) {
                 statusStr = "??";
-                col = C2D_Color32(255, 180, 50, 255);
+                col = Draw2D_Color32(255, 180, 50, 255);
             } else if (active) {
 #ifdef PORT_DEBUG_TOOLS_ACTIVE
                 if (Port_BottomUI_DebugTabVisible() && PortPpuMzm_DebugGetForceEffect(flag)) {
                     statusStr = "AUTO";
-                    col = C2D_Color32(120, 220, 255, 255);
+                    col = Draw2D_Color32(120, 220, 255, 255);
                 } else
 #endif
                 {
                     statusStr = "OK";
-                    col = C2D_Color32(80, 255, 120, 255);
+                    col = Draw2D_Color32(80, 255, 120, 255);
                 }
             } else {
                 statusStr = "OFF";
-                col = C2D_Color32(220, 160, 60, 255);
+                col = Draw2D_Color32(220, 160, 60, 255);
             }
         }
 
@@ -4656,13 +4651,13 @@ static void RenderStatusView(void) {
     }
 
     /* 4. Area Map Downloads Card & Collectibles Button (Y: 168 to 234) */
-    C2D_DrawRectSolid(8.0f, 168.0f, 0.45f, 304.0f, 66.0f, C2D_Color32(16, 20, 30, 255));
+    Draw2D_Rect(8.0f, 168.0f, 0.45f, 304.0f, 66.0f, Draw2D_Color32(16, 20, 30, 255));
 
     const char* mapHeaderTitles[7] = {
         "DOWNLOADED MAPS:", "DOWNLOADED MAPS:", "DOWNLOADED MAPS:",
         "HERUNTERGELADENE KARTEN:", "CARTES TELECHARGEES:", "MAPPE SCARICATE:", "MAPAS DESCARGADOS:"
     };
-    DrawText(14.0f, 172.0f, 1.0f, mapHeaderTitles[lang], C2D_Color32(100, 220, 255, 255));
+    DrawText(14.0f, 172.0f, 1.0f, mapHeaderTitles[lang], Draw2D_Color32(100, 220, 255, 255));
 
     /* Button for opening Collectibles Detail Modal */
     struct AreaItemStats globalStats;
@@ -4680,9 +4675,9 @@ static void RenderStatusView(void) {
         snprintf(globBtn, sizeof(globBtn), "%s: %u/%u (%u%%)", itemsBtnLabels[lang],
                  globalStats.totalObtained, globalStats.totalItems, pct);
     }
-    C2D_DrawRectSolid(182.0f, 170.0f, 0.5f, 126.0f, 14.0f, C2D_Color32(20, 50, 90, 255));
-    C2D_DrawRectSolid(183.0f, 171.0f, 0.55f, 124.0f, 12.0f, C2D_Color32(12, 30, 60, 255));
-    DrawTextCentered(245.0f, 173.0f, 1.0f, globBtn, C2D_Color32(255, 215, 0, 255));
+    Draw2D_Rect(182.0f, 170.0f, 0.5f, 126.0f, 14.0f, Draw2D_Color32(20, 50, 90, 255));
+    Draw2D_Rect(183.0f, 171.0f, 0.55f, 124.0f, 12.0f, Draw2D_Color32(12, 30, 60, 255));
+    DrawTextCentered(245.0f, 173.0f, 1.0f, globBtn, Draw2D_Color32(255, 215, 0, 255));
 
     /* Box colour is driven by the per-area debug cycle state, not by % :
      *   not downloaded            -> grey
@@ -4706,22 +4701,22 @@ static void RenderStatusView(void) {
             uint32_t boxBg, boxBorder;
             bool lit;
             if (mst == 2) {                 /* forced 100% -> orange */
-                boxBg = C2D_Color32(70, 45, 15, 255);
-                boxBorder = C2D_Color32(255, 170, 60, 255); lit = true;
+                boxBg = Draw2D_Color32(70, 45, 15, 255);
+                boxBorder = Draw2D_Color32(255, 170, 60, 255); lit = true;
             } else if (mst == 1) {          /* forced download -> purple */
-                boxBg = C2D_Color32(45, 30, 70, 255);
-                boxBorder = C2D_Color32(170, 110, 240, 255); lit = true;
+                boxBg = Draw2D_Color32(45, 30, 70, 255);
+                boxBorder = Draw2D_Color32(170, 110, 240, 255); lit = true;
             } else if (dl) {                /* genuinely downloaded -> green */
-                boxBg = C2D_Color32(18, 62, 32, 255);
-                boxBorder = C2D_Color32(70, 220, 110, 255); lit = true;
+                boxBg = Draw2D_Color32(18, 62, 32, 255);
+                boxBorder = Draw2D_Color32(70, 220, 110, 255); lit = true;
             } else {                        /* not downloaded -> grey */
-                boxBg = C2D_Color32(22, 26, 38, 255);
-                boxBorder = C2D_Color32(45, 52, 70, 255); lit = false;
+                boxBg = Draw2D_Color32(22, 26, 38, 255);
+                boxBorder = Draw2D_Color32(45, 52, 70, 255); lit = false;
             }
-            uint32_t textCol = lit ? C2D_Color32(255, 255, 255, 255)
-                                   : C2D_Color32(90, 100, 120, 255);
-            C2D_DrawRectSolid(bx, by, 0.5f, bw, 18.0f, boxBorder);
-            C2D_DrawRectSolid(bx + 1.0f, by + 1.0f, 0.55f, bw - 2.0f, 16.0f, boxBg);
+            uint32_t textCol = lit ? Draw2D_Color32(255, 255, 255, 255)
+                                   : Draw2D_Color32(90, 100, 120, 255);
+            Draw2D_Rect(bx, by, 0.5f, bw, 18.0f, boxBorder);
+            Draw2D_Rect(bx + 1.0f, by + 1.0f, 0.55f, bw - 2.0f, 16.0f, boxBg);
             DrawTextCentered(bx + bw / 2.0f, by + 5.0f, 1.0f, AreaName(i), textCol);
         }
     }
@@ -4742,12 +4737,12 @@ static void RenderOptionsView(void) {
     const float viewY1 = viewY0 + viewH;
 
     /* Background panel */
-    C2D_DrawRectSolid(viewX0, viewY0, 0.4f, viewW, viewH, C2D_Color32(14, 18, 28, 255));
-    C2D_DrawRectSolid(viewX0, viewY0, 0.38f, viewW, viewH, C2D_Color32(35, 45, 70, 255));
+    Draw2D_Rect(viewX0, viewY0, 0.4f, viewW, viewH, Draw2D_Color32(14, 18, 28, 255));
+    Draw2D_Rect(viewX0, viewY0, 0.38f, viewW, viewH, Draw2D_Color32(35, 45, 70, 255));
 
     /* Button 1: Display settings (Y: 48 to 76, H: 28) */
     bool p1 = DrawButtonBox(16.0f, 48.0f, 288.0f, 28.0f,
-                            C2D_Color32(16, 40, 74, 255), C2D_Color32(60, 110, 180, 255));
+                            Draw2D_Color32(16, 40, 74, 255), Draw2D_Color32(60, 110, 180, 255));
     static const char* const displayBtnTitles[7] = {
         "DISPLAY", "DISPLAY", "DISPLAY",
         "BILDSCHIRM", "AFFICHAGE", "SCHERMO", "PANTALLA"
@@ -4756,12 +4751,12 @@ static void RenderOptionsView(void) {
         "LANGUAGE, ASPECT, STYLE, FPS", "LANGUAGE, ASPECT, STYLE, FPS", "LANGUAGE, ASPECT, STYLE, FPS",
         "SPRACHE, BILD, STIL, FPS", "LANGUE, FORMAT, STYLE, FPS", "LINGUA, FORMATO, STILE, FPS", "IDIOMA, ASPECTO, ESTILO, FPS"
     };
-    DrawTextCentered(160.0f, 53.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnTitles[lang], C2D_Color32(120, 210, 255, 255));
-    DrawTextCentered(160.0f, 64.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnSubs[lang], C2D_Color32(150, 170, 200, 255));
+    DrawTextCentered(160.0f, 53.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnTitles[lang], Draw2D_Color32(120, 210, 255, 255));
+    DrawTextCentered(160.0f, 64.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnSubs[lang], Draw2D_Color32(150, 170, 200, 255));
 
     /* Controls remapping (Y: 82 to 114, H: 32) */
     bool p4 = DrawButtonBox(16.0f, 82.0f, 288.0f, 32.0f,
-                            C2D_Color32(46, 32, 12, 255), C2D_Color32(170, 130, 60, 255));
+                            Draw2D_Color32(46, 32, 12, 255), Draw2D_Color32(170, 130, 60, 255));
     static const char* const ctrlTitles[7] = {
         "CONTROLS", "CONTROLS", "CONTROLS",
         "STEUERUNG", "COMMANDES", "CONTROLLI", "CONTROLES"
@@ -4770,8 +4765,8 @@ static void RenderOptionsView(void) {
         "REMAPPABLE BUTTONS & C-STICK", "REMAPPABLE BUTTONS & C-STICK", "REMAPPABLE BUTTONS & C-STICK",
         "TASTEN & C-STICK BELEGEN", "TOUCHES ET C-STICK", "RIMAPPA TASTI E C-STICK", "MAPEAR BOTONES Y C-STICK"
     };
-    DrawTextCentered(160.0f, 89.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlTitles[lang], C2D_Color32(255, 215, 90, 255));
-    DrawTextCentered(160.0f, 100.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlSubs[lang], C2D_Color32(190, 170, 120, 255));
+    DrawTextCentered(160.0f, 89.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlTitles[lang], Draw2D_Color32(255, 215, 90, 255));
+    DrawTextCentered(160.0f, 100.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlSubs[lang], Draw2D_Color32(190, 170, 120, 255));
 
     /* Restart button (Y: 122 to 150, H: 28) */
     static const char* const restartBtnTitles[7] = {
@@ -4779,14 +4774,14 @@ static void RenderOptionsView(void) {
         "SPIEL NEUSTARTEN", "RECOMMENCER PARTIE", "RIAVVIA PARTITA", "REINICIAR PARTIDA"
     };
     DrawButton(16.0f, 122.0f, 140.0f, 28.0f, restartBtnTitles[lang],
-               C2D_Color32(255, 150, 150, 255), C2D_Color32(64, 22, 22, 255), C2D_Color32(180, 60, 60, 255));
+               Draw2D_Color32(255, 150, 150, 255), Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
 
     /* Updates button, right half of the restart row */
     DrawButton(164.0f, 122.0f, 140.0f, 28.0f, (lang == 6) ? "ACTUALIZAR" : "UPDATES",
-               C2D_Color32(150, 230, 255, 255), C2D_Color32(16, 44, 64, 255), C2D_Color32(60, 130, 180, 255));
+               Draw2D_Color32(150, 230, 255, 255), Draw2D_Color32(16, 44, 64, 255), Draw2D_Color32(60, 130, 180, 255));
 
     /* Footer */
-    DrawTextCentered(160.0f, 212.0f, 1.0f, "METROID ZERO MISSION 3DS " MZM_PORT_VERSION_LABEL, C2D_Color32(90, 115, 145, 255));
+    DrawTextCentered(160.0f, 212.0f, 1.0f, "METROID ZERO MISSION 3DS " MZM_PORT_VERSION_LABEL, Draw2D_Color32(90, 115, 145, 255));
 
     /* Render active modal on top */
     if (sShowDisplayModal) RenderDisplayModal(lang);
@@ -4842,8 +4837,8 @@ static void DrawDebugCell(int index, const char* label, const char* state, uint3
     float x = DBGTOOL_CELL_X(index & 1);
     float y = DBGTOOL_CELL_Y(index >> 1);
     DrawButtonBox(x, y, (float)DBGTOOL_COL_W, (float)DBGTOOL_CELL_H,
-                  C2D_Color32(24, 32, 50, 255), C2D_Color32(50, 80, 130, 255));
-    DrawTextMaxWClipped(x + 6.0f, y + 2.0f, 1.0f, label, C2D_Color32(255, 255, 255, 255),
+                  Draw2D_Color32(24, 32, 50, 255), Draw2D_Color32(50, 80, 130, 255));
+    DrawTextMaxWClipped(x + 6.0f, y + 2.0f, 1.0f, label, Draw2D_Color32(255, 255, 255, 255),
                         0.0f, 240.0f, (float)DBGTOOL_COL_W - 12.0f);
     if (state) DrawText(x + 6.0f, y + 11.0f, 1.0f, state, accent);
 }
@@ -4859,13 +4854,13 @@ static void DrawDebugCellSplit(int index, const char* label,
     float y = DBGTOOL_CELL_Y(index >> 1);
     float bx = x + (float)DBGTOOL_COL_W - 46.0f; /* divider / right-zone edge */
     DrawButtonBox(x, y, (float)DBGTOOL_COL_W, (float)DBGTOOL_CELL_H,
-                  C2D_Color32(24, 32, 50, 255), C2D_Color32(50, 80, 130, 255));
-    DrawTextMaxWClipped(x + 6.0f, y + 2.0f, 1.0f, label, C2D_Color32(255, 255, 255, 255),
+                  Draw2D_Color32(24, 32, 50, 255), Draw2D_Color32(50, 80, 130, 255));
+    DrawTextMaxWClipped(x + 6.0f, y + 2.0f, 1.0f, label, Draw2D_Color32(255, 255, 255, 255),
                         0.0f, 240.0f, bx - x - 8.0f);
     if (leftTxt)
         DrawTextMaxWClipped(x + 6.0f, y + 11.0f, 1.0f, leftTxt, leftCol, 0.0f, 240.0f, bx - x - 8.0f);
-    C2D_DrawRectSolid(bx - 1.0f, y + 3.0f, 0.92f, 1.0f, (float)DBGTOOL_CELL_H - 6.0f,
-                      C2D_Color32(90, 110, 150, 255));
+    Draw2D_Rect(bx - 1.0f, y + 3.0f, 0.92f, 1.0f, (float)DBGTOOL_CELL_H - 6.0f,
+                      Draw2D_Color32(90, 110, 150, 255));
     /* Centred in the right zone (bx .. x+COL_W), horizontally and
      * vertically -- one short tag, mid-cell (glyphs are 7px in a 19px
      * cell). ~45px fits 7 glyphs at 6px each, so keep right tags short. */
@@ -4883,18 +4878,18 @@ static void DrawDebugCellSideButton(int index, bool running) {
     float y = DBGTOOL_CELL_Y(index >> 1);
     float cy = y + (float)DBGTOOL_CELL_H * 0.5f;
     float bx = xr - 46.0f;                 /* panel left edge */
-    const uint32_t fg   = running ? C2D_Color32(255, 90, 90, 255)   /* red = tap to stop */
-                                  : C2D_Color32(120, 230, 140, 255);/* green = tap to start */
-    const uint32_t bg   = running ? C2D_Color32(70, 22, 22, 255)
-                                  : C2D_Color32(22, 44, 30, 255);
-    C2D_DrawRectSolid(bx - 2.0f, y + 3.0f, 0.92f, 1.0f, (float)DBGTOOL_CELL_H - 6.0f,
-                      C2D_Color32(90, 110, 150, 255));
-    C2D_DrawRectSolid(bx, y + 3.0f, 0.92f, 44.0f, (float)DBGTOOL_CELL_H - 6.0f, bg);
+    const uint32_t fg   = running ? Draw2D_Color32(255, 90, 90, 255)   /* red = tap to stop */
+                                  : Draw2D_Color32(120, 230, 140, 255);/* green = tap to start */
+    const uint32_t bg   = running ? Draw2D_Color32(70, 22, 22, 255)
+                                  : Draw2D_Color32(22, 44, 30, 255);
+    Draw2D_Rect(bx - 2.0f, y + 3.0f, 0.92f, 1.0f, (float)DBGTOOL_CELL_H - 6.0f,
+                      Draw2D_Color32(90, 110, 150, 255));
+    Draw2D_Rect(bx, y + 3.0f, 0.92f, 44.0f, (float)DBGTOOL_CELL_H - 6.0f, bg);
     float mx = bx + 22.0f;                 /* glyph centre */
     if (running) {
-        C2D_DrawRectSolid(mx - 5.0f, cy - 5.0f, 0.93f, 10.0f, 10.0f, fg);
+        Draw2D_Rect(mx - 5.0f, cy - 5.0f, 0.93f, 10.0f, 10.0f, fg);
     } else {
-        C2D_DrawTriangle(mx - 4.0f, cy - 6.0f, fg,
+        Draw2D_Triangle(mx - 4.0f, cy - 6.0f, fg,
                          mx - 4.0f, cy + 6.0f, fg,
                          mx + 6.0f, cy,        fg, 0.93f);
     }
@@ -4940,8 +4935,8 @@ static void DrawDebugRow(int i, const char* label, const char* value, uint32_t v
     float ry = DBGTOOL_ROW_Y(i);
     DrawButtonBox((float)DBGTOOL_ROW_X0, ry,
                   (float)(DBGTOOL_ROW_X1 - DBGTOOL_ROW_X0), (float)DBGTOOL_ROW_H,
-                  C2D_Color32(24, 32, 50, 255), C2D_Color32(60, 90, 130, 255));
-    DrawText((float)DBGTOOL_ROW_X0 + 8.0f, ry + 6.0f, 1.0f, label, C2D_Color32(255, 255, 255, 255));
+                  Draw2D_Color32(24, 32, 50, 255), Draw2D_Color32(60, 90, 130, 255));
+    DrawText((float)DBGTOOL_ROW_X0 + 8.0f, ry + 6.0f, 1.0f, label, Draw2D_Color32(255, 255, 255, 255));
     if (value) DrawText(224.0f, ry + 6.0f, 1.0f, value, valueCol);
 }
 
@@ -4955,11 +4950,11 @@ static int DebugRowHit(int x, int y, int rowCount) {
 }
 
 static void DrawDebugModalFrame(int lang, const char* titleEs, const char* titleEn) {
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.85f, 300.0f, 210.0f, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(10.0f, 26.0f, 0.84f, 300.0f, 210.0f, C2D_Color32(40, 70, 120, 255));
-    DrawText(20.0f, 32.0f, 1.0f, (lang == 6) ? titleEs : titleEn, C2D_Color32(255, 215, 0, 255));
+    Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 210.0f, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 210.0f, Draw2D_Color32(40, 70, 120, 255));
+    DrawText(20.0f, 32.0f, 1.0f, (lang == 6) ? titleEs : titleEn, Draw2D_Color32(255, 215, 0, 255));
     DrawButton(116.0f, 214.0f, 88.0f, 20.0f, (lang == 6) ? "CERRAR" : "CLOSE",
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 static bool DebugCloseHit(int x, int y) {
@@ -4973,9 +4968,9 @@ static void RenderDebugToolsModal(int lang) {
     const bool perf = PlatformGpu3DS_IsPerfRecording();
     const char* onTxt = (lang == 6) ? "ACTIVO" : "ON";
     const char* offTxt = (lang == 6) ? "PARADO" : "OFF";
-    const uint32_t colAct = C2D_Color32(140, 170, 210, 255);
-    const uint32_t colOn = C2D_Color32(80, 255, 120, 255);
-    const uint32_t colMenu = C2D_Color32(255, 215, 0, 255);
+    const uint32_t colAct = Draw2D_Color32(140, 170, 210, 255);
+    const uint32_t colOn = Draw2D_Color32(80, 255, 120, 255);
+    const uint32_t colMenu = Draw2D_Color32(255, 215, 0, 255);
 
     DrawDebugCell(0, (lang == 6) ? "VOLCADO PANTALLA" : "SCREEN DUMP",
                   (lang == 6) ? "VOLCAR" : "DUMP", colAct);
@@ -4992,7 +4987,7 @@ static void RenderDebugToolsModal(int lang) {
     DrawDebugCell(4, (lang == 6) ? "ATLAS GPU" : "GPU ATLAS",
                   (lang == 6) ? "VOLCAR" : "DUMP", colAct);
     DrawDebugCell(5, (lang == 6) ? "MATAR A SAMUS" : "KILL SAMUS",
-                  (lang == 6) ? "MATAR" : "KILL", C2D_Color32(255, 130, 130, 255));
+                  (lang == 6) ? "MATAR" : "KILL", Draw2D_Color32(255, 130, 130, 255));
     DrawDebugCell(6, (lang == 6) ? "TELETRANSPORTE" : "WARP", ">", colMenu);
 
     /* Nothing is written to the SD card while LOG is stopped even in a debug
@@ -5022,7 +5017,7 @@ static void RenderDebugToolsModal(int lang) {
          * stays correct when frames overrun -- judder, not slow motion). */
         DrawDebugCellSplit(9, "RENDERER", gpuOn ? "GPU" : "CPU", gpuOn ? colAct : colOn,
                            skipOn ? "SKIP" : "skip",
-                           skipOn ? C2D_Color32(140, 235, 150, 255) : C2D_Color32(120, 135, 160, 255));
+                           skipOn ? Draw2D_Color32(140, 235, 150, 255) : Draw2D_Color32(120, 135, 160, 255));
     }
     {
         /* Run the Old3DS profile on New3DS hardware without a FORCE_OLD3DS
@@ -5034,9 +5029,9 @@ static void RenderDebugToolsModal(int lang) {
             const bool forced = Platform3DS_ForcedOld3DSProfile();
             const char* st = !hwNew ? "OLD (hw)" : (forced ? "OLD (forz.)" : "NEW");
             DrawDebugCell(10, "PERFIL 3DS", st,
-                          !hwNew ? C2D_Color32(120, 135, 160, 255)
-                                 : (forced ? C2D_Color32(230, 200, 120, 255)
-                                           : C2D_Color32(120, 230, 140, 255)));
+                          !hwNew ? Draw2D_Color32(120, 135, 160, 255)
+                                 : (forced ? Draw2D_Color32(230, 200, 120, 255)
+                                           : Draw2D_Color32(120, 230, 140, 255)));
         }
         /* Flat-colour every layer/sprite by its stereo depth plane, so a
          * wrongly-placed cutscene layer stands out at a glance. */
@@ -5063,14 +5058,14 @@ static void RenderDebugToolsModal(int lang) {
         const bool waiting = !running && Port_Config_DebugFtpOn();
         DrawDebugCell(DBGTOOL_FTP_CELL, connected ? "FTP  CLIENT ON" : "FTP SERVER",
                       waiting ? "WAITING WI-FI" : address,
-                      running ? colOn : waiting ? C2D_Color32(240, 200, 80, 255) : colAct);
+                      running ? colOn : waiting ? Draw2D_Color32(240, 200, 80, 255) : colAct);
         DrawDebugCellSideButton(DBGTOOL_FTP_CELL, running || waiting);
     }
 
     DrawDebugCell(DBGTOOL_SOUNDTEST_CELL, (lang == 6) ? "SOUND TEST" : "SOUND TEST", ">", colMenu);
 
     if (sDebugToolsMsg[0] && sFrameCounter < sDebugToolsMsgUntil) {
-        DrawTextCentered(160.0f, 204.0f, 1.0f, sDebugToolsMsg, C2D_Color32(120, 255, 160, 255));
+        DrawTextCentered(160.0f, 204.0f, 1.0f, sDebugToolsMsg, Draw2D_Color32(120, 255, 160, 255));
     } else {
         /* Linear heap, free / total. Everything big the port reserves comes
          * out of here -- the 8MB ROM buffer, the tile atlas, the citro2d/
@@ -5091,7 +5086,7 @@ static void RenderDebugToolsModal(int lang) {
         snprintf(mem, sizeof(mem), "LINEAR %u.%01u / %u.%01u MB FREE",
                  freeKb / 1024u, (freeKb % 1024u) * 10u / 1024u,
                  totalKb / 1024u, (totalKb % 1024u) * 10u / 1024u);
-        DrawTextCentered(160.0f, 204.0f, 1.0f, mem, C2D_Color32(140, 170, 210, 255));
+        DrawTextCentered(160.0f, 204.0f, 1.0f, mem, Draw2D_Color32(140, 170, 210, 255));
     }
 }
 
@@ -5274,30 +5269,30 @@ static void RenderDebugWarpModal(int lang) {
      * left third = previous, right third = next, middle = nothing, so a
      * mis-tap in the middle does nothing rather than jumping a step. */
     DrawDebugRow(0, (lang == 6) ? "AREA" : "AREA", NULL, 0);
-    DrawText(120.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, "<", C2D_Color32(255, 215, 0, 255));
-    DrawText(140.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, AreaName((uint8_t)selArea), C2D_Color32(220, 235, 255, 255));
-    DrawText(288.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, ">", C2D_Color32(255, 215, 0, 255));
+    DrawText(120.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, "<", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(140.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, AreaName((uint8_t)selArea), Draw2D_Color32(220, 235, 255, 255));
+    DrawText(288.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, ">", Draw2D_Color32(255, 215, 0, 255));
 
     snprintf(valBuf, sizeof(valBuf), "%d / %d", selDoor, doorCount > 0 ? doorCount - 1 : 0);
     DrawDebugRow(1, (lang == 6) ? "PUERTA" : "DOOR", NULL, 0);
-    DrawText(120.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, "<", C2D_Color32(255, 215, 0, 255));
-    DrawText(140.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, valBuf, C2D_Color32(220, 235, 255, 255));
-    DrawText(288.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, ">", C2D_Color32(255, 215, 0, 255));
+    DrawText(120.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, "<", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(140.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, valBuf, Draw2D_Color32(220, 235, 255, 255));
+    DrawText(288.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, ">", Draw2D_Color32(255, 215, 0, 255));
 
     if (selRoom >= 0) snprintf(valBuf, sizeof(valBuf), "%s %d", (lang == 6) ? "SALA" : "ROOM", selRoom);
     else snprintf(valBuf, sizeof(valBuf), "--");
     DrawDebugRow(2, (lang == 6) ? "IR A ESA PUERTA" : "GO TO THAT DOOR",
-                 valBuf, selRoom >= 0 ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(110, 120, 140, 255));
+                 valBuf, selRoom >= 0 ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(110, 120, 140, 255));
 
     DrawDebugRow(3, (lang == 6) ? "GUARDAR PUNTO AQUI" : "SAVE POINT HERE",
-                 (lang == 6) ? "GUARDAR" : "SAVE", C2D_Color32(255, 215, 0, 255));
+                 (lang == 6) ? "GUARDAR" : "SAVE", Draw2D_Color32(255, 215, 0, 255));
     DrawDebugRow(4, (lang == 6) ? "IR AL PUNTO GUARDADO" : "GO TO SAVED POINT",
                  hasWarp ? ((lang == 6) ? "IR" : "GO") : "--",
-                 hasWarp ? C2D_Color32(80, 255, 120, 255) : C2D_Color32(110, 120, 140, 255));
+                 hasWarp ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(110, 120, 140, 255));
 
     char warpInfo[48];
     PortPpuMzm_DebugGetWarpPointInfo(warpInfo, (int)sizeof(warpInfo));
-    DrawText((float)DBGTOOL_ROW_X0, 176.0f, 1.0f, warpInfo, C2D_Color32(150, 190, 240, 255));
+    DrawText((float)DBGTOOL_ROW_X0, 176.0f, 1.0f, warpInfo, Draw2D_Color32(150, 190, 240, 255));
 
     /* Current position, so "save point here" is verifiable before pressing
      * it and the spinner has something to aim at. */
@@ -5305,10 +5300,10 @@ static void RenderDebugWarpModal(int lang) {
     snprintf(hereBuf, sizeof(hereBuf), "%s: %s %s %u",
              (lang == 6) ? "AHORA" : "NOW", AreaName(gCurrentArea),
              (lang == 6) ? "SALA" : "ROOM", gCurrentRoom);
-    DrawText((float)DBGTOOL_ROW_X0, 187.0f, 1.0f, hereBuf, C2D_Color32(150, 190, 240, 255));
+    DrawText((float)DBGTOOL_ROW_X0, 187.0f, 1.0f, hereBuf, Draw2D_Color32(150, 190, 240, 255));
 
     if (sDebugToolsMsg[0] && sFrameCounter < sDebugToolsMsgUntil) {
-        DrawTextCentered(160.0f, 198.0f, 1.0f, sDebugToolsMsg, C2D_Color32(120, 255, 160, 255));
+        DrawTextCentered(160.0f, 198.0f, 1.0f, sDebugToolsMsg, Draw2D_Color32(120, 255, 160, 255));
     }
 }
 
@@ -5382,18 +5377,18 @@ static void RenderSoundTestModal(int lang) {
     char buf[40];
     snprintf(buf, sizeof(buf), "0x%03X  (%d)", sSndTestId, sSndTestId);
     DrawDebugRow(0, "ID", NULL, 0);
-    DrawText(120.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, "<", C2D_Color32(255, 215, 0, 255));
-    DrawText(140.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, buf, C2D_Color32(220, 235, 255, 255));
-    DrawText(288.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, ">", C2D_Color32(255, 215, 0, 255));
+    DrawText(120.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, "<", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(140.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, buf, Draw2D_Color32(220, 235, 255, 255));
+    DrawText(288.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, ">", Draw2D_Color32(255, 215, 0, 255));
 
     DrawDebugRow(1, "ID  x16", NULL, 0);
-    DrawText(120.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, "<<", C2D_Color32(255, 215, 0, 255));
-    DrawText(286.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, ">>", C2D_Color32(255, 215, 0, 255));
+    DrawText(120.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, "<<", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(286.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, ">>", Draw2D_Color32(255, 215, 0, 255));
 
     /* One toggle per source: tap plays it, tap again stops it. The glyph is
      * a play triangle when idle and a stop square while it is sounding. */
-    const uint32_t glyphIdle = C2D_Color32(120, 255, 140, 255);
-    const uint32_t glyphLive = C2D_Color32(255, 120, 120, 255);
+    const uint32_t glyphIdle = Draw2D_Color32(120, 255, 140, 255);
+    const uint32_t glyphLive = Draw2D_Color32(255, 120, 120, 255);
 
     DrawDebugRow(2, (lang == 6) ? "SONIDO DEL MOTOR" : "ENGINE SOUND", NULL, 0);
     DrawActionGlyph(292.0f, DBGTOOL_ROW_Y(2) + (float)DBGTOOL_ROW_H * 0.5f,
@@ -5407,10 +5402,10 @@ static void RenderSoundTestModal(int lang) {
     DrawText((float)DBGTOOL_ROW_X0, 176.0f, 1.0f,
              (lang == 6) ? "0x01-0x5F musica/jingles  |  0x60+ efectos"
                          : "0x01-0x5F music/jingles  |  0x60+ SFX",
-             C2D_Color32(150, 190, 240, 255));
+             Draw2D_Color32(150, 190, 240, 255));
 
     if (sDebugToolsMsg[0] && sFrameCounter < sDebugToolsMsgUntil)
-        DrawTextCentered(160.0f, 190.0f, 1.0f, sDebugToolsMsg, C2D_Color32(120, 255, 160, 255));
+        DrawTextCentered(160.0f, 190.0f, 1.0f, sDebugToolsMsg, Draw2D_Color32(120, 255, 160, 255));
 }
 
 static void HandleSoundTestModalTouch(int x, int y) {
@@ -5516,17 +5511,17 @@ static bool DebugEquipHas(const struct DebugEquipEntry* e, unsigned beams, unsig
 static void DrawEquipCell(float x, float y, const struct DebugEquipEntry* e, int lang,
                           unsigned beams, unsigned misc) {
     bool on = DebugEquipHas(e, beams, misc);
-    C2D_DrawRectSolid(x, y, 0.9f, (float)DBGEQUIP_COL_W, (float)DBGEQUIP_CELL_H,
-                      on ? C2D_Color32(20, 60, 35, 255) : C2D_Color32(24, 32, 50, 255));
+    Draw2D_Rect(x, y, 0.9f, (float)DBGEQUIP_COL_W, (float)DBGEQUIP_CELL_H,
+                      on ? Draw2D_Color32(20, 60, 35, 255) : Draw2D_Color32(24, 32, 50, 255));
     DrawText(x + 6.0f, y + 5.0f, 1.0f, (lang == 6) ? e->es : e->en,
-             on ? C2D_Color32(120, 255, 160, 255) : C2D_Color32(140, 150, 170, 255));
+             on ? Draw2D_Color32(120, 255, 160, 255) : Draw2D_Color32(140, 150, 170, 255));
     DrawText(x + (float)DBGEQUIP_COL_W - 26.0f, y + 5.0f, 1.0f, on ? "ON" : "--",
-             on ? C2D_Color32(120, 255, 160, 255) : C2D_Color32(110, 120, 140, 255));
+             on ? Draw2D_Color32(120, 255, 160, 255) : Draw2D_Color32(110, 120, 140, 255));
 }
 
 static void DrawEquipAction(float x, float y, float w, const char* label, uint32_t col) {
     DrawButton(x, y, w, (float)DBGEQUIP_ACT_H, label, col,
-               C2D_Color32(24, 40, 66, 255), C2D_Color32(70, 110, 160, 255));
+               Draw2D_Color32(24, 40, 66, 255), Draw2D_Color32(70, 110, 160, 255));
 }
 
 static void RenderDebugEquipModal(int lang) {
@@ -5542,17 +5537,17 @@ static void RenderDebugEquipModal(int lang) {
     }
 
     DrawEquipAction((float)DBGEQUIP_COL_L_X, (float)DBGEQUIP_ACT_Y0, 140.0f,
-                    (lang == 6) ? "TODO ON" : "ALL ON", C2D_Color32(120, 255, 160, 255));
+                    (lang == 6) ? "TODO ON" : "ALL ON", Draw2D_Color32(120, 255, 160, 255));
     DrawEquipAction((float)DBGEQUIP_COL_R_X, (float)DBGEQUIP_ACT_Y0, 140.0f,
-                    (lang == 6) ? "TODO OFF" : "ALL OFF", C2D_Color32(255, 150, 150, 255));
+                    (lang == 6) ? "TODO OFF" : "ALL OFF", Draw2D_Color32(255, 150, 150, 255));
 
     float ay = (float)DBGEQUIP_ACT2_Y0;
     DrawEquipAction((float)DBGEQUIP_COL_L_X, ay, 90.0f,
-                    (lang == 6) ? "MUNIC MAX" : "AMMO MAX", C2D_Color32(255, 215, 0, 255));
+                    (lang == 6) ? "MUNIC MAX" : "AMMO MAX", Draw2D_Color32(255, 215, 0, 255));
     DrawEquipAction((float)(DBGEQUIP_COL_L_X + 94), ay, 90.0f,
-                    (lang == 6) ? "MUNIC MIN" : "AMMO MIN", C2D_Color32(255, 150, 150, 255));
+                    (lang == 6) ? "MUNIC MIN" : "AMMO MIN", Draw2D_Color32(255, 150, 150, 255));
     DrawEquipAction((float)(DBGEQUIP_COL_L_X + 188), ay, 100.0f,
-                    (lang == 6) ? "RELLENAR" : "REFILL", C2D_Color32(120, 255, 160, 255));
+                    (lang == 6) ? "RELLENAR" : "REFILL", Draw2D_Color32(120, 255, 160, 255));
 
     /* Deliberately no energy/missile readout here: the game's own HUD on the
      * top screen already shows all of it, and the line collided with the
@@ -5609,10 +5604,10 @@ static void HandleDebugEquipModalTouch(int x, int y) {
 
 /* Render Debug View with Map Tile Inspector */
 static void RenderDebugView(void) {
-    C2D_DrawRectSolid(8.0f, 28.0f, 0.4f, 304.0f, 204.0f, C2D_Color32(14, 18, 28, 255));
-    C2D_DrawRectSolid(8.0f, 28.0f, 0.35f, 304.0f, 204.0f, C2D_Color32(40, 60, 90, 255));
+    Draw2D_Rect(8.0f, 28.0f, 0.4f, 304.0f, 204.0f, Draw2D_Color32(14, 18, 28, 255));
+    Draw2D_Rect(8.0f, 28.0f, 0.35f, 304.0f, 204.0f, Draw2D_Color32(40, 60, 90, 255));
 
-    DrawText(16.0f, 32.0f, 1.0f, "PERFORMANCE & MAP DEBUG (" MZM_PORT_VERSION ")", C2D_Color32(100, 220, 255, 255));
+    DrawText(16.0f, 32.0f, 1.0f, "PERFORMANCE & MAP DEBUG (" MZM_PORT_VERSION ")", Draw2D_Color32(100, 220, 255, 255));
 
     char buf[80];
     double fps = Port_PPU_3DS_CurrentFps();
@@ -5623,28 +5618,28 @@ static void RenderDebugView(void) {
 
     snprintf(buf, sizeof(buf), "FPS: %u   RENDER: %s   SYS: %s",
              roundedFps, usedGpu ? "GPU" : "CPU", isNew3ds ? "N3DS" : "O3DS");
-    DrawText(16.0f, 46.0f, 1.0f, buf, C2D_Color32(255, 255, 255, 255));
+    DrawText(16.0f, 46.0f, 1.0f, buf, Draw2D_Color32(255, 255, 255, 255));
 
     snprintf(buf, sizeof(buf), "GAME STATE: AREA=%s (%u) ROOM=%u",
              AreaName(gCurrentArea), gCurrentArea, gCurrentRoom);
-    DrawText(16.0f, 58.0f, 1.0f, buf, C2D_Color32(180, 240, 160, 255));
+    DrawText(16.0f, 58.0f, 1.0f, buf, Draw2D_Color32(180, 240, 160, 255));
 
     snprintf(buf, sizeof(buf), "MAP COORDS: X=%u Y=%u", gMinimapX, gMinimapY);
-    DrawText(16.0f, 70.0f, 1.0f, buf, C2D_Color32(180, 240, 160, 255));
+    DrawText(16.0f, 70.0f, 1.0f, buf, Draw2D_Color32(180, 240, 160, 255));
 
     /* Current room raw tile data & surrounding 3x3 inspect */
     uint16_t curTile = gDecompressedMinimapVisitedTiles[gMinimapX + gMinimapY * 32];
     uint16_t baseTile = gDecompressedMinimapData[gMinimapX + gMinimapY * 32];
     snprintf(buf, sizeof(buf), "CURRENT TILE: VISITED=0x%04X (T=%u P=%u)",
              curTile, curTile & 0x3FF, (curTile >> 12) & 0xF);
-    DrawText(16.0f, 82.0f, 1.0f, buf, C2D_Color32(255, 220, 100, 255));
+    DrawText(16.0f, 82.0f, 1.0f, buf, Draw2D_Color32(255, 220, 100, 255));
 
     snprintf(buf, sizeof(buf), "BASE MAP TILE: 0x%04X (T=%u P=%u)",
              baseTile, baseTile & 0x3FF, (baseTile >> 12) & 0xF);
-    DrawText(16.0f, 93.0f, 1.0f, buf, C2D_Color32(255, 200, 80, 255));
+    DrawText(16.0f, 93.0f, 1.0f, buf, Draw2D_Color32(255, 200, 80, 255));
 
     /* 3x3 Grid surrounding Samus */
-    DrawText(16.0f, 107.0f, 1.0f, "SURROUNDING 3x3 TILES:", C2D_Color32(140, 200, 255, 255));
+    DrawText(16.0f, 107.0f, 1.0f, "SURROUNDING 3x3 TILES:", Draw2D_Color32(140, 200, 255, 255));
     for (int dy = -1; dy <= 1; ++dy) {
         int ty = (int)gMinimapY + dy;
         char rowBuf[64];
@@ -5656,7 +5651,7 @@ static void RenderDebugView(void) {
         } else {
             snprintf(rowBuf, sizeof(rowBuf), "Y%+d: OUT OF BOUNDS", dy);
         }
-        DrawText(20.0f, 118.0f + (float)(dy + 1) * 11.0f, 1.0f, rowBuf, C2D_Color32(200, 220, 240, 255));
+        DrawText(20.0f, 118.0f + (float)(dy + 1) * 11.0f, 1.0f, rowBuf, Draw2D_Color32(200, 220, 240, 255));
     }
 
     /* Active Chozo target status */
@@ -5664,9 +5659,9 @@ static void RenderDebugView(void) {
     bool hasTarget = GetActiveChozoTarget(&tArea, &tX, &tY);
     if (hasTarget) {
         snprintf(buf, sizeof(buf), "CHOZO TARGET: AREA=%s (%u) X=%u Y=%u", AreaName(tArea), tArea, tX, tY);
-        DrawText(16.0f, 158.0f, 1.0f, buf, C2D_Color32(255, 120, 120, 255));
+        DrawText(16.0f, 158.0f, 1.0f, buf, Draw2D_Color32(255, 120, 120, 255));
     } else {
-        DrawText(16.0f, 158.0f, 1.0f, "CHOZO TARGET: NONE ACTIVE", C2D_Color32(140, 150, 170, 255));
+        DrawText(16.0f, 158.0f, 1.0f, "CHOZO TARGET: NONE ACTIVE", Draw2D_Color32(140, 150, 170, 255));
     }
 
     /* Check obtained items count */
@@ -5681,12 +5676,12 @@ static void RenderDebugView(void) {
         }
     }
     snprintf(buf, sizeof(buf), "TOTAL ITEMS OBTAINED: %lu", (unsigned long)totalItems);
-    DrawText(16.0f, 171.0f, 1.0f, buf, C2D_Color32(180, 240, 160, 255));
+    DrawText(16.0f, 171.0f, 1.0f, buf, Draw2D_Color32(180, 240, 160, 255));
 
     /* RetroAchievements Network & Session Diagnostics */
     char raDiag[80];
     snprintf(raDiag, sizeof(raDiag), "RA: %s (%s)", Port_RA_GetStatusString(GetLang()), Port_RA_GetLastDebugLog());
-    DrawText(16.0f, 186.0f, 1.0f, raDiag, C2D_Color32(255, 220, 100, 255));
+    DrawText(16.0f, 186.0f, 1.0f, raDiag, Draw2D_Color32(255, 220, 100, 255));
 
 #ifdef PORT_DEBUG_TOOLS_ACTIVE
     /* [HERRAMIENTAS] button (Y: 198 to 224). Only exists in a DEBUG_TOOLS /
@@ -5695,14 +5690,14 @@ static void RenderDebugView(void) {
      * entirely rather than just hidden (see port_debug_tools.h). */
     DrawButton(16.0f, 198.0f, 288.0f, 26.0f,
         (GetLang() == 6) ? "HERRAMIENTAS DE DEPURACION" : "DEBUG TOOLS",
-        C2D_Color32(180, 225, 255, 255), C2D_Color32(30, 55, 90, 255), C2D_Color32(90, 160, 240, 255));
+        Draw2D_Color32(180, 225, 255, 255), Draw2D_Color32(30, 55, 90, 255), Draw2D_Color32(90, 160, 240, 255));
 
     if (sShowDebugToolsModal) RenderDebugToolsModal(GetLang());
     else if (sShowDebugWarpModal) RenderDebugWarpModal(GetLang());
     else if (sShowDebugEquipModal) RenderDebugEquipModal(GetLang());
     else if (sShowSoundTestModal) RenderSoundTestModal(GetLang());
 #else
-    DrawText(16.0f, 212.0f, 1.0f, (GetLang() == 6) ? "TOCA LA PESTANA [MAPA] PARA VOLVER" : "TOUCH [MAP] TAB TO RETURN TO MAP VIEW", C2D_Color32(120, 140, 170, 255));
+    DrawText(16.0f, 212.0f, 1.0f, (GetLang() == 6) ? "TOCA LA PESTANA [MAPA] PARA VOLVER" : "TOUCH [MAP] TAB TO RETURN TO MAP VIEW", Draw2D_Color32(120, 140, 170, 255));
 #endif
 }
 
@@ -5799,12 +5794,12 @@ static void OpenStateModal(const PortSaveStateInfo* info, unsigned number) {
  * label at the bottom. `bg` is the button colour, used for the notch. */
 static void DrawFloppyIcon(float cx, float cy, uint32_t ink, uint32_t bg) {
     const float x = floorf(cx) - 6.0f, y = floorf(cy) - 6.0f;
-    C2D_DrawRectSolid(x, y, 0.95f, 12.0f, 12.0f, ink);
-    C2D_DrawRectSolid(x + 3.0f, y, 0.96f, 6.0f, 4.0f, bg);          /* shutter slot */
-    C2D_DrawRectSolid(x + 6.0f, y + 1.0f, 0.97f, 2.0f, 2.0f, ink);  /* shutter pin */
-    C2D_DrawRectSolid(x + 2.0f, y + 7.0f, 0.96f, 8.0f, 5.0f, bg);   /* label */
-    C2D_DrawRectSolid(x + 3.0f, y + 8.0f, 0.97f, 6.0f, 1.0f, ink);
-    C2D_DrawRectSolid(x + 3.0f, y + 10.0f, 0.97f, 6.0f, 1.0f, ink);
+    Draw2D_Rect(x, y, 0.95f, 12.0f, 12.0f, ink);
+    Draw2D_Rect(x + 3.0f, y, 0.96f, 6.0f, 4.0f, bg);          /* shutter slot */
+    Draw2D_Rect(x + 6.0f, y + 1.0f, 0.97f, 2.0f, 2.0f, ink);  /* shutter pin */
+    Draw2D_Rect(x + 2.0f, y + 7.0f, 0.96f, 8.0f, 5.0f, bg);   /* label */
+    Draw2D_Rect(x + 3.0f, y + 8.0f, 0.97f, 6.0f, 1.0f, ink);
+    Draw2D_Rect(x + 3.0f, y + 10.0f, 0.97f, 6.0f, 1.0f, ink);
 }
 
 static void FormatSavedAt(uint32_t savedAt, char* out, size_t n) {
@@ -5821,116 +5816,116 @@ static void FormatSavedAt(uint32_t savedAt, char* out, size_t n) {
 static void DrawStateStats(float x, float y, const PortSaveStateInfo* info, float clipY0, float clipY1) {
     char seg[20];
     snprintf(seg, sizeof(seg), "E%u/%u", (unsigned)info->energy, (unsigned)info->maxEnergy);
-    DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(255, 215, 90, 255), clipY0, clipY1);
+    DrawTextClipped(x, y, 1.0f, seg, Draw2D_Color32(255, 215, 90, 255), clipY0, clipY1);
     x += ((float)Utf8CharCount(seg) + 1.0f) * 6.0f;
     if (info->maxMissiles > 0) {
         snprintf(seg, sizeof(seg), "M%u/%u", (unsigned)info->missiles, (unsigned)info->maxMissiles);
-        DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(255, 130, 110, 255), clipY0, clipY1);
+        DrawTextClipped(x, y, 1.0f, seg, Draw2D_Color32(255, 130, 110, 255), clipY0, clipY1);
         x += ((float)Utf8CharCount(seg) + 1.0f) * 6.0f;
     }
     if (info->maxSuperMissiles > 0) {
         snprintf(seg, sizeof(seg), "S%u/%u", (unsigned)info->superMissiles, (unsigned)info->maxSuperMissiles);
-        DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(120, 220, 130, 255), clipY0, clipY1);
+        DrawTextClipped(x, y, 1.0f, seg, Draw2D_Color32(120, 220, 130, 255), clipY0, clipY1);
         x += ((float)Utf8CharCount(seg) + 1.0f) * 6.0f;
     }
     if (info->maxPowerBombs > 0) {
         snprintf(seg, sizeof(seg), "P%u/%u", (unsigned)info->powerBombs, (unsigned)info->maxPowerBombs);
-        DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(255, 170, 70, 255), clipY0, clipY1);
+        DrawTextClipped(x, y, 1.0f, seg, Draw2D_Color32(255, 170, 70, 255), clipY0, clipY1);
     }
 }
 
 static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned number, bool es) {
     const float c0 = STATE_LIST_Y0, c1 = STATE_LIST_Y1;
-    DrawRectClipped(8.0f, y, 0.5f, 296.0f, STATE_ROW_H, C2D_Color32(14, 22, 34, 255), c0, c1);
-    DrawRectClipped(8.0f, y, 0.51f, 296.0f, 1.0f, C2D_Color32(60, 80, 110, 255), c0, c1);
+    DrawRectClipped(8.0f, y, 0.5f, 296.0f, STATE_ROW_H, Draw2D_Color32(14, 22, 34, 255), c0, c1);
+    DrawRectClipped(8.0f, y, 0.51f, 296.0f, 1.0f, Draw2D_Color32(60, 80, 110, 255), c0, c1);
 
     char head[48];
     snprintf(head, sizeof(head), es ? "#%u  %s  SALA %u" : "#%u  %s  ROOM %u",
              number, Port_SaveState_AreaName(info->area), (unsigned)info->room);
-    DrawTextClipped(14.0f, y + 4.0f, 1.0f, head, C2D_Color32(170, 210, 245, 255), c0, c1);
+    DrawTextClipped(14.0f, y + 4.0f, 1.0f, head, Draw2D_Color32(170, 210, 245, 255), c0, c1);
 
     char when[40];
     FormatSavedAt(info->savedAt, when, sizeof(when));
     if (when[0])
         DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(when) * 6.0f, y + 4.0f, 1.0f, when,
-                        C2D_Color32(120, 140, 170, 255), c0, c1);
+                        Draw2D_Color32(120, 140, 170, 255), c0, c1);
 
     if (info->hasStats)
         DrawStateStats(14.0f, y + 15.0f, info, c0, c1);
     else
         DrawTextClipped(14.0f, y + 15.0f, 1.0f, es ? "sin datos (guardado antiguo)" : "no stats (older save)",
-                        C2D_Color32(110, 125, 150, 255), c0, c1);
+                        Draw2D_Color32(110, 125, 150, 255), c0, c1);
 
     if (!info->compatible) {
         const char* tag = es ? "OTRA BUILD" : "OTHER BUILD";
         DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(tag) * 6.0f, y + 15.0f, 1.0f, tag,
-                        C2D_Color32(235, 110, 90, 255), c0, c1);
+                        Draw2D_Color32(235, 110, 90, 255), c0, c1);
     } else if (info->hasPlayTime) {
         char play[16];
         snprintf(play, sizeof(play), "%u:%02u:%02u", (unsigned)info->playHours, (unsigned)info->playMinutes,
                  (unsigned)info->playSeconds);
         DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(play) * 6.0f, y + 15.0f, 1.0f, play,
-                        C2D_Color32(150, 170, 200, 255), c0, c1);
+                        Draw2D_Color32(150, 170, 200, 255), c0, c1);
     }
 }
 
 static void RenderStateModal(bool es, bool avail) {
     const PortSaveStateInfo* info = &sStateModalInfo;
-    C2D_DrawRectSolid(SMODAL_X, SMODAL_Y, 0.85f, SMODAL_W, SMODAL_H, C2D_Color32(10, 14, 24, 250));
-    C2D_DrawRectSolid(SMODAL_X, SMODAL_Y, 0.84f, SMODAL_W, SMODAL_H, C2D_Color32(40, 70, 120, 255));
+    Draw2D_Rect(SMODAL_X, SMODAL_Y, 0.85f, SMODAL_W, SMODAL_H, Draw2D_Color32(10, 14, 24, 250));
+    Draw2D_Rect(SMODAL_X, SMODAL_Y, 0.84f, SMODAL_W, SMODAL_H, Draw2D_Color32(40, 70, 120, 255));
 
     char title[32];
     snprintf(title, sizeof(title), es ? "ESTADO #%u" : "SAVE STATE #%u", sStateModalNumber);
-    DrawText(20.0f, 32.0f, 1.0f, title, C2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 32.0f, 1.0f, title, Draw2D_Color32(255, 215, 0, 255));
 
     /* Screenshot, 160x96 inside a frame. */
-    C2D_DrawRectSolid(18.0f, 46.0f, 0.86f, 164.0f, 100.0f, C2D_Color32(4, 6, 12, 255));
+    Draw2D_Rect(18.0f, 46.0f, 0.86f, 164.0f, 100.0f, Draw2D_Color32(4, 6, 12, 255));
     if (PortStateThumb_HasImage()) {
         PortStateThumb_Draw(20.0f, 48.0f, 160.0f, 96.0f, 0.9f);
     } else {
         const char* t = info->hasThumb ? "..." : (es ? "SIN IMAGEN" : "NO IMAGE");
-        DrawTextCentered(100.0f, 92.0f, 1.0f, t, C2D_Color32(110, 125, 150, 255));
+        DrawTextCentered(100.0f, 92.0f, 1.0f, t, Draw2D_Color32(110, 125, 150, 255));
     }
 
     /* Data. */
     const float tx = 190.0f;
     char line[40];
     snprintf(line, sizeof(line), "%s", Port_SaveState_AreaName(info->area));
-    DrawText(tx, 46.0f, 1.0f, line, C2D_Color32(170, 210, 245, 255));
+    DrawText(tx, 46.0f, 1.0f, line, Draw2D_Color32(170, 210, 245, 255));
     snprintf(line, sizeof(line), es ? "SALA %u" : "ROOM %u", (unsigned)info->room);
-    DrawText(tx, 56.0f, 1.0f, line, C2D_Color32(170, 210, 245, 255));
+    DrawText(tx, 56.0f, 1.0f, line, Draw2D_Color32(170, 210, 245, 255));
     if (info->savedAt) {
         char when[40];
         FormatSavedAt(info->savedAt, when, sizeof(when));
         char* sp = strchr(when, ' ');
         if (sp) {
             *sp = '\0';
-            DrawText(tx, 69.0f, 1.0f, when, C2D_Color32(120, 140, 170, 255));
-            DrawText(tx, 79.0f, 1.0f, sp + 1, C2D_Color32(120, 140, 170, 255));
+            DrawText(tx, 69.0f, 1.0f, when, Draw2D_Color32(120, 140, 170, 255));
+            DrawText(tx, 79.0f, 1.0f, sp + 1, Draw2D_Color32(120, 140, 170, 255));
         }
     }
     if (info->hasPlayTime) {
         snprintf(line, sizeof(line), es ? "JUEGO %u:%02u:%02u" : "TIME %u:%02u:%02u", (unsigned)info->playHours,
                  (unsigned)info->playMinutes, (unsigned)info->playSeconds);
-        DrawText(tx, 92.0f, 1.0f, line, C2D_Color32(150, 170, 200, 255));
+        DrawText(tx, 92.0f, 1.0f, line, Draw2D_Color32(150, 170, 200, 255));
     }
     if (info->hasStats) {
         snprintf(line, sizeof(line), "E %u/%u", (unsigned)info->energy, (unsigned)info->maxEnergy);
-        DrawText(tx, 106.0f, 1.0f, line, C2D_Color32(255, 215, 90, 255));
+        DrawText(tx, 106.0f, 1.0f, line, Draw2D_Color32(255, 215, 90, 255));
         if (info->maxMissiles > 0) {
             snprintf(line, sizeof(line), "M %u/%u", (unsigned)info->missiles, (unsigned)info->maxMissiles);
-            DrawText(tx, 116.0f, 1.0f, line, C2D_Color32(255, 130, 110, 255));
+            DrawText(tx, 116.0f, 1.0f, line, Draw2D_Color32(255, 130, 110, 255));
         }
         if (info->maxSuperMissiles > 0) {
             snprintf(line, sizeof(line), "S %u/%u", (unsigned)info->superMissiles, (unsigned)info->maxSuperMissiles);
-            DrawText(tx, 126.0f, 1.0f, line, C2D_Color32(120, 220, 130, 255));
+            DrawText(tx, 126.0f, 1.0f, line, Draw2D_Color32(120, 220, 130, 255));
         }
         if (info->maxPowerBombs > 0) {
             snprintf(line, sizeof(line), "P %u/%u", (unsigned)info->powerBombs, (unsigned)info->maxPowerBombs);
-            DrawText(tx, 136.0f, 1.0f, line, C2D_Color32(255, 170, 70, 255));
+            DrawText(tx, 136.0f, 1.0f, line, Draw2D_Color32(255, 170, 70, 255));
         }
     } else {
-        DrawText(tx, 106.0f, 1.0f, es ? "SIN DATOS" : "NO STATS", C2D_Color32(110, 125, 150, 255));
+        DrawText(tx, 106.0f, 1.0f, es ? "SIN DATOS" : "NO STATS", Draw2D_Color32(110, 125, 150, 255));
     }
 
     /* Actions. */
@@ -5945,15 +5940,15 @@ static void RenderStateModal(bool es, bool avail) {
         const bool armed = enabled[i] && StateArmed(actions[i]);
         uint32_t body, edge, ink;
         if (!enabled[i]) {
-            body = C2D_Color32(30, 34, 40, 255); edge = C2D_Color32(60, 66, 78, 255); ink = C2D_Color32(90, 100, 115, 255);
+            body = Draw2D_Color32(30, 34, 40, 255); edge = Draw2D_Color32(60, 66, 78, 255); ink = Draw2D_Color32(90, 100, 115, 255);
         } else if (armed) {
-            body = C2D_Color32(120, 90, 20, 255); edge = C2D_Color32(220, 180, 70, 255); ink = C2D_Color32(255, 235, 150, 255);
+            body = Draw2D_Color32(120, 90, 20, 255); edge = Draw2D_Color32(220, 180, 70, 255); ink = Draw2D_Color32(255, 235, 150, 255);
         } else if (i == 2) {
-            body = C2D_Color32(64, 22, 22, 255); edge = C2D_Color32(180, 60, 60, 255); ink = C2D_Color32(255, 170, 170, 255);
+            body = Draw2D_Color32(64, 22, 22, 255); edge = Draw2D_Color32(180, 60, 60, 255); ink = Draw2D_Color32(255, 170, 170, 255);
         } else if (i == 1) {
-            body = C2D_Color32(24, 60, 34, 255); edge = C2D_Color32(70, 150, 90, 255); ink = C2D_Color32(200, 240, 205, 255);
+            body = Draw2D_Color32(24, 60, 34, 255); edge = Draw2D_Color32(70, 150, 90, 255); ink = Draw2D_Color32(200, 240, 205, 255);
         } else {
-            body = C2D_Color32(24, 46, 70, 255); edge = C2D_Color32(80, 140, 200, 255); ink = C2D_Color32(200, 225, 245, 255);
+            body = Draw2D_Color32(24, 46, 70, 255); edge = Draw2D_Color32(80, 140, 200, 255); ink = Draw2D_Color32(200, 225, 245, 255);
         }
         DrawButton(kStateBtnX[i], SMODAL_BTN_Y, SMODAL_BTN_W, SMODAL_BTN_H, armed ? "OK?" : labels[i], ink, body, edge);
     }
@@ -5963,10 +5958,10 @@ static void RenderStateModal(bool es, bool avail) {
     else if (!avail) hint = es ? "SOBRESCRIBIR: SOLO EN PARTIDA" : "OVERWRITE: IN GAMEPLAY ONLY";
     else hint = es ? "PULSA DOS VECES PARA CONFIRMAR" : "TAP TWICE TO CONFIRM";
     DrawTextCentered(160.0f, 188.0f, 1.0f, hint,
-                     info->compatible ? C2D_Color32(120, 140, 170, 255) : C2D_Color32(235, 110, 90, 255));
+                     info->compatible ? Draw2D_Color32(120, 140, 170, 255) : Draw2D_Color32(235, 110, 90, 255));
 
     DrawButton(SMODAL_CLOSE_X, SMODAL_CLOSE_Y, SMODAL_CLOSE_W, SMODAL_CLOSE_H, es ? "VOLVER" : "BACK",
-               C2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
+               Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 static void RenderStateView(void) {
@@ -5979,10 +5974,10 @@ static void RenderStateView(void) {
     }
 
     /* New state. */
-    const uint32_t newBody = avail ? C2D_Color32(24, 60, 34, 255) : C2D_Color32(30, 34, 40, 255);
-    const uint32_t newInk = avail ? C2D_Color32(200, 240, 205, 255) : C2D_Color32(90, 100, 115, 255);
+    const uint32_t newBody = avail ? Draw2D_Color32(24, 60, 34, 255) : Draw2D_Color32(30, 34, 40, 255);
+    const uint32_t newInk = avail ? Draw2D_Color32(200, 240, 205, 255) : Draw2D_Color32(90, 100, 115, 255);
     DrawButton(STATE_NEW_X, STATE_NEW_Y, STATE_NEW_W, STATE_NEW_H, es ? "NUEVO GUARDADO" : "NEW SAVE STATE",
-               newInk, newBody, avail ? C2D_Color32(70, 150, 90, 255) : C2D_Color32(60, 66, 78, 255));
+               newInk, newBody, avail ? Draw2D_Color32(70, 150, 90, 255) : Draw2D_Color32(60, 66, 78, 255));
     DrawFloppyIcon(STATE_NEW_X + 16.0f, STATE_NEW_Y + STATE_NEW_H * 0.5f, newInk, newBody);
 
     /* The list, newest first. */
@@ -5994,7 +5989,7 @@ static void RenderStateView(void) {
     if (count == 0) {
         DrawTextCentered(160.0f, 120.0f, 1.0f,
                          Port_SaveState_Scanned() ? (es ? "NO HAY ESTADOS GUARDADOS" : "NO SAVE STATES YET") : "",
-                         C2D_Color32(110, 125, 150, 255));
+                         Draw2D_Color32(110, 125, 150, 255));
     }
     for (int i = 0; i < count; ++i) {
         const float y = STATE_LIST_Y0 + (float)i * STATE_ROW_PITCH - sStateScrollY;
@@ -6007,19 +6002,19 @@ static void RenderStateView(void) {
         const float trackH = STATE_LIST_Y1 - STATE_LIST_Y0;
         const float thumbH = 24.0f;
         const float thumbY = STATE_LIST_Y0 + (sStateScrollY / maxScroll) * (trackH - thumbH);
-        C2D_DrawRectSolid(310.0f, STATE_LIST_Y0, 0.9f, 2.0f, trackH, C2D_Color32(40, 50, 70, 255));
-        C2D_DrawRectSolid(310.0f, thumbY, 0.92f, 2.0f, thumbH, C2D_Color32(80, 160, 240, 255));
+        Draw2D_Rect(310.0f, STATE_LIST_Y0, 0.9f, 2.0f, trackH, Draw2D_Color32(40, 50, 70, 255));
+        Draw2D_Rect(310.0f, thumbY, 0.92f, 2.0f, thumbH, Draw2D_Color32(80, 160, 240, 255));
     }
 
     const char* msg = Port_SaveState_LastMessage();
     if (msg && msg[0] && Port_SaveState_MessageTtl() > 0) {
-        DrawTextCentered(160.0f, 216.0f, 1.0f, msg, C2D_Color32(255, 235, 150, 255));
+        DrawTextCentered(160.0f, 216.0f, 1.0f, msg, Draw2D_Color32(255, 235, 150, 255));
     } else if (!avail) {
         DrawTextCentered(160.0f, 216.0f, 1.0f, es ? "GUARDAR: SOLO DURANTE LA PARTIDA" : "SAVING: ONLY DURING GAMEPLAY",
-                         C2D_Color32(150, 165, 190, 255));
+                         Draw2D_Color32(150, 165, 190, 255));
     } else {
         DrawTextCentered(160.0f, 216.0f, 1.0f, es ? "TOCA UN ESTADO PARA VER SUS DATOS" : "TAP A STATE FOR ITS DETAILS",
-                         C2D_Color32(120, 140, 170, 255));
+                         Draw2D_Color32(120, 140, 170, 255));
     }
 }
 
@@ -6117,13 +6112,13 @@ static void RenderDevFtp(void) {
     if (!FtpServer_InstallOnly()) return;
     char address[48];
     FtpServer_Address(address, sizeof(address));
-    C2D_DrawRectSolid(0.0f, 200.0f, 0.97f, 320.0f, 40.0f, C2D_Color32(10, 14, 24, 255));
-    C2D_DrawRectSolid(0.0f, 200.0f, 0.97f, 320.0f, 1.0f, C2D_Color32(245, 175, 45, 255));
-    DrawText(8.0f, 206.0f, 1.0f, "FTP (INSTALL ONLY)", C2D_Color32(255, 215, 0, 255));
-    DrawText(8.0f, 222.0f, 1.0f, address, C2D_Color32(190, 210, 240, 255));
-    C2D_DrawRectSolid(DEVFTP_X, DEVFTP_Y, 0.97f, DEVFTP_W, DEVFTP_H, C2D_Color32(120, 150, 210, 255));
-    C2D_DrawRectSolid(DEVFTP_X + 1, DEVFTP_Y + 1, 0.97f, DEVFTP_W - 2, DEVFTP_H - 2, C2D_Color32(30, 40, 70, 255));
-    DrawText(DEVFTP_X + 17.0f, DEVFTP_Y + 10.0f, 1.0f, "CANCEL", C2D_Color32(255, 215, 0, 255));
+    Draw2D_Rect(0.0f, 200.0f, 0.97f, 320.0f, 40.0f, Draw2D_Color32(10, 14, 24, 255));
+    Draw2D_Rect(0.0f, 200.0f, 0.97f, 320.0f, 1.0f, Draw2D_Color32(245, 175, 45, 255));
+    DrawText(8.0f, 206.0f, 1.0f, "FTP (INSTALL ONLY)", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(8.0f, 222.0f, 1.0f, address, Draw2D_Color32(190, 210, 240, 255));
+    Draw2D_Rect(DEVFTP_X, DEVFTP_Y, 0.97f, DEVFTP_W, DEVFTP_H, Draw2D_Color32(120, 150, 210, 255));
+    Draw2D_Rect(DEVFTP_X + 1, DEVFTP_Y + 1, 0.97f, DEVFTP_W - 2, DEVFTP_H - 2, Draw2D_Color32(30, 40, 70, 255));
+    DrawText(DEVFTP_X + 17.0f, DEVFTP_Y + 10.0f, 1.0f, "CANCEL", Draw2D_Color32(255, 215, 0, 255));
 }
 
 /* "Wait" message over whatever tab is showing while the SD card is read or
@@ -6152,7 +6147,7 @@ static void RenderNoticeToast(void) {
     } else if (elapsed >= (int)(NOTICE_SHOW_MS - NOTICE_FADE_MS)) {
         alpha = (float)(NOTICE_SHOW_MS - (unsigned)elapsed) / (float)NOTICE_FADE_MS;
     }
-#define NOTICE_RGBA(r, g, b, a) C2D_Color32((r), (g), (b), (uint8_t)((float)(a) * alpha))
+#define NOTICE_RGBA(r, g, b, a) Draw2D_Color32((r), (g), (b), (uint8_t)((float)(a) * alpha))
 
     const float icon = 22.0f;
     const float padX = 10.0f;
@@ -6166,16 +6161,16 @@ static void RenderNoticeToast(void) {
     const float x = (float)(int)((320.0f - boxW) / 2.0f);
     const float y = (float)(int)((240.0f - boxH) / 2.0f + rise);
 
-    C2D_DrawRectSolid(x + 3.0f, y + 3.0f, 0.97f, boxW, boxH, NOTICE_RGBA(0, 0, 0, 110));
-    C2D_DrawRectSolid(x, y, 0.97f, boxW, boxH, NOTICE_RGBA(120, 150, 210, 255));
-    C2D_DrawRectSolid(x + 1.0f, y + 1.0f, 0.97f, boxW - 2.0f, boxH - 2.0f, NOTICE_RGBA(10, 14, 24, 245));
-    C2D_DrawRectSolid(x + 1.0f, y + 1.0f, 0.97f, 3.0f, boxH - 2.0f, NOTICE_RGBA(245, 175, 45, 255));
+    Draw2D_Rect(x + 3.0f, y + 3.0f, 0.97f, boxW, boxH, NOTICE_RGBA(0, 0, 0, 110));
+    Draw2D_Rect(x, y, 0.97f, boxW, boxH, NOTICE_RGBA(120, 150, 210, 255));
+    Draw2D_Rect(x + 1.0f, y + 1.0f, 0.97f, boxW - 2.0f, boxH - 2.0f, NOTICE_RGBA(10, 14, 24, 245));
+    Draw2D_Rect(x + 1.0f, y + 1.0f, 0.97f, 3.0f, boxH - 2.0f, NOTICE_RGBA(245, 175, 45, 255));
 
     /* Warning badge: an amber tile with clipped corners and a "!". */
     const float ix = x + 4.0f + padX;
     const float iy = y + (boxH - icon) / 2.0f;
-    C2D_DrawRectSolid(ix + 1.0f, iy, 0.97f, icon - 2.0f, icon, NOTICE_RGBA(245, 175, 45, 255));
-    C2D_DrawRectSolid(ix, iy + 1.0f, 0.97f, icon, icon - 2.0f, NOTICE_RGBA(245, 175, 45, 255));
+    Draw2D_Rect(ix + 1.0f, iy, 0.97f, icon - 2.0f, icon, NOTICE_RGBA(245, 175, 45, 255));
+    Draw2D_Rect(ix, iy + 1.0f, 0.97f, icon, icon - 2.0f, NOTICE_RGBA(245, 175, 45, 255));
     DrawText(ix + (icon - 10.0f) / 2.0f, iy + (icon - 14.0f) / 2.0f, 2.0f, "!", NOTICE_RGBA(10, 14, 24, 255));
 
     const float tx = ix + icon + gap;
@@ -6183,8 +6178,8 @@ static void RenderNoticeToast(void) {
     DrawText(tx, y + 26.0f, 1.0f, body, NOTICE_RGBA(190, 210, 240, 255));
     if (bar) { /* the bar, over the whole text column */
         const float by = y + 42.0f;
-        C2D_DrawRectSolid(tx, by, 0.97f, textW, 6.0f, NOTICE_RGBA(40, 52, 84, 255));
-        C2D_DrawRectSolid(tx, by, 0.97f, textW * (float)permille / 1000.0f, 6.0f, NOTICE_RGBA(245, 175, 45, 255));
+        Draw2D_Rect(tx, by, 0.97f, textW, 6.0f, NOTICE_RGBA(40, 52, 84, 255));
+        Draw2D_Rect(tx, by, 0.97f, textW * (float)permille / 1000.0f, 6.0f, NOTICE_RGBA(245, 175, 45, 255));
     }
 #undef NOTICE_RGBA
 }
@@ -6227,11 +6222,11 @@ static void RenderBusyOverlay(void) {
     case PORT_SS_JOB_DELETE:    what = es ? "BORRANDO DE LA TARJETA SD" : "DELETING FROM THE SD CARD"; break;
     default: break;
     }
-    C2D_DrawRectSolid(0.0f, 0.0f, 0.985f, 320.0f, 240.0f, C2D_Color32(0, 0, 0, 150));
-    C2D_DrawRectSolid(30.0f, 84.0f, 0.99f, 260.0f, 72.0f, C2D_Color32(120, 150, 210, 255));
-    C2D_DrawRectSolid(31.0f, 85.0f, 0.995f, 258.0f, 70.0f, C2D_Color32(10, 14, 24, 255));
-    DrawTextCentered(160.0f, 104.0f, 1.0f, es ? "ESPERA..." : "PLEASE WAIT...", C2D_Color32(255, 215, 0, 255));
-    DrawTextCentered(160.0f, 124.0f, 1.0f, what, C2D_Color32(190, 210, 240, 255));
+    Draw2D_Rect(0.0f, 0.0f, 0.985f, 320.0f, 240.0f, Draw2D_Color32(0, 0, 0, 150));
+    Draw2D_Rect(30.0f, 84.0f, 0.99f, 260.0f, 72.0f, Draw2D_Color32(120, 150, 210, 255));
+    Draw2D_Rect(31.0f, 85.0f, 0.995f, 258.0f, 70.0f, Draw2D_Color32(10, 14, 24, 255));
+    DrawTextCentered(160.0f, 104.0f, 1.0f, es ? "ESPERA..." : "PLEASE WAIT...", Draw2D_Color32(255, 215, 0, 255));
+    DrawTextCentered(160.0f, 124.0f, 1.0f, what, Draw2D_Color32(190, 210, 240, 255));
 }
 
 void Port_BottomUI_Render(void) {
@@ -6247,15 +6242,15 @@ void Port_BottomUI_Render(void) {
         bool blinkOn = ((sFrameCounter & 0x0F) < 8);
         uint32_t bgCol;
         if (inRealGameplay && curE < 30) {
-            bgCol = blinkOn ? C2D_Color32(30, 8, 8, 255)
-                            : C2D_Color32(12, 5, 5, 255);
+            bgCol = blinkOn ? Draw2D_Color32(30, 8, 8, 255)
+                            : Draw2D_Color32(12, 5, 5, 255);
         } else if (inRealGameplay && curE < 60) {
-            bgCol = blinkOn ? C2D_Color32(30, 22, 8, 255)
-                            : C2D_Color32(12, 10, 5, 255);
+            bgCol = blinkOn ? Draw2D_Color32(30, 22, 8, 255)
+                            : Draw2D_Color32(12, 10, 5, 255);
         } else {
-            bgCol = C2D_Color32(6, 8, 14, 255);       /* original dark blue */
+            bgCol = Draw2D_Color32(6, 8, 14, 255);       /* original dark blue */
         }
-        C2D_DrawRectSolid(0.0f, 0.0f, 0.1f, 320.0f, 240.0f, bgCol);
+        Draw2D_Rect(0.0f, 0.0f, 0.1f, 320.0f, 240.0f, bgCol);
     }
 
     /* Always draw the top tab navigation bar */
@@ -6309,12 +6304,12 @@ void Port_BottomUI_Render(void) {
      * centered in the square: offset = (10-7)/2 = 1px. Panel wraps the
      * content with 3px border + 2px fill padding on all sides. */
     if (blink && (PlatformGpu3DS_IsRecording() || PlatformGpu3DS_IsPerfRecording())) {
-        C2D_DrawRectSolid(5.0f, 5.0f, 0.90f, 62.0f, 40.0f, C2D_Color32(40, 70, 120, 255));
-        C2D_DrawRectSolid(6.0f, 6.0f, 0.91f, 60.0f, 38.0f, C2D_Color32(14, 20, 32, 240));
+        Draw2D_Rect(5.0f, 5.0f, 0.90f, 62.0f, 40.0f, Draw2D_Color32(40, 70, 120, 255));
+        Draw2D_Rect(6.0f, 6.0f, 0.91f, 60.0f, 38.0f, Draw2D_Color32(14, 20, 32, 240));
     }
     if (PlatformGpu3DS_IsRecording() && blink) {
-        C2D_DrawRectSolid(8.0f, 8.0f, 0.95f, 10.0f, 10.0f, C2D_Color32(230, 30, 30, 255));
-        DrawText(24.0f, 9.0f, 0.95f, "REC", C2D_Color32(230, 30, 30, 255));
+        Draw2D_Rect(8.0f, 8.0f, 0.95f, 10.0f, 10.0f, Draw2D_Color32(230, 30, 30, 255));
+        DrawText(24.0f, 9.0f, 0.95f, "REC", Draw2D_Color32(230, 30, 30, 255));
         /* Cost of the recorder's own per-sample work. Reading this ~= a
          * whole frame budget means the crawl IS the recorder. */
         extern bool PlatformGpu3DS_RecordingToRam(void);
@@ -6322,10 +6317,10 @@ void Port_BottomUI_Render(void) {
         snprintf(dt, sizeof(dt), "%s %lu us",
                  PlatformGpu3DS_RecordingToRam() ? "RAM" : "SD",
                  (unsigned long)PlatformGpu3DS_LastRecTickUs());
-        DrawText(9.0f, 32.0f, 0.95f, dt, C2D_Color32(210, 210, 210, 255));
+        DrawText(9.0f, 32.0f, 0.95f, dt, Draw2D_Color32(210, 210, 210, 255));
     }
     if (PlatformGpu3DS_IsPerfRecording() && blink) {
-        C2D_DrawRectSolid(8.0f, 20.0f, 0.95f, 10.0f, 10.0f, C2D_Color32(30, 120, 230, 255));
-        DrawText(24.0f, 21.0f, 0.95f, "PERF", C2D_Color32(30, 120, 230, 255));
+        Draw2D_Rect(8.0f, 20.0f, 0.95f, 10.0f, 10.0f, Draw2D_Color32(30, 120, 230, 255));
+        DrawText(24.0f, 21.0f, 0.95f, "PERF", Draw2D_Color32(30, 120, 230, 255));
     }
 }

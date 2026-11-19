@@ -9,7 +9,7 @@
 #include "port_dsp_firm_prompt_3ds.h"
 
 /* ndspInit() needs sdmc:/3ds/dspfirm.cdc; without it the game runs silent. When the audio could not
- * start because the file is missing or damaged, the bottom screen asks (port_bottom_ui_3ds.c draws
+ * start because the file is missing or damaged, the bottom screen asks (port/ui/port_bottom_ui.c draws
  * it) whether to extract it from the console's own Home Menu. It is Nintendo's, so it never ships. */
 
 extern bool Port_MzmAudio_Init(void);

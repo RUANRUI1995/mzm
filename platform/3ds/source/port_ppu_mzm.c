@@ -133,7 +133,7 @@ static void UpdateFpsWindow(void) {
     }
 }
 
-#include "port_bottom_ui_3ds.h"
+#include "port_bottom_ui.h"
 #include "port_paths.h"
 #include <stdio.h>
 
@@ -645,36 +645,8 @@ int Port_Input_RemapMode(void) {
     return gPreventMovementTimer != 0 ? 2 : 1;
 }
 
-/* Per-area, per-tank-type collected counts for the bottom-screen collectibles
- * breakdown (port_bottom_ui_3ds.c's RenderCollectiblesModal). The map's
- * "obtained item" bitmap (gMinimapTilesWithObtainedItems) only says a tile
- * had *something* collected, not what -- BgClipSetItemAsCollected (bg_clip.c)
- * is the thing that actually knows the type, and it logs every pickup (tanks
- * and major items alike) into gItemsCollected[area][0..gNumberOfItemsCollected[area]),
- * so walk that log and tally by type instead. Major items (ITEM_TYPE_ABILITY)
- * are logged too but deliberately not counted here -- this is a tank/ammo
- * breakdown, matching the per-area totals table (sTotalTanksTable) it's
- * compared against. */
-void Port_GetAreaItemTypeCounts(int area, int* outEnergy, int* outMissile, int* outSuper, int* outPowerBomb) {
-    *outEnergy = 0;
-    *outMissile = 0;
-    *outSuper = 0;
-    *outPowerBomb = 0;
-    if (area < 0 || area >= MAX_AMOUNT_OF_AREAS) return;
-
-    int count = gNumberOfItemsCollected[area];
-    if (count > MAX_AMOUNT_OF_ITEMS_PER_AREA) count = MAX_AMOUNT_OF_ITEMS_PER_AREA;
-    for (int i = 0; i < count; i++) {
-        switch (gItemsCollected[area][i].type) {
-            case ITEM_TYPE_ENERGY: (*outEnergy)++; break;
-            case ITEM_TYPE_MISSILE: (*outMissile)++; break;
-            case ITEM_TYPE_SUPER_MISSILE: (*outSuper)++; break;
-            case ITEM_TYPE_POWER_BOMB: (*outPowerBomb)++; break;
-            default: break;
-        }
-    }
-}
-
+/* Port_GetAreaItemTypeCounts moved to port/ui/port_ui_game.c (shared with the
+ * other platforms). */
 
 int Port_Config_Get3DSAspectRatio(void) { return sAspectRatio; }
 const char* Port_Config_Get3DSAspectRatioName(void) {
@@ -1178,7 +1150,7 @@ void PortPpuMzm_DumpSamusState(void) {
  * itself checks gEquipment.currentEnergy and only then transitions to
  * SPOSE_DYING (src/samus.c). Zeroing energy first reproduces that exact
  * path instead of a synthetic one. Triggered from the debug tools menu
- * (port_bottom_ui_3ds.c, which can't call SamusSetPose directly for the
+ * (port/ui/port_bottom_ui.c, which can't call SamusSetPose directly for the
  * same <3ds.h>/structs-samus.h conflict reason PortPpuMzm_GetSamusRecordState
  * exists). No-op if Samus is already in a hurt/dying/getting-knocked-back
  * pose so pressing it again doesn't
@@ -1219,7 +1191,7 @@ void PortPpuMzm_GetSamusRecordState(uint32_t* out) {
 /* ---------------------------------------------------------------------
  * Debug warp ("teletransporte")
  *
- * Lives here rather than in port_bottom_ui_3ds.c (which owns the menu that
+ * Lives here rather than in port/ui/port_bottom_ui.c (which owns the menu that
  * triggers it) for the same reason PortPpuMzm_DebugKillSamus does: that
  * file includes <3ds.h>, whose u32 typedef conflicts with the GBA port's
  * own, so it can't touch gSamusData/gCurrentArea/the door tables directly.
@@ -1410,7 +1382,7 @@ void PortPpuMzm_DebugApplyPendingWarp(void) {
  * Debug: warp to a minimap tile, reveal every map, edit equipment.
  *
  * Same placement rationale as the warp block above: everything here needs
- * the GBA-side structs that port_bottom_ui_3ds.c (which owns the menus)
+ * the GBA-side structs that port/ui/port_bottom_ui.c (which owns the menus)
  * cannot include alongside <3ds.h>.
  * ------------------------------------------------------------------- */
 

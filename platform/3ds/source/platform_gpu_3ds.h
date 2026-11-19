@@ -109,7 +109,7 @@ void PlatformGpu3DS_GetTopImageRect(int* outX, int* outY, int* outW, int* outH);
  * triggered from the DEBUG tab's tools menu, see platform_gpu_3ds.c. PlatformGpu3DS_RecordTick must be
  * called once per emulated GBA frame (Port_Bios_Halt does this) -- it's a
  * no-op unless recording is active. PlatformGpu3DS_IsRecording is for the
- * on-screen "REC" indicator (port_bottom_ui_3ds.c). */
+ * on-screen "REC" indicator (port/ui/port_bottom_ui.c). */
 void PlatformGpu3DS_DumpScreens(void);
 /* Both screens as 24-bit BMP files (debug_link_3ds.c, SITE SHOT); false when either failed. */
 bool PlatformGpu3DS_SaveShots(const char* topPath, const char* bottomPath);

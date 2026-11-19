@@ -120,8 +120,10 @@ Plain text, one change per line; the keys hold until the next line:
 ```
 
 `replays/eu_new_game_walk.txt` starts a new game on the EU ROM and walks around
-the first room. `--record` writes the same format, so a recorded run replays as
-is.
+the first room; `replays/eu_title_demos.txt` leaves the title screen alone, so
+the attract demos play; `replays/eu_pause_map.txt` adds the map and status
+screens to the walk. `--record` writes the same format, so a recorded run
+replays as is.
 
 ## Traces
 

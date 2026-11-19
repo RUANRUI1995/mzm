@@ -17,6 +17,9 @@
 #include "structs/display.h"
 #include "structs/game_state.h"
 #include "structs/intro.h"
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#include "port_gba_mem.h"
+#endif
 
 /**
  * @brief 800f4 | 90 | V-blank code for the intro
@@ -968,6 +971,12 @@ static u8 IntroFuzz(void)
 #endif // REGION_EU
             break;
     }
+
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    /* The sources above are u8 tables, used as colours. */
+    if (!(MOD_AND(INTRO_DATA.unk_A, 8) & 1))
+        Port_SwapHalfwordBytes(INTRO_DATA.fuzzPalette, ARRAY_SIZE(INTRO_DATA.fuzzPalette));
+#endif
 
     INTRO_DATA.unk_A++;
     IntroFuzzProcessOam();

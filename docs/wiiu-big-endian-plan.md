@@ -6,12 +6,34 @@ both, checked without a Wii U: `platform/pc` builds for 32-bit PowerPC Linux
 (`make OS_TARGET=linux-ppc`) and runs under `qemu-ppc`, and its trace is compared
 with the x86 one (`compare_traces.py --cross-endian`).
 
-## Where it stands (2026-11-19)
+## Where it stands (2026-11-20)
 
-Step 3 is in for the sample replay: the PowerPC build matches x86 on every
-neutral hash (frame, VRAM, palettes, OAM, EWRAM, IWRAM, I/O) for all 2551
-frames of `replays/eu_new_game_walk.txt` (title, file select, intro, Brinstar
-walk). Other replays (step 4) are next.
+The PowerPC build matches x86 on the game values and every neutral hash
+(frame, VRAM, palettes, OAM, sound mix) for all frames of the three replays
+in `platform/pc/replays`:
+
+- `eu_new_game_walk.txt` (2551 frames): title, file select, intro, a walk in
+  the first Brinstar room.
+- `eu_title_demos.txt` (8000 frames): the intro left to run and the attract
+  demos in Brinstar, Norfair and Kraid.
+- `eu_pause_map.txt` (3400 frames): the walk, then the map and status
+  screens.
+
+Step 4 so far (what the new replays found):
+
+- `SamusUpdateEnvironmentalEffect` read the env effects' frame table as host
+  pointers: its entries are GBA addresses (`RESOLVE_SAMUS_PTR`). The x86 build
+  crashed on the first splash in a demo; it is likely the "corrupted slot" the
+  3DS guards against since 2f43d826.
+- Byte data copied into buffers read by value: the intro's fuzz palette (u8
+  tables used as colours) and a demo's minimap and hatch bit sets (u8 arrays
+  in `struct SaveDemo`, u32 in RAM), with `Port_SwapHalfwordBytes` and
+  `Port_SwapWordBytes` (port_gba_mem.h).
+- A backwards sample's start read the sample length natively; sound data is
+  not in the type map, so `port_read32le`.
+
+Next: replays of the other areas, bosses and cutscenes need a save to start
+from (F), then the bottom screen.
 
 Step 3 (what the replay found):
 

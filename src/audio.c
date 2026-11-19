@@ -184,8 +184,10 @@ void UpdateMusic(void)
 #endif
                 {
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
+                    /* The sample header is sound data (assembly, not in the
+                     * ROM type map): its words stay little-endian. */
                     if (pChannel->unk_1 == 0x20)
-                        pChannel->unk_18 = pChannel->pSample[3] << 14;
+                        pChannel->unk_18 = port_read32le(&pChannel->pSample[3]) << 14;
                     else
                         pChannel->unk_18 = 0;
 #else

@@ -177,6 +177,31 @@ static inline void Port_SwapWordHalves(u32* words, u32 count) {
 #endif
 }
 
+/* Byte data copied into a u16 buffer that C code reads by value (the
+ * GBA's halfwords are little-endian): put it in host order. */
+static inline void Port_SwapHalfwordBytes(u16* halfwords, u32 count) {
+#if PORT_HOST_BIG_ENDIAN
+    u32 i;
+    for (i = 0; i < count; i++)
+        halfwords[i] = (u16)((halfwords[i] << 8) | (halfwords[i] >> 8));
+#else
+    (void)halfwords;
+    (void)count;
+#endif
+}
+
+/* The same for byte data copied into a u32 buffer. */
+static inline void Port_SwapWordBytes(u32* words, u32 count) {
+#if PORT_HOST_BIG_ENDIAN
+    u32 i;
+    for (i = 0; i < count; i++)
+        words[i] = __builtin_bswap32(words[i]);
+#else
+    (void)words;
+    (void)count;
+#endif
+}
+
 #if PORT_HOST_BIG_ENDIAN
 /* Whether a resolved host pointer is in memory that holds GBA units by value
  * (everything but the I/O registers and the original ROM bytes). */

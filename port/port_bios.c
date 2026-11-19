@@ -171,7 +171,7 @@ u32 MidiKey2Freq(u32* waveData, u8 midiKey, u8 fineAdjust) {
         return 0;
 
     const u32* wd = (const u32*)GBA_RESOLVE((const void*)waveData);
-    u32 baseFreq = wd[1]; // base frequency stored as (Hz * 1024)
+    u32 baseFreq = port_read32le(&wd[1]); // base frequency stored as (Hz * 1024), little-endian in the ROM
     if (baseFreq == 0)
         return 0;
 

@@ -8,13 +8,29 @@ with the x86 one (`compare_traces.py --cross-endian`).
 
 ## Where it stands (2026-11-19)
 
-- The PowerPC build compiles and links (static, headless, `frontend_none.c`).
-- It crashes at ROM load: `Port_Build2DTextTable` (port_constructor_init.c)
-  reads GBA pointers out of the ROM as native `u32`, which on PowerPC have
-  their bytes reversed. Expected: nothing byte-order aware exists yet.
-- Already big-endian safe: the C sound engine (`port/audio`, reads ROM data
-  byte by byte and splits/joins multi-field words by value), `gba_read16/32`
-  and `gba_write16/32` (compose bytes explicitly), the trace's neutral hashes.
+Step 1 is in: the PowerPC build runs the intro and the title screen and reaches
+the file select (frame 301 of `replays/eu_new_game_walk.txt`), where it crashes
+in `ProcessMenuOam`. The title screen is recognisable but its colours and tiles
+are scrambled, and OAM differs from x86 from frame 0: step 2's work.
+
+- `tools/gen_rom_type_map.py` generates `port/generated/byteswap/rom_type_map_eu.c`
+  (10,718 typed objects, from the 473 `src/data` files plus `sSoundDataEntries`).
+  Statics are placed from gcc's order and natural alignment, re-anchored on the
+  map's globals; 22 file sections disagree with the map somewhere and keep only
+  their anchored (global) objects for now. Regenerate it after a change to
+  `src/data` or `include/structs`.
+- `port_rom_swap.c` builds the swapped copy at load (`PORT_ROM_SWAP`, PC builds;
+  little-endian hosts skip it). `gRomData` is the typed copy, `gRomDataRaw` the
+  original; `gba_read*` and `port_resolve_copy_src` use the original.
+- `port_read32le`/`port_read16le`/`port_rom_raw` (port_gba_mem.h) read ROM data
+  as little-endian from the original bytes; the C sound engine, `MidiKey2Freq`
+  and `AudioCommand_Voice`'s voice-table reads use them (the sound data is
+  assembly, not in the type map).
+- Already big-endian safe before this: the C sound engine's field handling,
+  `gba_read16/32` and `gba_write16/32` (compose bytes explicitly), the trace's
+  neutral hashes.
+- First known step-2 case: OAM is cleared with a 32-bit fill (`0x000000FF`),
+  stored natively (`00 00 00 ff`) instead of in GBA order (`ff 00 00 00`).
 
 ## The problem, in three parts
 

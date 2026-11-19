@@ -39,11 +39,10 @@ extern u32 MidiKey2Freq(u32* waveData, u8 midiKey, u8 fineAdjust);
 #define TRACK_VARIABLES_SIZE 0x50 /* o_TrackVariables_size: the assembly clears this many bytes per track */
 #define PCM_HALF 0x600            /* left/right halves of musicRawData / soundRawData */
 
-static inline u32 Read32LE(const u8* p) {
-    return (u32)p[0] | ((u32)p[1] << 8) | ((u32)p[2] << 16) | ((u32)p[3] << 24);
-}
-
-static inline u16 Read16LE(const u8* p) { return (u16)(p[0] | (p[1] << 8)); }
+/* ROM data is read through port_read*le: the original ROM bytes, whatever the
+ * host's byte order and whether the big-endian ROM copy swapped them. */
+static inline u32 Read32LE(const u8* p) { return port_read32le(p); }
+static inline u16 Read16LE(const u8* p) { return port_read16le(p); }
 
 static inline void Write16LE(u8* p, u32 v) {
     p[0] = (u8)v;
@@ -246,7 +245,7 @@ void AudioC_UpdateAudio(void) {
 void AudioC_unk_4e10(struct TrackVariables* pVariables) {
     /* pSample2 is the voice group, a host pointer into the ROM (AudioCommand_Voice
      * resolved it); envelope2 holds the host pointer to a keysplit's key map. */
-    const u8* pVoice = (const u8*)pVariables->pSample2;
+    const u8* pVoice = port_rom_raw(pVariables->pSample2); /* read as ROM bytes */
     u32 word;
     u32 type;
 
@@ -264,6 +263,7 @@ void AudioC_unk_4e10(struct TrackVariables* pVariables) {
         /* Keysplit: the key map picks the voice. */
         const u8* pKeyMap;
         memcpy(&pKeyMap, &pVariables->envelope2, sizeof(pKeyMap));
+        pKeyMap = port_rom_raw(pKeyMap);
         pVoice += pKeyMap[pVariables->unk_1] * 12;
     }
 
@@ -428,7 +428,7 @@ void AudioC_AudioCommand_PatternPlay(struct TrackVariables* pVariables) {
 
 void AudioC_UploadSampleToWaveRam(const u32* pSample) {
     gIoMem[0x70] = 0x40; /* REG_SOUND3CNT_L: wave RAM bank select while writing */
-    memcpy(&gIoMem[0x90], pSample, 16);
+    memcpy(&gIoMem[0x90], port_rom_raw(pSample), 16);
     gIoMem[0x70] = 0;
 }
 
@@ -509,7 +509,7 @@ static inline void MixDirect(u32* pMix, const s8* pData, u32 pos, u32 volL, u32 
  * position. */
 void AudioC_SoundCodeA(struct SoundChannel* pChannel, u32* pMix, u8 count) {
     const u8* pHeader = (const u8*)pChannel->pSample;
-    const s8* pData = (const s8*)pChannel->pData;
+    const s8* pData = (const s8*)port_rom_raw(pChannel->pData);
     const u32 volL = pChannel->unk_11;
     const u32 volR = pChannel->unk_12;
     const u32 length = Read32LE(pHeader + 0xC);

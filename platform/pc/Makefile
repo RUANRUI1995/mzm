@@ -101,6 +101,7 @@ CPPFLAGS := \
 	-DPORT_NATIVE \
 	-DNON_MATCHING=1 \
 	-DPLATFORM_PC \
+	-DPORT_ROM_SWAP \
 	-DMZM_3DS \
 	-I$(ROOT) \
 	-I$(ROOT)/port \
@@ -137,6 +138,8 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_gba_mem.c \
 	$(ROOT)/port/port_sram_legacy.c \
 	$(ROOT)/port/port_bios.c \
+	$(ROOT)/port/port_rom_swap.c \
+	$(wildcard $(ROOT)/port/generated/byteswap/*.c) \
 	$(ROOT)/port/port_mzm_audio_glue.c \
 	$(ROOT)/port/port_psg_synth.c \
 	$(ROOT)/port/audio/port_audio_engine.c \

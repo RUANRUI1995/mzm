@@ -77,7 +77,7 @@ u8 gba_read8(uint32_t addr) {
 #ifndef MZM_3DS
         Port_LogRomAccess(addr, "gba_read8");
 #endif
-        return gRomData[addr - 0x08000000u];
+        return gRomDataRaw[addr - 0x08000000u];
     }
 
     printf("gba_read8: unimplemented for address 0x%08lX\n", (unsigned long)addr);
@@ -167,7 +167,7 @@ u16 gba_read16(uint32_t addr) {
 #endif
         u32 off = addr - 0x08000000u;
         if (off + 1 < gRomSize) {
-            return gRomData[off] | (gRomData[off + 1] << 8);
+            return gRomDataRaw[off] | (gRomDataRaw[off + 1] << 8);
         }
     }
 
@@ -273,7 +273,8 @@ u32 gba_read32(uint32_t addr) {
 #endif
         u32 off = addr - 0x08000000u;
         if (off + 3 < gRomSize) {
-            return gRomData[off] | (gRomData[off + 1] << 8) | (gRomData[off + 2] << 16) | (gRomData[off + 3] << 24);
+            return gRomDataRaw[off] | (gRomDataRaw[off + 1] << 8) | (gRomDataRaw[off + 2] << 16) |
+                   ((u32)gRomDataRaw[off + 3] << 24);
         }
     }
 
@@ -302,7 +303,8 @@ u32 gba_read32(uint32_t addr) {
  * address from gRomData's host pointer value), so checking this first and
  * returning unchanged is always correct, on every platform. */
 static bool IsWithinRomDataBuffer(uintptr_t val) {
-    return gRomData != NULL && val >= (uintptr_t)gRomData && val < (uintptr_t)gRomData + gRomSize;
+    return (gRomData != NULL && val >= (uintptr_t)gRomData && val < (uintptr_t)gRomData + gRomSize) ||
+           (gRomDataRaw != NULL && val >= (uintptr_t)gRomDataRaw && val < (uintptr_t)gRomDataRaw + gRomSize);
 }
 
 #ifdef MZM_3DS
@@ -381,9 +383,15 @@ void* port_resolve_write_addr(uintptr_t val) {
 }
 
 const void* port_resolve_copy_src(const void* src, u32 size) {
+    const u8* resolved;
     (void)size;
     if (IsActiveStackPtr((uintptr_t)src)) {
         return src;
     }
-    return port_resolve_addr((uintptr_t)src);
+    resolved = (const u8*)port_resolve_addr((uintptr_t)src);
+    /* Copies take the ROM's own bytes: on a big-endian host gRomData is the
+     * byte-swapped copy for typed reads, gRomDataRaw the original. */
+    if (gRomDataRaw != gRomData && gRomData != NULL && resolved >= gRomData && resolved < gRomData + gRomSize)
+        return gRomDataRaw + (resolved - gRomData);
+    return resolved;
 }

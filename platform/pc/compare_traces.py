@@ -32,7 +32,12 @@ def read_trace(path):
                 continue
             parts = [p.split() for p in line.split("|")]
             if len(parts) != len(GROUPS) or any(len(p) != len(g[1]) for p, g in zip(parts, GROUPS)):
-                sys.exit(f"{path}:{lineno}: not a trace line")
+                # A run that crashed leaves its last line half written.
+                rest = f.read().strip()
+                if rest:
+                    sys.exit(f"{path}:{lineno}: not a trace line")
+                print(f"{path}: ignoring the incomplete last line {lineno}")
+                break
             rows.append(parts)
     return rows
 

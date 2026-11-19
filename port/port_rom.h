@@ -25,7 +25,16 @@ typedef enum PortRomRegion {
 /* ROM data buffer (also declared in port_gba_mem.h to avoid a circular
  * include; both declarations must stay in sync). */
 extern u8* gRomData;
+/* The ROM exactly as loaded. The same buffer as gRomData, except on a
+ * big-endian host, where gRomData has its typed data byte-swapped
+ * (port_rom_swap.c) and this keeps the original bytes for byte and GBA-order
+ * reads (gba_read16/32, DMA and decompression sources). */
+extern u8* gRomDataRaw;
 extern u32 gRomSize;
+
+/* port_rom_swap.c */
+int Port_HostIsBigEndian(void);
+int Port_RomSwap_Apply(u8* rom, u32 size, int region);
 u32 Port_RomSize(void);
 
 /* Region of the currently loaded ROM. PORT_ROM_REGION_UNKNOWN until a

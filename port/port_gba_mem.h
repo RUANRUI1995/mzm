@@ -20,7 +20,31 @@ extern u8 gSramMem[0x10000];    // 64 KB SRAM (0x0E000000-0x0E00FFFF)
 
 // ROM data (loaded from baserom.gba)
 extern u8* gRomData;
+extern u8* gRomDataRaw; /* port_rom.h */
 extern u32 gRomSize;
+
+/* The original bytes behind a host pointer into the loaded ROM. On a
+ * big-endian host typed reads go to a copy with its typed data byte-swapped
+ * (port_rom_swap.c); byte and little-endian reads of ROM data must use the
+ * original. Pointers elsewhere are returned unchanged; on a little-endian host
+ * this is the identity. */
+static inline const u8* port_rom_raw(const void* p) {
+    const u8* b = (const u8*)p;
+    if (gRomDataRaw != gRomData && gRomData != NULL && b >= gRomData && b < gRomData + gRomSize)
+        return gRomDataRaw + (b - gRomData);
+    return b;
+}
+
+/* Little-endian reads that are right for ROM data on any host. */
+static inline u32 port_read32le(const void* p) {
+    const u8* b = port_rom_raw(p);
+    return (u32)b[0] | ((u32)b[1] << 8) | ((u32)b[2] << 16) | ((u32)b[3] << 24);
+}
+
+static inline u16 port_read16le(const void* p) {
+    const u8* b = port_rom_raw(p);
+    return (u16)(b[0] | (b[1] << 8));
+}
 
 // ROM access logging (defined in port_rom.c)
 void Port_LogRomAccess(u32 gba_addr, const char* caller);

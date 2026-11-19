@@ -82,6 +82,16 @@ static void OpenDevice(unsigned int rate) {
     }
     sDeviceRate = rate;
     SDL_PauseAudioDevice(sDevice, 0);
+    {
+        /* The device opened is the system default (NULL above). */
+        char* name = NULL;
+        SDL_AudioSpec spec;
+        const bool known = SDL_GetDefaultAudioInfo(&name, &spec, 0) == 0 && name;
+        printf("[PC] Sound: %u Hz on '%s' (%s driver)\n", rate, known ? name : "default device",
+               SDL_GetCurrentAudioDriver());
+        fflush(stdout);
+        if (name) SDL_free(name);
+    }
 }
 
 void Audio_PC_Init(bool openDevice) {

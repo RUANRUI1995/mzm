@@ -101,7 +101,7 @@ SRCS_3DS := \
 	$(CURDIR)/source/platform_3ds_minimal.c \
 	$(CURDIR)/source/port_oam_census.c \
 	$(CURDIR)/source/platform_gpu_3ds.c \
-	$(CURDIR)/source/port_bottom_ui_3ds.c \
+	$(CURDIR)/source/port_ui_platform_3ds.c \
 	$(CURDIR)/source/port_ppu_mzm.c \
 	$(CURDIR)/source/port_gpu_renderer.c \
 	$(CURDIR)/source/port_save_state.c \
@@ -156,6 +156,11 @@ OBJS_ASM  := $(patsubst $(ROOT)/%.s, $(BUILD)/root/%.o, $(SRCS_ASM))
 OBJS_3DS  := $(patsubst $(CURDIR)/%.c, $(BUILD)/3ds/%.o, $(SRCS_3DS))
 OBJS_RC   := $(patsubst $(RCHEEVOS)/%.c, $(BUILD)/rcheevos/%.o, $(SRCS_RCHEEVOS))
 
+# Port code shared with the other platforms (port/ui: the bottom-screen UI).
+# Hand-written like platform/3ds/source, so it gets CFLAGS, not CFLAGS_DECOMP.
+SRCS_UI := $(ROOT)/port/ui/port_bottom_ui.c $(ROOT)/port/ui/port_ui_game.c
+OBJS_UI := $(patsubst $(ROOT)/%.c, $(BUILD)/ui/%.o, $(SRCS_UI))
+
 # PICA200 vertex shaders: picasso assembles each into a .shbin, bin2s turns
 # that into an object plus a header (<name>_shbin / <name>_shbin_size) the C
 # side includes.
@@ -164,7 +169,7 @@ SHADER_OBJS := $(patsubst $(CURDIR)/source/%.v.pica, $(BUILD)/shaders/%.shbin.o,
 PICASSO     := $(DEVKITPRO)/tools/bin/picasso
 BIN2S       := $(DEVKITPRO)/tools/bin/bin2s
 
-C_OBJS    := $(OBJS_ROOT) $(OBJS_ASM) $(OBJS_3DS) $(OBJS_RC) $(SHADER_OBJS)
+C_OBJS    := $(OBJS_ROOT) $(OBJS_ASM) $(OBJS_3DS) $(OBJS_UI) $(OBJS_RC) $(SHADER_OBJS)
 DEPS      := $(C_OBJS:.o=.d)
 
 # Asegurar que existan todos los directorios de salida y tmp antes de compilar en paralelo
@@ -333,6 +338,7 @@ INCLUDES := \
 	-I$(ROOT)/port \
 	-I$(ROOT)/port/generated \
 	-I$(ROOT)/port/ppu/include \
+	-I$(ROOT)/port/ui \
 	-I$(CURDIR)/source \
 	-I$(BUILD)/shaders \
 	-I$(ROOT)/third_party/rcheevos/include \
@@ -542,6 +548,12 @@ $(BUILD)/root/port/asm/%.o: $(ROOT)/port/asm/%.s
 	@mkdir -p $(dir $@)
 	@echo "AS $<"
 	@$(CC) -x assembler-with-cpp -Wa,-I$(ROOT) -march=armv6k -mfloat-abi=hard -mtp=soft -I$(ROOT) -c $< -o $@
+
+# Shared port UI code (port/ui)
+$(BUILD)/ui/%.o: $(ROOT)/%.c
+	@mkdir -p $(dir $@)
+	@echo "CC $<"
+	@$(CC) -MMD -MP -MF $(@:.o=.d) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compilación de archivos C bajo platform/3ds
 $(BUILD)/3ds/%.o: $(CURDIR)/%.c

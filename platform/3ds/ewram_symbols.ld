@@ -25,3 +25,5 @@ gMinimapTilesGfx = gEwram + 0x37e20;
 gSram = gEwram + 0x38000;
 gSramDemoInputData = gEwram + 0x3f080;
 gSramDemoInputDuration = gEwram + 0x3f280;
+gBgPltt = gPaletteRam;
+gObjPltt = gPaletteRam + 0x200;

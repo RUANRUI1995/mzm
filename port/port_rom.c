@@ -113,11 +113,18 @@ int Port_LoadRom(const char* path) {
     }
     rewind(file);
 
-#if defined(__3DS__) || (defined(MZM_3DS) && !defined(PLATFORM_LINUX))
+#if defined(__3DS__) || (defined(MZM_3DS) && !defined(PLATFORM_PC))
 extern void* linearAlloc(size_t size);
 extern void linearFree(void* mem);
 #define PORT_ROM_ALLOC(sz) linearAlloc(sz)
 #define PORT_ROM_FREE(p) do { if (p) linearFree(p); } while(0)
+#elif defined(PLATFORM_PC)
+/* The PC build places the buffer outside the GBA address ranges itself
+ * (platform/pc/source/main_pc.c): on Windows the C heap can sit inside them. */
+extern void* Platform_PC_AllocRom(size_t size);
+extern void Platform_PC_FreeRom(void* mem);
+#define PORT_ROM_ALLOC(sz) Platform_PC_AllocRom(sz)
+#define PORT_ROM_FREE(p) do { if (p) Platform_PC_FreeRom(p); } while(0)
 #else
 #define PORT_ROM_ALLOC(sz) malloc(sz)
 #define PORT_ROM_FREE(p) do { if (p) free(p); } while(0)

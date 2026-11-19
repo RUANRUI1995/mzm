@@ -29,7 +29,7 @@ static const char* LogPath(void) {
 }
 
 /* Runtime state, flipped from the bottom screen's DEBUG -> HERRAMIENTAS menu
- * (see port_bottom_ui_3ds.c). Writing to the SD card is OFF by default even
+ * (see port/ui/port_bottom_ui.c). Writing to the SD card is OFF by default even
  * in a debug build: a debug build used to log every session unconditionally,
  * which costs SD I/O, grows mzm-debug.log without anyone asking, and makes
  * "start recording now" impossible to say. The state is checked in the

@@ -6,12 +6,18 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#ifdef _WIN32
+#include <direct.h>
+/* The Windows C runtime's mkdir takes no mode. */
+#define mkdir(path, mode) _mkdir(path)
+#endif
+
 #define PORT_DEBUG_FILES_DIR PORT_DEBUG_DIR
 
 int Port_Paths_Ensure(void) {
     /* The parent of PORT_APP_DIR ("sdmc:/3ds") already exists on any 3DS
      * with homebrew; create it anyway, it is harmless when present. */
-#ifndef PLATFORM_LINUX
+#ifndef PLATFORM_PC
     mkdir("sdmc:/3ds", 0777);
 #endif
     if (mkdir(PORT_APP_DIR, 0777) != 0 && errno != EEXIST) return 0;

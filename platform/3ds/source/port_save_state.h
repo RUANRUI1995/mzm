@@ -22,7 +22,7 @@ extern "C" {
  * This module is deliberately GBA-side (no <3ds.h>): it must see the real
  * u32 typedef and the emulated-memory symbols, exactly like the debug warp
  * code in port_ppu_mzm.c. The bottom-screen tab that drives it lives in
- * port_bottom_ui_3ds.c and only calls the functions below. */
+ * port/ui/port_bottom_ui.c and only calls the functions below. */
 
 /* Save states are an open-ended list: every `mzm-state<id>.bin` in the states
  * folder is one entry (ids start at 1 and are never reused while the file

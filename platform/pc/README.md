@@ -132,10 +132,9 @@ frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | e
 - **values**: game variables read as numbers.
 - **neutral hashes**: the rendered frame, VRAM, palettes, OAM and the sound
   (`snd`: the 8-bit PCM buffers the engine mixed into, `gMusicInfo.soundRawData`).
-  Palettes and OAM are hashed as `u16` values, the frame as pixel values, the
-  sound as bytes, so these mean the same on a big-endian host. VRAM is hashed
-  as bytes: it only matches across byte orders if the big-endian build keeps
-  VRAM in GBA (little-endian) order, which is what the PPU reads.
+  VRAM, palettes and OAM are hashed as `u16` values (what they hold on any
+  host, see `port/port_gba_mem.h`), the frame as pixel values, the sound as
+  bytes, so these mean the same on a big-endian host.
 - **host hashes**: raw EWRAM, IWRAM and I/O bytes (without the DMA address
   registers, which hold host pointers in the port). Their layout follows the
   host byte order, so they only compare builds of the same byte order.

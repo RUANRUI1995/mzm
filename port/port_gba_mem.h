@@ -4,8 +4,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #ifdef _MSC_VER
 #include <intrin.h>
+#endif
+
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define PORT_HOST_BIG_ENDIAN 1
+#else
+#define PORT_HOST_BIG_ENDIAN 0
 #endif
 
 extern u8 gIoMem[0x400];       // I/O Memory (0x04000000-0x040003FF)
@@ -130,6 +137,27 @@ void* port_resolve_write_addr(uintptr_t val);
 /* Resolve a copy source while preserving known ROM-buffer and active-stack
  * pointers before interpreting numeric GBA addresses. */
 const void* port_resolve_copy_src(const void* src, u32 size);
+
+/* Copies and fills that move GBA units (DMA, CpuSet). The port's memories
+ * keep two byte orders on a big-endian host (docs/wiiu-big-endian-plan.md):
+ *   native     EWRAM, IWRAM, host objects, the typed ROM copy
+ *   halfwords  VRAM, palette RAM and OAM: arrays of host-order u16 (what the
+ *              game's typed stores use; the PPU reads VRAM byte a at a ^ 1);
+ *              a 32-bit unit is its low half at the lower address
+ *   GBA        I/O registers, the original ROM bytes: little-endian
+ * A unit keeps its value across orders, as on the hardware. On a
+ * little-endian host all three are the same and these are memmove/stores.
+ * dst and src are unresolved (GBA addresses or host pointers); unit is the
+ * transfer width in bytes (2 or 4). */
+void Port_GbaCopy(void* dst, const void* src, u32 len, u32 unit);
+void Port_GbaFill(void* dst, u32 value, u32 len, u32 unit);
+/* The value of the unit at src as the GBA sees it (CpuSet's fill source). */
+u32 Port_GbaReadUnit(const void* src, u32 unit);
+#if PORT_HOST_BIG_ENDIAN
+/* Whether a resolved host pointer is in memory that holds GBA units by value
+ * (everything but the I/O registers and the original ROM bytes). */
+int Port_GbaMemHoldsUnits(const void* p);
+#endif
 #ifdef __cplusplus
 }
 #endif

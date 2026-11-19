@@ -8,10 +8,14 @@ with the x86 one (`compare_traces.py --cross-endian`).
 
 ## Where it stands (2026-11-19)
 
-Step 1 is in: the PowerPC build runs the intro and the title screen and reaches
-the file select (frame 301 of `replays/eu_new_game_walk.txt`), where it crashes
-in `ProcessMenuOam`. The title screen is recognisable but its colours and tiles
-are scrambled, and OAM differs from x86 from frame 0: step 2's work.
+Step 2 is in: the PowerPC build matches x86 on every neutral hash (the frame
+included) through the intro and the whole title screen, frames 0-197 of
+`replays/eu_new_game_walk.txt`. It diverges on entering the file select
+(frame 198: OAM empty) and crashes at frame 301 in `ProcessMenuOam`:
+`src/data/menus/file_select_data.c` is one of the 22 sections whose statics
+the type map does not cover yet (step 3).
+
+Step 1 (the type map and the swapped ROM):
 
 - `tools/gen_rom_type_map.py` generates `port/generated/byteswap/rom_type_map_eu.c`
   (10,718 typed objects, from the 473 `src/data` files plus `sSoundDataEntries`).
@@ -21,16 +25,37 @@ are scrambled, and OAM differs from x86 from frame 0: step 2's work.
   `src/data` or `include/structs`.
 - `port_rom_swap.c` builds the swapped copy at load (`PORT_ROM_SWAP`, PC builds;
   little-endian hosts skip it). `gRomData` is the typed copy, `gRomDataRaw` the
-  original; `gba_read*` and `port_resolve_copy_src` use the original.
+  original; `gba_read*` and `port_resolve_copy_src` use the original. It also
+  keeps a bitmap of the typed objects (`Port_RomIsTyped`).
 - `port_read32le`/`port_read16le`/`port_rom_raw` (port_gba_mem.h) read ROM data
   as little-endian from the original bytes; the C sound engine, `MidiKey2Freq`
   and `AudioCommand_Voice`'s voice-table reads use them (the sound data is
   assembly, not in the type map).
-- Already big-endian safe before this: the C sound engine's field handling,
-  `gba_read16/32` and `gba_write16/32` (compose bytes explicitly), the trace's
-  neutral hashes.
-- First known step-2 case: OAM is cleared with a 32-bit fill (`0x000000FF`),
-  stored natively (`00 00 00 ff`) instead of in GBA order (`ff 00 00 00`).
+
+Step 2 (the memories' byte orders, see "A" below as built):
+
+- VRAM, palette RAM and OAM are arrays of host-order halfwords; I/O stays in
+  GBA order. The game's typed u16 stores into VRAM (tilemap edits) then just
+  work; the PPU reads VRAM byte `a` at `a ^ 1` (`MODE1_VRAM_BYTE`), and its
+  4bpp row and colour/token pair shortcuts are byte-order aware.
+- `DmaTransfer`, `BitFill`, `CpuSet` and `CpuFastSet` go through
+  `Port_GbaCopy`/`Port_GbaFill` (port_gba_mem.c), which move units by value
+  between orders. On little-endian hosts they are the old memmove and stores.
+- `LZ77Uncomp` stores its output as halfwords when the destination holds
+  units by value (VRAM, EWRAM): graphics staged in EWRAM then reach VRAM
+  intact, and decompressed tilemaps and clipdata read right from C.
+- `gba_read/write16/32` treat EWRAM and IWRAM as native.
+- `union OamData`'s bitfields are declared from the top of each halfword down
+  on big-endian hosts (`include/oam.h`).
+- `CpuSet`'s flag bits were wrong (bit 24 taken as 32-bit); fixed to GBATek's
+  (24 fill, 26 32-bit), which the game's only callers (32-bit fills) did not
+  notice.
+- The trace hashes VRAM as u16 values (same hash as before on little-endian).
+
+Known limits of the unit rule, to fix per site when the trace finds them:
+32-bit data copied as 32-bit units between EWRAM and VRAM/palette/OAM is taken
+as two u16 (the common case); decompressed data that C reads as bytes, or as
+u32, comes out halfword-swapped in EWRAM.
 
 ## The problem, in three parts
 
@@ -53,7 +78,8 @@ are scrambled, and OAM differs from x86 from frame 0: step 2's work.
 | Native (host order) | GBA order (little-endian) |
 |---|---|
 | the ROM copy C code reads (transcoded, B) | the pristine ROM bytes |
-| EWRAM, IWRAM, host globals | VRAM, palette RAM, OAM, I/O registers |
+| EWRAM, IWRAM, host globals | I/O registers |
+| VRAM, palette RAM, OAM as host-order u16 (step 2) | |
 
 Inside a group, copies are plain `memcpy`. A copy that crosses groups moves
 **units** (DMA and CpuSet already say 16 or 32 bits) and keeps each unit's

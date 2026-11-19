@@ -52,18 +52,31 @@ u16 Sqrt(u32 value) {
 
 /* ctrl bit layout (GBATek "3.4 CpuSet/CpuFastSet"):
  *   0-20  word count
- *   24    datasize: 0 = 16-bit, 1 = 32-bit (ignored by CpuFastSet, always 32)
- *   25    fixed source: 0 = copy, 1 = fill (repeat src[0]) */
+ *   24    fixed source: 0 = copy, 1 = fill (repeat src[0])
+ *   26    datasize: 0 = 16-bit, 1 = 32-bit (ignored by CpuFastSet, always 32)
+ * (include/gba/dma.h's C_32_2_16(CPU_SET_SRC_FIXED | CPU_SET_32BIT, n)) */
 #define CPUSET_COUNT_MASK 0x001FFFFFu
-#define CPUSET_32BIT (1u << 24)
-#define CPUSET_FIXED_SRC (1u << 25)
+#define CPUSET_FIXED_SRC (1u << 24)
+#define CPUSET_32BIT (1u << 26)
 
 #include "port_gba_mem.h"
 
 void CpuSet(void* src, void* dst, u32 ctrl) {
     u32 count = ctrl & CPUSET_COUNT_MASK;
-    int fill = (ctrl & (CPUSET_FIXED_SRC | (1u << 24))) != 0;
+    int fill = (ctrl & CPUSET_FIXED_SRC) != 0;
     u32 i;
+
+#if PORT_HOST_BIG_ENDIAN
+    {
+        u32 unit = (ctrl & CPUSET_32BIT) ? 4u : 2u;
+        if (fill)
+            Port_GbaFill(dst, Port_GbaReadUnit(src, unit), count * unit, unit);
+        else
+            Port_GbaCopy(dst, src, count * unit, unit);
+        (void)i;
+        return;
+    }
+#endif
 
     void* d = port_resolve_write_addr((uintptr_t)dst);
     const void* s = port_resolve_copy_src(src, count * 4);
@@ -86,8 +99,17 @@ void CpuSet(void* src, void* dst, u32 ctrl) {
 
 void CpuFastSet(void* src, void* dst, u32 ctrl) {
     u32 count = (((u32)ctrl & CPUSET_COUNT_MASK) + 7u) & ~7u;
-    int fill = (ctrl & (CPUSET_FIXED_SRC | (1u << 24))) != 0;
+    int fill = (ctrl & CPUSET_FIXED_SRC) != 0;
     u32 i;
+
+#if PORT_HOST_BIG_ENDIAN
+    if (fill)
+        Port_GbaFill(dst, Port_GbaReadUnit(src, 4), count * 4, 4);
+    else
+        Port_GbaCopy(dst, src, count * 4, 4);
+    (void)i;
+    return;
+#endif
 
     void* d = port_resolve_write_addr((uintptr_t)dst);
     const void* s = port_resolve_copy_src(src, count * 4);
@@ -141,6 +163,20 @@ static void Lz77Uncomp(const u8* src, u8* dst) {
             }
         }
     }
+
+#if PORT_HOST_BIG_ENDIAN
+    /* VRAM and EWRAM hold GBA units by value (port_gba_mem.h): the output is
+     * stored as halfwords, which is what graphics, tilemaps and clipdata are,
+     * so the PPU sees the stream's bytes and C code reads tilemaps and
+     * clipdata as the GBA would. */
+    if (Port_GbaMemHoldsUnits(d)) {
+        for (i = 0; i + 1 < decompressedSize; i += 2) {
+            u8 t = d[i];
+            d[i] = d[i + 1];
+            d[i + 1] = t;
+        }
+    }
+#endif
 }
 
 void LZ77UncompVram(const void* src, void* dst) {

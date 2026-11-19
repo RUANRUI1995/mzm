@@ -586,14 +586,36 @@ static void virtuappu_mode1_publish_obj_line_lists(void) {
  * The row load is little-endian: GBA character data stores the
  * leftmost pixel in the low nibble. memcpy becomes one aligned word load on
  * ARM11/x86. */
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define MODE1_HOST_BIG_ENDIAN 1
+#else
+#define MODE1_HOST_BIG_ENDIAN 0
+#endif
+
+/* VRAM is an array of host-order halfwords, like palette RAM and OAM (the
+ * game's C code stores tilemap entries into it as u16): on a big-endian host
+ * the GBA's byte at address a is the host's byte a ^ 1. */
+#define MODE1_VRAM_BYTE(addr) ((addr) ^ (MODE1_HOST_BIG_ENDIAN ? 1u : 0u))
+
 static uint32_t mode1_read_tile_row_4bpp(const uint8_t* bytes) {
+#if MODE1_HOST_BIG_ENDIAN
+    /* bytes is a 4-aligned VRAM row: two host-order halfwords. */
+    return (uint32_t)bytes[1] | ((uint32_t)bytes[0] << 8) | ((uint32_t)bytes[3] << 16) | ((uint32_t)bytes[2] << 24);
+#else
     uint32_t value;
     memcpy(&value, bytes, sizeof(value));
     return value;
+#endif
 }
 
+/* The pair's low half is the left pixel. */
 static void mode1_store_bg_color_pair(uint32_t* destination, uint64_t colors) {
+#if MODE1_HOST_BIG_ENDIAN
+    destination[0] = (uint32_t)colors;
+    destination[1] = (uint32_t)(colors >> 32u);
+#else
     memcpy(destination, &colors, sizeof(colors));
+#endif
 }
 
 static uint64_t mode1_bg_color_pair(unsigned palette_bank, uint8_t packed_pair) {
@@ -648,8 +670,8 @@ static void mode1_render_text_bg_native_4bpp(int bg_index, uint32_t char_base, u
         } else {
             const uint32_t map_addr = screen_base + (uint32_t)screen_block_index * 0x800u +
                                       (uint32_t)(local_row * 32 + local_col) * 2u;
-            entry.raw = (uint16_t)mode1_memory.vram[map_addr] |
-                        ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);
+            entry.raw = (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] |
+                        ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);
         }
         const int tile_pixel_y = mode1_tile_vflip(entry) ? 7 - pixel_y : pixel_y;
         const uint32_t row_base = char_base + (uint32_t)mode1_tile_index(entry) * 32u +
@@ -716,9 +738,14 @@ static void mode1_render_text_bg_native_4bpp(int bg_index, uint32_t char_base, u
  * below performs the ABGR lookup only for layers that actually win.
  *
  * The packed-pair lookup turns each source byte (two 4bpp pixels) into one
- * 32-bit token pair on little-endian hosts. */
+ * 32-bit token pair (low half the left pixel). */
 static void mode1_store_bg_token_pair(uint16_t* destination, uint32_t tokens) {
+#if MODE1_HOST_BIG_ENDIAN
+    destination[0] = (uint16_t)tokens;
+    destination[1] = (uint16_t)(tokens >> 16u);
+#else
     memcpy(destination, &tokens, sizeof(tokens));
+#endif
 }
 
 static uint32_t mode1_bg_token_pair(unsigned palette_bank, uint8_t packed_pair) {
@@ -779,8 +806,8 @@ static void mode1_render_text_bg_native_tokens(int bg_index, int line, uint16_t 
                                                                  (size_t)shadow_index]
                             : 0u;
         } else {
-            entry.raw = (uint16_t)mode1_memory.vram[map_addr] |
-                        ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);
+            entry.raw = (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] |
+                        ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);
         }
         const int tile_pixel_y = mode1_tile_vflip(entry) ? 7 - pixel_y : pixel_y;
         const uint32_t row_base = char_base + (uint32_t)mode1_tile_index(entry) * 32u +
@@ -894,8 +921,8 @@ static void mode1_render_text_bg_compact_tokens(int bg_index, int line, uint16_t
             const int local_col = tile_col & 31;
             const uint32_t map_addr = screen_base + (uint32_t)screen_block_index * 0x800u +
                                       (uint32_t)(local_row * 32 + local_col) * 2u;
-            entry.raw = (uint16_t)mode1_memory.vram[map_addr] |
-                        ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);
+            entry.raw = (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] |
+                        ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);
         }
 
         const int tile_pixel_x = mode1_tile_hflip(entry) ? 7 - pixel_x : pixel_x;
@@ -903,7 +930,7 @@ static void mode1_render_text_bg_compact_tokens(int bg_index, int line, uint16_t
         const uint32_t byte_addr = char_base + (uint32_t)mode1_tile_index(entry) * 32u +
                                    (uint32_t)tile_pixel_y * 4u + (uint32_t)(tile_pixel_x >> 1);
         if (byte_addr >= MODE1_VRAM_SIZE) continue;
-        const uint8_t packed = mode1_memory.vram[byte_addr];
+        const uint8_t packed = mode1_memory.vram[MODE1_VRAM_BYTE(byte_addr)];
         const uint8_t color_index = (tile_pixel_x & 1) != 0 ? packed >> 4u : packed & 0x0Fu;
         if (color_index == 0u) continue;
         const unsigned palette_index = (unsigned)mode1_tile_palette(entry) * 16u + color_index;
@@ -1023,7 +1050,7 @@ void virtuappu_mode1_render_text_bg_line(int bg_index, int line, uint32_t* line_
                 uint32_t map_addr =                                                                                    \
                     screen_base + (uint32_t)screen_block_index * 0x800u + (uint32_t)(local_row * 32 + local_col) * 2u; \
                 bg_tile_entry.raw =                                                                                    \
-                    (uint16_t)mode1_memory.vram[map_addr] | ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);        \
+                    (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] | ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);        \
             }                                                                                                          \
             bg_hflip = mode1_tile_hflip(bg_tile_entry);                                                                \
             bg_tpy = mode1_tile_vflip(bg_tile_entry) ? (7 - pixel_y) : pixel_y;                                        \
@@ -1038,10 +1065,10 @@ void virtuappu_mode1_render_text_bg_line(int bg_index, int line, uint32_t* line_
         uint8_t color_index;                                                                                           \
         if (bpp8) {                                                                                                    \
             uint32_t addr = bg_row_base + (uint32_t)tile_pixel_x;                                                      \
-            color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;                                     \
+            color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;                                     \
         } else {                                                                                                       \
             uint32_t addr = bg_row_base + (uint32_t)(tile_pixel_x / 2);                                                \
-            uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;                                  \
+            uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;                                  \
             color_index = (tile_pixel_x & 1) ? (packed >> 4u) : (packed & 0x0Fu);                                      \
         }                                                                                                              \
         if (color_index != 0u) {                                                                                       \
@@ -1345,11 +1372,11 @@ void virtuappu_mode1_render_obj_line(int line, bool obj_1d, uint32_t* line_buffe
 
             if (bpp8) {
                 uint32_t addr = obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 8u + (uint32_t)pixel_x;
-                color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
             } else {
                 uint32_t addr =
                     obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 4u + (uint32_t)(pixel_x / 2);
-                uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
                 color_index = (pixel_x & 1) ? (packed >> 4u) : (packed & 0x0Fu);
             }
 
@@ -2404,11 +2431,11 @@ void virtuappu_mode1_render_affine_obj_overlay(uint32_t* dst, int dst_w, int dst
                 if (bpp8) {
                     uint32_t addr =
                         obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 8u + (uint32_t)pixel_x;
-                    color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                    color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
                 } else {
                     uint32_t addr =
                         obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 4u + (uint32_t)(pixel_x / 2);
-                    uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                    uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
                     color_index = (pixel_x & 1) ? (packed >> 4u) : (packed & 0x0Fu);
                 }
                 if (color_index == 0u)
@@ -2512,9 +2539,9 @@ static void mode1_render_affine_bg2_line(int frame_width, int32_t ref_x, int32_t
         const int pixel_x = src_x % 8;
         const int pixel_y = src_y % 8;
         const uint32_t map_addr = screen_base + (uint32_t)(tile_row * map_tiles + tile_col);
-        const uint8_t tile_index = (map_addr < MODE1_VRAM_SIZE) ? memory.vram[map_addr] : 0u;
+        const uint8_t tile_index = (map_addr < MODE1_VRAM_SIZE) ? memory.vram[MODE1_VRAM_BYTE(map_addr)] : 0u;
         const uint32_t tile_addr = char_base + (uint32_t)tile_index * 64u + (uint32_t)pixel_y * 8u + (uint32_t)pixel_x;
-        const uint8_t color_index = (tile_addr < MODE1_VRAM_SIZE) ? memory.vram[tile_addr] : 0u;
+        const uint8_t color_index = (tile_addr < MODE1_VRAM_SIZE) ? memory.vram[MODE1_VRAM_BYTE(tile_addr)] : 0u;
 
         if (color_index == 0u) {
             continue;

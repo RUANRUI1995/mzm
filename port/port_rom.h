@@ -35,6 +35,9 @@ extern u32 gRomSize;
 /* port_rom_swap.c */
 int Port_HostIsBigEndian(void);
 int Port_RomSwap_Apply(u8* rom, u32 size, int region);
+/* Whether ROM offset lies in a typed object that the swap changed
+ * (big-endian hosts; 0 elsewhere). */
+int Port_RomIsTyped(u32 offset);
 u32 Port_RomSize(void);
 
 /* Region of the currently loaded ROM. PORT_ROM_REGION_UNKNOWN until a

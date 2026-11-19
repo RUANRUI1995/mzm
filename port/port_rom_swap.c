@@ -13,6 +13,26 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+/* One bit per ROM halfword: set where a typed object with 2- or 4-byte
+ * scalars lies. Copies into native memory read those from the swapped copy
+ * and everything else (graphics, compressed data) as GBA units. */
+static uint8_t* sTypedBits;
+static uint32_t sTypedSize;
+
+static void MarkTyped(uint32_t offset, uint32_t length) {
+    uint32_t h;
+    for (h = offset >> 1; h < ((offset + length + 1) >> 1); h++)
+        sTypedBits[h >> 3] |= (uint8_t)(1u << (h & 7));
+}
+
+int Port_RomIsTyped(uint32_t offset) {
+    uint32_t h = offset >> 1;
+    if (sTypedBits == NULL || offset >= sTypedSize)
+        return 0;
+    return (sTypedBits[h >> 3] >> (h & 7)) & 1;
+}
 
 int Port_HostIsBigEndian(void) {
     const uint16_t probe = 1;
@@ -58,6 +78,8 @@ int Port_RomSwap_Apply(uint8_t* rom, uint32_t size, int region) {
             outside++;
             continue;
         }
+        if (type->opCount != 0 && sTypedBits != NULL)
+            MarkTyped(offset, type->size * object->count);
         for (e = 0; e < object->count; e++) {
             uint8_t* element = rom + offset + e * type->size;
             for (k = 0; k < type->opCount; k++) {

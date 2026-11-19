@@ -111,6 +111,43 @@ struct FrameData {
 #define FRAME_DATA_NBR_OF_FRAMES(oam) (ARRAY_SIZE((oam)) - 1)
 #define FRAME_DATA_LAST_ANIM_FRAME(oam) (ARRAY_SIZE((oam)) - 2)
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC allocates bitfields from the most significant bit, so the
+ * fields are declared from the top of each halfword down: every field then
+ * sits at the same bits of attr0..affineParam as on the GBA. */
+union OamData {
+    struct {
+    /*0x00*/ u32 shape:2;
+             u32 bpp:1;
+             u32 mosaic:1;
+             u32 objMode:2;
+             u32 affineMode:2;
+             u32 y:8;
+
+    /*0x01*/ u32 size:2;
+             u32 yFlip:1;
+             u32 xFlip:1;
+             u32 matrixNum:3;
+             u32 x:9;
+
+    /*0x02*/ u16 paletteNum:4;
+             u16 priority:2;
+             u16 tileNum:10;
+
+    /*0x03*/ u16 sign:1;
+             u16 integer:7;
+             u16 fractional:8;
+    } split;
+
+    struct {
+        u16 attr0;
+        u16 attr1;
+        u16 attr2;
+        u16 affineParam;
+    } all;
+};
+#else
 union OamData {
     struct {
     /*0x00*/ u32 y:8;
@@ -142,6 +179,40 @@ union OamData {
         u16 affineParam;
     } all;
 };
+#endif
+#else
+union OamData {
+    struct {
+    /*0x00*/ u32 y:8;
+             u32 affineMode:2;  // 0x1, 0x2 -> 0x4
+             u32 objMode:2;     // 0x4, 0x8 -> 0xC
+             u32 mosaic:1;      // 0x10
+             u32 bpp:1;         // 0x20
+             u32 shape:2;       // 0x40, 0x80 -> 0xC0
+
+    /*0x01*/ u32 x:9;
+             u32 matrixNum:3;
+             u32 xFlip:1;
+             u32 yFlip:1;
+             u32 size:2;        // 0x4000, 0x8000 -> 0xC000
+
+    /*0x02*/ u16 tileNum:10;    // 0x3FF
+             u16 priority:2;    // 0x400, 0x800 -> 0xC00
+             u16 paletteNum:4;
+
+    /*0x03*/ u16 fractional:8;
+             u16 integer:7;
+             u16 sign:1;
+    } split;
+
+    struct {
+        u16 attr0;
+        u16 attr1;
+        u16 attr2;
+        u16 affineParam;
+    } all;
+};
+#endif
 
 extern u8 gNextOamSlot;
 

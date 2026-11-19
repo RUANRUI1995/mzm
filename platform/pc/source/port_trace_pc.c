@@ -268,7 +268,7 @@ void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer) 
             (unsigned)gSamusData.xPosition, (unsigned)gSamusData.yPosition,
             (unsigned)gEquipment.currentEnergy, (unsigned)gFrameCounter16Bit,
             fb,
-            HashBytes(FNV_OFFSET, gVram, sizeof(gVram)),
+            HashU16Values((const uint16_t*)gVram, sizeof(gVram) / 2),
             HashU16Values(gBgPltt, 256), HashU16Values(gObjPltt, 256),
             HashU16Values(gOamMem, 0x200),
             HashBytes(FNV_OFFSET, gMusicInfo.soundRawData, sizeof(gMusicInfo.soundRawData)),

@@ -18,7 +18,7 @@ import sys
 
 GROUPS = [
     ("values", ["frame", "keys", "mode", "sub", "area", "room", "x", "y", "energy", "fc16"]),
-    ("neutral hashes", ["fb", "vram", "bgpal", "objpal", "oam"]),
+    ("neutral hashes", ["fb", "vram", "bgpal", "objpal", "oam", "snd"]),
     ("host hashes", ["ewram", "iwram", "io"]),
 ]
 

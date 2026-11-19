@@ -13,7 +13,7 @@
  *
  * Trace line, one per frame (VBlank), all values hexadecimal:
  *
- *     frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam | ewram iwram io
+ *     frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io
  *
  * Everything before the second '|' is read as values, never as raw memory, so
  * it means the same on a big-endian build: that part is the cross-endian check.
@@ -28,6 +28,7 @@
 #include "structs/game_state.h"
 #include "structs/connection.h"
 #include "structs/samus.h"
+#include "structs/audio.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -237,7 +238,7 @@ bool Trace_OpenLog(const char* path) {
         fprintf(stderr, "[Trace] Cannot write '%s'\n", path);
         return false;
     }
-    fprintf(sLog, "# frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam | ewram iwram io\n");
+    fprintf(sLog, "# frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io\n");
     return true;
 }
 
@@ -260,7 +261,7 @@ void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer) 
 
     if (!sLog) return;
     fb = framebuffer ? HashU32Values(framebuffer, 240u * 160u) : 0;
-    fprintf(sLog, "%u %03x %x %x %x %x %x %x %x %x | %08x %08x %08x %08x %08x | %08x %08x %08x\n",
+    fprintf(sLog, "%u %03x %x %x %x %x %x %x %x %x | %08x %08x %08x %08x %08x %08x | %08x %08x %08x\n",
             (unsigned)frame, (unsigned)keys,
             (unsigned)gMainGameMode, (unsigned)(u16)gSubGameMode1,
             (unsigned)gCurrentArea, (unsigned)gCurrentRoom,
@@ -270,6 +271,7 @@ void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer) 
             HashBytes(FNV_OFFSET, gVram, sizeof(gVram)),
             HashU16Values(gBgPltt, 256), HashU16Values(gObjPltt, 256),
             HashU16Values(gOamMem, 0x200),
+            HashBytes(FNV_OFFSET, gMusicInfo.soundRawData, sizeof(gMusicInfo.soundRawData)),
             HashBytes(FNV_OFFSET, gEwram, sizeof(gEwram)),
             HashBytes(FNV_OFFSET, gIwram, sizeof(gIwram)),
             HashIo());

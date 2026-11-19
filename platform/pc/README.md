@@ -9,10 +9,27 @@ The window, keyboard and controller go through SDL2, which a Wii U frontend
 can use too.
 
 The bottom screen is the 3DS one (`port/ui/port_bottom_ui.c`, shared), drawn
-in software (`port/ui/port_draw2d_soft.c`). There is no audio
-(`PORT_NATIVE_AUDIO_STUBS`) and none of the 3DS-only features: Wide view,
-save states, RetroAchievements, the updater, FTP (`source/port_hooks_pc.c` and
-`source/port_services_pc.c` answer for them as "off" / "not available").
+in software (`port/ui/port_draw2d_soft.c`). The sound engine is the C
+translation of the assembly (`port/audio`, see below). None of the 3DS-only
+features are here: Wide view, save states, RetroAchievements, the updater, FTP
+(`source/port_hooks_pc.c` and `source/port_services_pc.c` answer for them as
+"off" / "not available").
+
+## Sound
+
+The engine's assembly (`port/asm/audio_internal.s`, `asm/soundcode.s`) is ARM
+code; the 3DS assembles it, the PC uses its C translation,
+`port/audio/port_audio_engine.c`, written to give the same result bit for bit.
+It runs as on the GBA, once per frame from the game loop, so it is part of the
+deterministic run and of the trace (`snd`). `port/port_mzm_audio_glue.c` (shared
+with the 3DS) adds the PSG channels and turns each mixdown into 16-bit stereo;
+`source/audio_pc.c` queues it to SDL at the engine's rate. `--mute` keeps the
+engine running without a device; `--wav PATH` records it.
+
+The 3DS can check the C translation against the assembly while it plays:
+`make DEBUG_TOOLS=1 AUDIO_LOCKSTEP=1` in `platform/3ds` wraps every routine,
+runs both on the same memory and writes any difference to
+`debug/audio-lockstep.txt` (`port/audio/port_audio_lockstep.c`).
 
 ## Build
 
@@ -80,6 +97,8 @@ empty or does nothing, and the Options settings are kept in memory only.
 | `--bottom-shot N PATH` | write frame N's bottom screen (320x240) as a PPM image (repeatable) |
 | `--tap N X Y` | touch the bottom screen at (X, Y) on frame N, for three frames (repeatable) |
 | `--save-dir DIR` | where `mzm.sav` lives; replay and trace runs default to a new empty directory, so they always start from a blank save |
+| `--mute` | no sound device (the engine still runs) |
+| `--wav PATH` | also write the sound to a WAV file |
 | `--quiet` | no progress lines |
 
 A frame is one VBlank. Without a display, the VCOUNT/DISPSTAT registers
@@ -107,15 +126,16 @@ is.
 ## Traces
 
 ```
-frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam | ewram iwram io
+frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io
 ```
 
 - **values**: game variables read as numbers.
-- **neutral hashes**: the rendered frame, VRAM, palettes and OAM. Palettes and
-  OAM are hashed as `u16` values, the frame as pixel values, so these mean the
-  same on a big-endian host. VRAM is hashed as bytes: it only matches across
-  byte orders if the big-endian build keeps VRAM in GBA (little-endian) order,
-  which is what the PPU reads.
+- **neutral hashes**: the rendered frame, VRAM, palettes, OAM and the sound
+  (`snd`: the 8-bit PCM buffers the engine mixed into, `gMusicInfo.soundRawData`).
+  Palettes and OAM are hashed as `u16` values, the frame as pixel values, the
+  sound as bytes, so these mean the same on a big-endian host. VRAM is hashed
+  as bytes: it only matches across byte orders if the big-endian build keeps
+  VRAM in GBA (little-endian) order, which is what the PPU reads.
 - **host hashes**: raw EWRAM, IWRAM and I/O bytes (without the DMA address
   registers, which hold host pointers in the port). Their layout follows the
   host byte order, so they only compare builds of the same byte order.

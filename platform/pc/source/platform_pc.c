@@ -13,6 +13,7 @@
 #include "screens_pc.h"
 #include "port_bottom_ui.h"
 #include "port_draw2d.h"
+#include "audio_pc.h"
 
 #define SDL_MAIN_HANDLED /* main() stays ours on Windows too */
 #include <SDL.h>
@@ -90,11 +91,13 @@ bool Platform_PC_Init(bool headless) {
     SetupPpu();
     sRenderEveryFrame = !sHeadless || Trace_LogEnabled() || gPcOptions.shotCount > 0;
     if (!sHeadless && !OpenWindow()) return false;
+    Audio_PC_Init(sWindowOpen && !gPcOptions.mute);
     return true;
 }
 
 void Platform_PC_Cleanup(void) {
     Trace_Close();
+    Audio_PC_Shutdown();
     if (sController) SDL_GameControllerClose(sController);
     sController = NULL;
     if (sWindowOpen) {
@@ -282,6 +285,10 @@ static void ExitRun(void) {
 
 void Platform_PC_AfterVBlank(void) {
     int i;
+
+    /* The sound the engine mixed this frame, then the next frame's DMA step. */
+    Audio_PC_EndFrame();
+    Audio_PC_BeginFrame();
 
     if (sRenderEveryFrame) RenderFrame();
     if (BottomActive()) RenderBottom();

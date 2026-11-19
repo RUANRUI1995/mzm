@@ -23,11 +23,27 @@
 #include "port_retroachievements_3ds.h"
 #include "port_dsp_firm_prompt_3ds.h"
 
+#ifndef PC_NO_SDL
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#endif
 
 /* ---- port_ui_platform.h ------------------------------------------------------ */
 
+#ifdef PC_NO_SDL
+/* Builds without SDL (the headless PowerPC one): a monotonic clock, no battery. */
+uint64_t PortUi_NowMs(void) {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000u + (uint64_t)ts.tv_nsec / 1000000u;
+}
+
+bool PortUi_PollBattery(uint8_t* level, bool* charging) {
+    (void)level;
+    (void)charging;
+    return false;
+}
+#else
 uint64_t PortUi_NowMs(void) { return SDL_GetTicks64(); }
 
 bool PortUi_PollBattery(uint8_t* level, bool* charging) {
@@ -38,6 +54,7 @@ bool PortUi_PollBattery(uint8_t* level, bool* charging) {
     *charging = (state == SDL_POWERSTATE_CHARGING);
     return true;
 }
+#endif
 
 int PortUi_WifiStrength(void) { return 3; }
 

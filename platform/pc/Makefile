@@ -1,9 +1,10 @@
-# PC reference build of the Metroid: Zero Mission port (32-bit x86), for
-# Linux and Windows. See README.md.
+# PC reference build of the Metroid: Zero Mission port (32-bit), for Linux
+# and Windows on x86, and headless big-endian PowerPC. See README.md.
 #
 #   make                         Linux build  -> mzm-linux
 #   make OS_TARGET=windows       Windows build (MinGW cross-compiler, from
 #                                Linux/WSL)   -> mzm-windows.exe + SDL2.dll
+#   make OS_TARGET=linux-ppc     PowerPC build, run with qemu-ppc -> mzm-linux-ppc
 #
 # Deliberately 32-bit: several structs (e.g. struct SoundEntry in
 # include/structs/audio.h) are overlaid directly on raw GBA ROM bytes and
@@ -55,8 +56,29 @@ else ifeq ($(OS_TARGET),linux)
   # Init_sScrollTables) for GBA ROM addresses and translated them into
   # garbage. 0x20000000 is above every GBA region.
   OS_LDFLAGS := -no-pie -Wl,-Ttext-segment=0x20000000 -lrt -lpthread
+else ifeq ($(OS_TARGET),linux-ppc)
+  # 32-bit big-endian PowerPC, the Wii U's byte order, run under qemu-ppc
+  # (qemu-user). Headless only: no SDL, frontend_none.c. Static, so qemu needs
+  # no PowerPC libraries.
+  CC := powerpc-linux-gnu-gcc
+  TARGET := mzm-linux-ppc
+  BUILD := $(CURDIR)/build/linux-ppc
+  NO_SDL := 1
+  ARCH_FLAGS :=
+  SYM_PREFIX :=
+  # -latomic: 64-bit __atomic operations (port/ui/port_bottom_ui.c) are library
+  # calls on 32-bit PowerPC.
+  OS_LDFLAGS := -static -Wl,-Ttext-segment=0x20000000 -lrt -lpthread -latomic
 else
-  $(error OS_TARGET must be linux or windows)
+  $(error OS_TARGET must be linux, windows or linux-ppc)
+endif
+
+ifeq ($(NO_SDL),1)
+  SDL_CFLAGS := -DPC_NO_SDL
+  SDL_LIBS :=
+  FRONTEND_SRCS := $(CURDIR)/source/frontend_none.c
+else
+  FRONTEND_SRCS := $(CURDIR)/source/frontend_sdl.c $(CURDIR)/source/screens_pc.c
 endif
 
 # No -std: the compiler's default dialect, as in the 3DS build (the port
@@ -139,7 +161,7 @@ SRCS_PC := \
 	$(CURDIR)/source/platform_pc.c \
 	$(CURDIR)/source/port_hooks_pc.c \
 	$(CURDIR)/source/port_services_pc.c \
-	$(CURDIR)/source/screens_pc.c \
+	$(FRONTEND_SRCS) \
 	$(CURDIR)/source/audio_pc.c \
 	$(CURDIR)/source/port_trace_pc.c
 

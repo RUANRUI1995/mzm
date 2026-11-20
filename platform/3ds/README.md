@@ -53,7 +53,10 @@ This target builds the native dual-screen Nintendo 3DS port of **Metroid: Zero M
 - The 3DS portlibs used by the self-updater: `dkp-pacman -S 3ds-curl 3ds-mbedtls 3ds-zlib`
   (on Windows run `pacman -S 3ds-curl 3ds-mbedtls 3ds-zlib` in the *devkitPro MSYS2* shell).
   The build stops with this same hint if they are missing.
-- `makerom` and `bannertool` (optional, required for `.cia` generation).
+- `makerom` and `bannertool` (optional, required for `.cia` generation). On Windows the build
+  uses devkitPro's `bannertool.exe` and a fixed `makerom.exe` that `tools/fetch-makerom.sh`
+  downloads once into `AppData\Local\3ds-tools` (devkitPro's makerom.exe 0.19.0 drops the
+  title version's minor number, 3DSGuy/Project_CTR#169); `MAKEROM=...` still overrides it.
 
 ### Compilation
 

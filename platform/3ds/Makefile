@@ -379,8 +379,12 @@ LIBS     := -L$(CTRULIB)/lib -L$(PORTLIBS)/lib -lcitro2d -lcitro3d -lcurl -lmbed
 # error" (make Error 126), so there we must skip them and use the .exe that
 # ships with devkitPro instead. devkitPro's Windows make is an Msys build and
 # scrubs $(OS), so detect via `uname -o` (Msys / Cygwin) rather than $(OS).
+# makerom is the exception: devkitPro's makerom.exe 0.19.0 drops the title
+# version's minor number (3DSGuy/Project_CTR#169), so take the fixed build
+# tools/fetch-makerom.sh prints, and stop if it cannot (no fallback). Recursive
+# on purpose: the script only runs when the CIA is packaged.
 ifneq (,$(filter Msys Cygwin,$(shell uname -o 2>/dev/null)))
-MAKEROM    ?= $(firstword $(wildcard $(DEVKITPRO)/tools/bin/makerom.exe) $(shell which makerom.exe 2>/dev/null))
+MAKEROM    ?= $(or $(shell sh $(ROOT)/tools/fetch-makerom.sh),$(error tools/fetch-makerom.sh gave no makerom))
 BANNERTOOL ?= $(firstword $(wildcard $(DEVKITPRO)/tools/bin/bannertool.exe) $(shell which bannertool.exe 2>/dev/null))
 else
 MAKEROM    ?= $(firstword $(wildcard $(ROOT)/tools/bin/makerom $(HOME)/tools/bin/makerom $(DEVKITPRO)/tools/bin/makerom $(shell which makerom 2>/dev/null)))

@@ -15,6 +15,15 @@ VERSION="${VERSION:-0.0-dev}"
 DEVKITPRO="${DEVKITPRO:-/opt/devkitpro}"
 BUILD="${ROOT}/build-3ds/game"
 TOOLS_ROOT="${MZM3DS_TOOLS_ROOT:-${ROOT}/../Tools/bin}"
+# On Windows, devkitPro's makerom.exe 0.19.0 drops the title version's minor
+# number (3DSGuy/Project_CTR#169): use the fixed build, and stop if it is missing.
+case "$(uname -o 2>/dev/null)" in
+  Msys|Cygwin)
+    if [[ -z "${MAKEROM:-}" ]]; then
+      MAKEROM="$(sh "${ROOT}/tools/fetch-makerom.sh")" || { printf 'error: tools/fetch-makerom.sh failed\n' >&2; exit 1; }
+    fi
+    ;;
+esac
 MAKEROM="${MAKEROM:-${TOOLS_ROOT}/makerom}"
 BANNERTOOL="${BANNERTOOL:-${TOOLS_ROOT}/bannertool}"
 

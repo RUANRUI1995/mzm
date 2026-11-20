@@ -209,6 +209,14 @@ endif
 endif
 VERSION ?= $(GIT_VERSION)
 
+# The CIA's title version (what FBI and the HOME Menu's data management show),
+# from VERSION: vX.Y.Z[-dev...] -> -major X -minor Y -micro Z. makerom takes it
+# over the RSF's RemasterVersion. The fields are 6/6/4 bits, so major and minor
+# stop at 63 and micro at 15 (a v0.8.16 would be packaged as 0.8.15). A VERSION
+# with no X.Y in it (a bare hash) gives 0.0.0 instead of a failed build. The
+# updater compares MZM_PORT_VERSION, never the title version.
+CIA_VERSION = $(shell echo '$(VERSION)' | awk '{ M = m = u = 0; if (match($$0, /[0-9]+\.[0-9]+(\.[0-9]+)?/)) { n = split(substr($$0, RSTART, RLENGTH), v, "."); M = v[1] + 0; m = v[2] + 0; if (n > 2) u = v[3] + 0 } if (M > 63) M = 63; if (m > 63) m = 63; if (u > 15) u = 15; printf "-major %d -minor %d -micro %d", M, m, u }')
+
 # CHANNEL=beta marks the build as a beta (the console shows BETA, and the
 # updater offers the stable build of the same X.Y.Z once it exists). Only the CI
 # sets it, from whether main reaches the tagged commit; local builds are neither.
@@ -398,7 +406,7 @@ PYTHON     ?= python3
 HOSTPATH    = $(1)
 endif
 
-.PHONY: all clean cia elf 3dsx print-version ftp test
+.PHONY: all clean cia elf 3dsx print-version print-cia-version ftp test
 
 # `all` must be the default goal. Keep it as the first real target rule in the
 # file: an explicit-target rule placed above it (with no recipe, e.g. an extra
@@ -445,6 +453,9 @@ elf: $(TARGET).elf
 
 print-version:
 	@echo $(VERSION)
+
+print-cia-version:
+	@echo $(CIA_VERSION)
 
 # Host-side tests. No devkitARM, no 3DS, no ROM -- these cover logic that is
 # a pure function of GBA register state, which is where every stereo-depth
@@ -510,7 +521,7 @@ ftp: $(TARGET).cia
 
 $(TARGET).cia: $(TARGET).elf $(BUILD)/mzm-3ds.smdh $(BUILD)/banner.bnr
 	@echo "Creating CIA: $(notdir $@)"
-	@$(MAKEROM) -f cia -o $@ -elf $(TARGET).elf -rsf $(CURDIR)/cia/mzm3ds.rsf \
+	@$(MAKEROM) -f cia -o $@ -elf $(TARGET).elf -rsf $(CURDIR)/cia/mzm3ds.rsf $(CIA_VERSION) \
 		-icon $(BUILD)/mzm-3ds.smdh -banner $(BUILD)/banner.bnr -DAPP_ROMFS=$(CURDIR)/romfs
 	@echo "CIA build successful: $@"
 

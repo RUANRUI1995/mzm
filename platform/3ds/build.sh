@@ -12,6 +12,10 @@ if [[ -z "${VERSION}" ]]; then
   VERSION="$(tr -d '\r\n' < "${ROOT}/platform/3ds/version.txt" 2>/dev/null || true)"
 fi
 VERSION="${VERSION:-0.0-dev}"
+# The CIA's title version (-major/-minor/-micro), worked out from VERSION by the
+# Makefile's CIA_VERSION (clamped to makerom's limits); 0.0.0 if make cannot.
+CIA_VERSION="$(make -C "${ROOT}/platform/3ds" -s --no-print-directory VERSION="${VERSION}" print-cia-version 2>/dev/null | tail -n1)"
+CIA_VERSION="${CIA_VERSION:--major 0 -minor 0 -micro 0}"
 DEVKITPRO="${DEVKITPRO:-/opt/devkitpro}"
 BUILD="${ROOT}/build-3ds/game"
 TOOLS_ROOT="${MZM3DS_TOOLS_ROOT:-${ROOT}/../Tools/bin}"
@@ -72,7 +76,7 @@ SMDH_DESC="${SMDH_DESC:0:64}"
 cd "${ROOT}"
 "${MAKEROM}" -f cia -o "${BUILD}/mzm-3ds-${VERSION}.cia" \
   -DAPP_ROMFS="${BUILD#"${ROOT}/"}/romfs" \
-  -rsf "${ROOT}/platform/3ds/cia/mzm3ds.rsf" -target t -exefslogo \
+  -rsf "${ROOT}/platform/3ds/cia/mzm3ds.rsf" ${CIA_VERSION} -target t -exefslogo \
   -elf "${BUILD}/mzm-3ds.elf" -icon "${BUILD}/mzm-3ds.icn" \
   -banner "${BUILD}/mzm-3ds.bnr"
 )

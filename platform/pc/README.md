@@ -134,7 +134,9 @@ Norfair, Ridley, Tourian, Crateria and Chozodia and move around for a while;
 Ridley; `replays/eu_cutscene_<name>.txt` go through a door or ride an elevator
 that plays a cutscene (Kraid rising, before the Ruins Test, Mecha Ridley sees
 Samus, the Mother Brain close-up, entering Tourian, Ridley landing, Ridley in
-space). `--record` writes the same format, so a recorded run replays as is.
+space); `eu_cutscene_escape_ship.txt` takes the escape ship to the credits and
+the final screen, `eu_cutscene_gunship.txt` the gunship off Zebes. `--record`
+writes the same format, so a recorded run replays as is.
 
 ### Saves for replays
 
@@ -149,7 +151,7 @@ python3 tools/mzm_save.py warp IN.sav OUT.sav --area brinstar --door 57 --items 
 ```
 
 `warp` makes file A resume in the room of a door, Samus where that door lets
-her out (or at `--y`: an elevator's door is the shaft under its pad), with
+her out (or at `--x`/`--y`: an elevator's door is the shaft under its pad), with
 every item and the events asked for, and writes the checksums back. The rest
 of the game state is a new game's (no events, nothing collected): bosses are
 there, Ridley only with `GRAVITY_SUIT_OBTAINED`. It needs devkitARM (it reads

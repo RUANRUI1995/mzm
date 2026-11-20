@@ -4,7 +4,7 @@ include/structs/save_file.h), for test runs of the PC build (platform/pc).
 
     python3 tools/mzm_save.py show SAVE
     python3 tools/mzm_save.py warp SAVE OUT --area norfair --door 5 [--file 0] [--items all]
-                                  [--event KRAID_KILLED ...] [--y Y]
+                                  [--event KRAID_KILLED ...] [--x X] [--y Y] [--standing sprite]
     python3 tools/mzm_save.py doors --area norfair
 
 `warp` makes a file resume in another room: it sets the area and room of a
@@ -12,8 +12,8 @@ door, puts Samus where that door lets her out (as RoomLoad does in
 src/room.c), aims the camera at her and marks the file as saved, then writes
 the checksums back (main file and its copy). `--items all` gives every item,
 `--event` sets an event (include/constants/event.h, with or without EVENT_),
-`--y` puts Samus at another height (an elevator's door is the shaft under its
-pad). A file that was never saved gets a new game's world data (no events);
+`--x`/`--y` put Samus somewhere else in the room (an elevator's door is the
+shaft under its pad). A file that was never saved gets a new game's world data (no events);
 otherwise the events and the items collected are left as they were, so the
 rest of the game state is a fresh one: good enough to look at other areas,
 bosses and cutscenes, not a real playthrough.
@@ -46,6 +46,8 @@ SAVE_FILE_SIZE = 0x1220
 # include/constants/samus.h
 SPOSE_STANDING = 1
 STANDING_MIDAIR = 2
+# include/constants/samus.h: STANDING_GROUND, STANDING_ENEMY (on a sprite), STANDING_MIDAIR
+STANDINGS = {"ground": 0, "sprite": 1, "midair": STANDING_MIDAIR}
 KEY_RIGHT = 0x10
 
 
@@ -190,6 +192,8 @@ def cmd_warp(args):
     # Where RoomLoad puts Samus when she comes through the door (src/room.c).
     x = door["xStart"] * BLOCK_SIZE + (door["xExit"] + 8) * 4
     y = (door["yEnd"] + 1) * BLOCK_SIZE + door["yExit"] * 4 - 1
+    if args.x is not None:
+        x = args.x
     if args.y is not None:
         y = args.y  # e.g. on an elevator, whose door is the shaft under it
     if not save.get(f + ".hasSaved"):
@@ -209,7 +213,7 @@ def cmd_warp(args):
     save.set(f + ".samusData.xPosition", x)
     save.set(f + ".samusData.yPosition", y)
     save.set(f + ".samusData.pose", SPOSE_STANDING)
-    save.set(f + ".samusData.standingStatus", STANDING_MIDAIR)
+    save.set(f + ".samusData.standingStatus", STANDINGS[args.standing])
     save.set(f + ".samusData.direction", KEY_RIGHT)
     # The screen is 240x160 pixels, a pixel 4 units; the scrolling clamps it to the room.
     save.set(f + ".camera.xPosition", max(0, x - 120 * 4))
@@ -257,6 +261,9 @@ def main():
     p.add_argument("--door", type=int, required=True)
     p.add_argument("--file", type=int, default=0, choices=(0, 1, 2))
     p.add_argument("--items", choices=("keep", "all"), default="keep")
+    p.add_argument("--standing", choices=sorted(STANDINGS), default="midair",
+                   help="how Samus starts: midair (falls to the floor), ground, sprite (on a platform sprite)")
+    p.add_argument("--x", type=int, help="Samus's x position instead of the door's")
     p.add_argument("--y", type=int, help="Samus's y position instead of the door's")
     p.add_argument("--event", action="append", default=[],
                    help="set this event, e.g. GRAVITY_SUIT_OBTAINED (repeatable)")

@@ -127,6 +127,10 @@ static void ChozodiaEscapeUpdateExplosionHaze(void)
     semiMinorAxis = CHOZODIA_ESCAPE_DATA.explosionSemiMinorAxis;
     semiMinorAxis_ = semiMinorAxis;
     src = sHaze_PowerBomb_WindowValuesPointers[semiMinorAxis];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    // The table's entries are GBA addresses, as in haze.c.
+    src = GBA_RESOLVE(src);
+#endif
 
     // Determine the Y bounds of the explosion
     if (semiMinorAxis < 4)

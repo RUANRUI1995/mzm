@@ -80,9 +80,24 @@ GBA reads the ROM objects next to it, `sSineTable` and `sIntrTable`, which a
 big-endian host keeps swapped; those reads take the original bytes
 (`Port_RomRawBytes`, port_rom.h).
 
-Not covered yet: the cutscenes started by a colour fade (statue opening,
-Ridley spawning, the fully powered suit, Samus in the blue ship), the
-escapes and the ending.
+The escapes and the ending: `eu_cutscene_escape_ship` gets into the escape
+ship (Samus in the blue ship, the Chozodia escape, the credits and the final
+screen, 13500 frames) and `eu_cutscene_gunship` into the gunship (the Zebes
+escape and the story text after it). Both crashed the x86 build first, on
+GBA addresses read as host pointers: the Chozodia escape's explosion
+(`sHaze_PowerBomb_WindowValuesPointers`, resolved in haze.c but not there)
+and the ending's text OAM (`oamFramePointers`, copied from the ROM). On the
+3DS those addresses fall in the app's heap, so they likely drew garbage
+rather than crash. Then the Zebes escape read `sTourianEscape_47cf50` one
+entry past its end, into the pointer table after it, whose halves a
+big-endian host swaps (`Port_RomRawU16`). PowerPC matches x86 on both.
+The Ridley spawn cutscene is in the Ridley fight replay.
+
+Not covered: the statue opening (Kraid or Ridley has to die) and the fully
+powered suit (the Ruins Test has to be won), which need a real fight. In the
+gunship replay Samus falls through the ship after a hop and only gets in
+once her y wraps around, about 4600 frames later; it is deterministic, but
+not how a player gets there.
 
 Next: the Wii U frontend.
 

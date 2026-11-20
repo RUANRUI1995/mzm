@@ -91,6 +91,13 @@ static inline const u8* Port_RomRawBytes(const void* p) {
     return b;
 }
 
+/* The halfword at p (a pointer into gRomData, maybe past the end of its
+ * table) as the GBA reads it: little-endian, from the ROM's own bytes. */
+static inline u16 Port_RomRawU16(const void* p) {
+    const u8* b = Port_RomRawBytes(p);
+    return (u16)(b[0] | b[1] << 8);
+}
+
 /* ROM access logging - logs unique ROM addresses accessed at runtime.
  * Declared here (not just in port_gba_mem.h) because port_rom.c owns the
  * implementation. */

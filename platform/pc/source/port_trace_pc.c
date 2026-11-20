@@ -147,6 +147,28 @@ static void FormatKeys(uint16_t keys, char* out, size_t size) {
     }
 }
 
+/* The save a replay starts from (a 'save FILE' line), relative to the replay's directory. */
+static char sReplaySave[1024];
+
+static bool SetReplaySave(const char* replayPath, const char* text) {
+    const char* slash = strrchr(replayPath, '/');
+    const char* backslash = strrchr(replayPath, '\\');
+    size_t dirLength, nameLength;
+    while (isspace((unsigned char)*text)) text++;
+    nameLength = strlen(text);
+    while (nameLength && isspace((unsigned char)text[nameLength - 1])) nameLength--;
+    if (nameLength == 0) return false;
+    if (backslash && (!slash || backslash > slash)) slash = backslash;
+    dirLength = slash && text[0] != '/' ? (size_t)(slash - replayPath + 1) : 0;
+    if (dirLength + nameLength >= sizeof(sReplaySave)) return false;
+    memcpy(sReplaySave, replayPath, dirLength);
+    memcpy(sReplaySave + dirLength, text, nameLength);
+    sReplaySave[dirLength + nameLength] = '\0';
+    return true;
+}
+
+const char* Trace_ReplaySave(void) { return sReplaySave[0] ? sReplaySave : NULL; }
+
 bool Trace_LoadReplay(const char* path) {
     FILE* f = fopen(path, "rb");
     char line[256];
@@ -164,6 +186,14 @@ bool Trace_LoadReplay(const char* path) {
         lineNo++;
         while (isspace((unsigned char)*p)) p++;
         if (*p == '\0' || *p == '#') continue;
+        if (strncmp(p, "save", 4) == 0 && isspace((unsigned char)p[4])) {
+            if (!SetReplaySave(path, p + 5)) {
+                fprintf(stderr, "[Trace] %s:%u: expected 'save <file>'\n", path, lineNo);
+                fclose(f);
+                return false;
+            }
+            continue;
+        }
         if (sscanf(p, "%lu %127s", &frame, keysText) != 2) {
             fprintf(stderr, "[Trace] %s:%u: expected '<frame> <keys>'\n", path, lineNo);
             fclose(f);

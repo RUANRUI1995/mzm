@@ -59,7 +59,9 @@ mzm-windows.exe --rom ..\..\mzm_eu_baserom.gba      # SDL2.dll next to the .exe
 Arrows, Z = A, X = B, A = L, S = R, Enter = START, Backspace or right Shift =
 SELECT, hold Tab = fast forward, Esc = quit. A game controller works too.
 `mzm.sav` is read and written in the current directory (`--save-dir` changes
-it).
+it). It is the GBA's save file byte for byte, on any host (a big-endian one
+converts it as it reads and writes it, `port/port_sram_swap.c`), so a save
+from an emulator, a cartridge or the 3DS port can be copied in as it is.
 
 ### The second screen
 
@@ -97,6 +99,7 @@ empty or does nothing, and the Options settings are kept in memory only.
 | `--bottom-shot N PATH` | write frame N's bottom screen (320x240) as a PPM image (repeatable) |
 | `--tap N X Y` | touch the bottom screen at (X, Y) on frame N, for three frames (repeatable) |
 | `--save-dir DIR` | where `mzm.sav` lives; replay and trace runs default to a new empty directory, so they always start from a blank save |
+| `--load-save FILE` | start from a copy of FILE as `mzm.sav` (in the run's save directory) |
 | `--mute` | no sound device (the engine still runs) |
 | `--wav PATH` | also write the sound to a WAV file |
 | `--quiet` | no progress lines |
@@ -119,11 +122,33 @@ Plain text, one change per line; the keys hold until the next line:
 1500  0x011       or a hex GBA key mask
 ```
 
+A line `save FILE` makes the replay start from that save (a path relative to
+the replay; the same as `--load-save`).
+
 `replays/eu_new_game_walk.txt` starts a new game on the EU ROM and walks around
 the first room; `replays/eu_title_demos.txt` leaves the title screen alone, so
 the attract demos play; `replays/eu_pause_map.txt` adds the map and status
-screens to the walk. `--record` writes the same format, so a recorded run
-replays as is.
+screens to the walk. `replays/eu_area_<area>.txt` resume a save in Kraid,
+Norfair, Ridley, Tourian, Crateria and Chozodia and move around for a while;
+`replays/eu_boss_kraid.txt` fights Kraid. `--record` writes the same format, so
+a recorded run replays as is.
+
+### Saves for replays
+
+`replays/saves/eu_new_game.sav` is what the walk leaves (file A, a new game).
+The others were made from it with `tools/mzm_save.py`, which edits a save:
+
+```sh
+python3 tools/mzm_save.py show replays/saves/eu_kraid.sav
+python3 tools/mzm_save.py doors --area ridley          # the area's doors and their rooms
+python3 tools/mzm_save.py warp IN.sav OUT.sav --area ridley --door 8 --items all
+```
+
+`warp` makes file A resume in the room of a door, Samus where that door lets
+her out, with every item if asked, and writes the checksums back. The rest
+of the game state is a fresh one (no events, nothing collected), so a boss
+that needs an event first is not there. It needs devkitARM (it reads the
+save's layout from its gcc) and runs on the Windows side here.
 
 ## Traces
 

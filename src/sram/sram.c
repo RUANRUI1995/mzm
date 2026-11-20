@@ -26,6 +26,7 @@ static const char sSramVersion[] = "SRAM_V113";
 #endif
 #include <stdlib.h>
 #include "port_sram_legacy.h"
+#include "port_sram_swap.h"
 
 /* Writes to SD are far too slow to run once per SramWrite* call (a single
  * in-game save fans out into dozens of them via unk_fbc / SramSaveFile's
@@ -183,6 +184,8 @@ static int ReadSramFile(const char* path)
     else
         memcpy(gSramMem, data, sizeof(gSramMem));
     free(data);
+    /* The file is in the GBA's byte order; the game reads gSramMem in the host's. */
+    Port_SramFileToHost(gSramMem, SAVE_FILE_BYTES);
     return kind;
 }
 
@@ -228,7 +231,18 @@ void Port_LoadSram(void)
 static u8 SramWriteAtomic(const u8* data, u32 size)
 {
     u8 ok;
-    FILE* f = fopen(SAVE_FILE_PATH ".tmp", "wb");
+    FILE* f;
+#ifdef PORT_ROM_SWAP
+    /* The data is in host order; the file gets the GBA's (port_sram_swap.h). Only one write runs
+     * at a time: the save thread's, or Port_SaveSram's when there is no thread. */
+    static u8 sFileImage[sizeof(gSramMem)];
+    if (size > sizeof(sFileImage))
+        return FALSE;
+    memcpy(sFileImage, data, size);
+    Port_SramHostToFile(sFileImage, size);
+    data = sFileImage;
+#endif
+    f = fopen(SAVE_FILE_PATH ".tmp", "wb");
     if (!f)
         return FALSE;
     ok = fwrite(data, 1, size, f) == size;

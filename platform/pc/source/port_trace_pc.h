@@ -12,6 +12,8 @@
 /* Loads a replay file. Returns false (and prints why) on a bad file. */
 bool Trace_LoadReplay(const char* path);
 bool Trace_HasReplay(void);
+/* The save file the loaded replay starts from (its 'save FILE' line), or NULL. */
+const char* Trace_ReplaySave(void);
 /* Keys (GBA KEY_* mask, 1 = pressed) the replay holds on this frame. */
 uint16_t Trace_ReplayKeys(uint32_t frame);
 /* Frame after the replay's last line, 0 without a replay. */

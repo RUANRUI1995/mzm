@@ -9,8 +9,8 @@ with the x86 one (`compare_traces.py --cross-endian`).
 ## Where it stands (2026-11-20)
 
 The PowerPC build matches x86 on the game values and every neutral hash
-(frame, VRAM, palettes, OAM, sound mix) for all frames of the three replays
-in `platform/pc/replays`:
+(frame, VRAM, palettes, OAM, sound mix) for all frames of every replay in
+`platform/pc/replays`:
 
 - `eu_new_game_walk.txt` (2551 frames): title, file select, intro, a walk in
   the first Brinstar room.
@@ -18,6 +18,32 @@ in `platform/pc/replays`:
   demos in Brinstar, Norfair and Kraid.
 - `eu_pause_map.txt` (3400 frames): the walk, then the map and status
   screens.
+- `eu_area_<area>.txt` (1800 frames each): a save resumed in Kraid, Norfair,
+  Ridley, Tourian, Crateria and Chozodia, every item, a walk through a few
+  rooms (shots, bombs, missiles, enemies).
+- `eu_boss_kraid.txt` (3100 frames): the Kraid fight.
+
+And `mzm.sav` is the same file on both: written by either, read by either
+(F, below).
+
+Part F (saves):
+
+- `mzm.sav` stays the GBA's bytes. The game keeps the save in host order in
+  `gSramMem`; `port/port_sram_swap.c` swaps struct Sram's scalars when the
+  file is read and written (`SramWriteAtomic`, `ReadSramFile`), from a table
+  of runs that `tools/gen_sram_byteswap.py` takes from devkitARM's DWARF
+  (`port/generated/byteswap/sram_layout.c`; `--check` says if it is stale).
+- The checksums are rewritten as the target byte order sums them (the game
+  sums each record as host u32 or u16 words, which pack smaller fields
+  differently in the two orders), keeping how far off a damaged one was, so
+  validity survives the conversion both ways.
+- The PC build never read `mzm.sav` back (only the 3DS called
+  `Port_LoadSram`), and quit without waiting for the save thread; both fixed.
+- Replays can start from a save (`save FILE` line, `--load-save`), and
+  `tools/mzm_save.py` makes saves in any room (`warp`).
+- Not done: a 64 KB save from a 3DS build before issue #37 (the "legacy"
+  layout, `port/port_sram_legacy.c`) is converted with native reads, so a
+  big-endian host would misread one; it is read right on little-endian hosts.
 
 Step 4 so far (what the new replays found):
 
@@ -32,8 +58,9 @@ Step 4 so far (what the new replays found):
 - A backwards sample's start read the sample length natively; sound data is
   not in the type map, so `port_read32le`.
 
-Next: replays of the other areas, bosses and cutscenes need a save to start
-from (F), then the bottom screen.
+Next: the bottom screen (`--bottom`, its map reads game data), the cutscenes
+and the other bosses (they need their events set in the save), then the Wii U
+frontend.
 
 Step 3 (what the replay found):
 

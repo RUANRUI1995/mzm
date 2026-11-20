@@ -81,6 +81,9 @@ bool Platform_PC_Init(bool headless) {
 }
 
 void Platform_PC_Cleanup(void) {
+    /* A save still being written (src/sram/sram.c writes it from a thread) reaches mzm.sav. */
+    extern void Port_FlushSramWait(void);
+    Port_FlushSramWait();
     Trace_Close();
     Audio_PC_Shutdown();
     Frontend_Close();

@@ -139,6 +139,7 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_sram_legacy.c \
 	$(ROOT)/port/port_bios.c \
 	$(ROOT)/port/port_rom_swap.c \
+	$(ROOT)/port/port_sram_swap.c \
 	$(wildcard $(ROOT)/port/generated/byteswap/*.c) \
 	$(ROOT)/port/port_mzm_audio_glue.c \
 	$(ROOT)/port/port_psg_synth.c \

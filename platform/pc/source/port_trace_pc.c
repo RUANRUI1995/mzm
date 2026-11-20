@@ -286,12 +286,12 @@ static uint32_t HashIo(void) {
     return HashBytes(FNV_OFFSET, io, sizeof(io));
 }
 
-void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer) {
+void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer, const uint32_t* bottom) {
     uint32_t fb;
 
     if (!sLog) return;
     fb = framebuffer ? HashU32Values(framebuffer, 240u * 160u) : 0;
-    fprintf(sLog, "%u %03x %x %x %x %x %x %x %x %x | %08x %08x %08x %08x %08x %08x | %08x %08x %08x\n",
+    fprintf(sLog, "%u %03x %x %x %x %x %x %x %x %x | %08x %08x %08x %08x %08x %08x | %08x %08x %08x",
             (unsigned)frame, (unsigned)keys,
             (unsigned)gMainGameMode, (unsigned)(u16)gSubGameMode1,
             (unsigned)gCurrentArea, (unsigned)gCurrentRoom,
@@ -305,6 +305,9 @@ void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer) 
             HashBytes(FNV_OFFSET, gEwram, sizeof(gEwram)),
             HashBytes(FNV_OFFSET, gIwram, sizeof(gIwram)),
             HashIo());
+    /* The bottom screen only when the UI runs, so other traces keep their lines. */
+    if (bottom) fprintf(sLog, " | %08x", HashU32Values(bottom, 320u * 240u));
+    fputc('\n', sLog);
 }
 
 /* ---- Screenshots ----------------------------------------------------------- */

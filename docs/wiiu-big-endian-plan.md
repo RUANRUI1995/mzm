@@ -58,9 +58,16 @@ Step 4 so far (what the new replays found):
 - A backwards sample's start read the sample length natively; sound data is
   not in the type map, so `port_read32le`.
 
-Next: the bottom screen (`--bottom`, its map reads game data), the cutscenes
-and the other bosses (they need their events set in the save), then the Wii U
-frontend.
+The bottom screen: with `--bottom` the trace gets a fourth group, the bottom
+screen's hash, and PowerPC matches x86 on every frame of the walk, three area
+replays going through the five tabs (map, status, save states, achievements,
+options), the pause map, the Kraid fight and the demos. It needed no fix in
+`port/ui`; what differed was the run, not the byte order: the UI's clock,
+timer and battery now come from the frame count in a replay or traced run,
+and the UI is rebuilt when HEAD moves (it printed a stale commit hash).
+
+Next: the cutscenes and the other bosses (they need their events set in the
+save), then the Wii U frontend.
 
 Step 3 (what the replay found):
 

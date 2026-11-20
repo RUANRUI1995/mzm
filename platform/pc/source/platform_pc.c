@@ -172,7 +172,8 @@ void Platform_PC_AfterVBlank(void) {
 
     if (sRenderEveryFrame) RenderFrame();
     if (BottomActive()) RenderBottom();
-    Trace_LogFrame(sFrame, sFrameKeys, sRenderEveryFrame ? sFramebuffer : NULL);
+    Trace_LogFrame(sFrame, sFrameKeys, sRenderEveryFrame ? sFramebuffer : NULL,
+                   BottomActive() ? sBottomFramebuffer : NULL);
 
     for (i = 0; i < gPcOptions.shotCount; ++i) {
         if (gPcOptions.shots[i].frame == sFrame) {

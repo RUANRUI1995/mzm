@@ -153,7 +153,7 @@ save's layout from its gcc) and runs on the Windows side here.
 ## Traces
 
 ```
-frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io
+frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io [| bottom]
 ```
 
 - **values**: game variables read as numbers.
@@ -165,6 +165,8 @@ frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | e
 - **host hashes**: raw EWRAM, IWRAM and I/O bytes (without the DMA address
   registers, which hold host pointers in the port). Their layout follows the
   host byte order, so they only compare builds of the same byte order.
+- **bottom**: the 320x240 bottom screen, as pixel values, only on runs where
+  the bottom-screen UI runs (see below).
 
 ```sh
 make replay-check          # the same replay twice: the build is deterministic
@@ -174,12 +176,18 @@ python3 compare_traces.py expected.txt actual.txt [--cross-endian]
 The bottom-screen UI only runs when something shows it (a layout with it,
 `--bottom`, `--bottom-shot`): drawing the map reads game data, so a trace with
 it on is not comparable to one with it off. For example, the five tabs, by
-tapping the tab bar:
+tapping the tab bar (icons centred at x = 19, 53, 87, 121, 155, y = 13):
 
 ```sh
-./mzm-linux --replay replays/eu_new_game_walk.txt --frames 1700 \
-  --tap 1600 49 13 --bottom-shot 1610 status.ppm --tap 1620 83 13 --bottom-shot 1630 states.ppm
+./mzm-linux --replay replays/eu_new_game_walk.txt --frames 1700 --trace t.txt \
+  --tap 1600 53 13 --bottom-shot 1610 status.ppm --tap 1620 87 13 --bottom-shot 1630 states.ppm
 ```
+
+A run fed by a replay or writing a trace takes the UI's clock (12:00 at the
+first frame), timer and battery from the frame count, so its bottom screen is
+the same at any hour and on any host. The Options footer prints the commit
+(`PC-<hash>`), so traces of two different commits differ from the frame that
+tab opens.
 
 `compare_traces.py` prints the first frame and column that differ; with
 `--cross-endian` it ignores the host hashes. `--dump` on that frame, in both

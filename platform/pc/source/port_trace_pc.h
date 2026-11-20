@@ -24,8 +24,9 @@ void Trace_RecordKeys(uint32_t frame, uint16_t keys);
 
 bool Trace_OpenLog(const char* path);
 bool Trace_LogEnabled(void);
-/* Appends this frame's line. framebuffer: 240x160 ABGR8888 pixels, or NULL. */
-void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer);
+/* Appends this frame's line. framebuffer: 240x160 ABGR8888 pixels, or NULL.
+ * bottom: the 320x240 bottom screen when the UI runs (adds a fourth group), or NULL. */
+void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer, const uint32_t* bottom);
 
 bool Trace_WritePpm(const char* path, const uint32_t* framebuffer);
 /* Any size, e.g. the 320x240 bottom screen. */

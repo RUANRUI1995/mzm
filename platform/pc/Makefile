@@ -212,6 +212,15 @@ $(BUILD)/ui/%.o: $(ROOT)/%.c
 	@echo "CC $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -I$(ROOT)/platform/3ds/source -c -o $@ $<
 
+# The UI prints PC_VERSION: a stamp named after it rebuilds the UI when HEAD
+# moves, so a binary never shows an older commit's hash.
+VERSION_STAMP := $(BUILD)/version-$(PC_VERSION).stamp
+$(VERSION_STAMP):
+	@mkdir -p $(dir $@)
+	@rm -f $(BUILD)/version-*.stamp
+	@touch $@
+$(BUILD)/ui/port/ui/port_bottom_ui.o: $(VERSION_STAMP)
+
 $(BUILD)/pc/%.o: $(CURDIR)/%.c
 	@mkdir -p $(dir $@)
 	@echo "CC $<"

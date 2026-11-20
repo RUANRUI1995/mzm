@@ -12,6 +12,8 @@
 *.map
 *.bin
 *.sav
+# Saves the PC replays start from (platform/pc/README.md)
+!platform/pc/replays/saves/*.sav
 
 *.exe
 *.dll

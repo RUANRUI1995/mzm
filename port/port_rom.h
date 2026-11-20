@@ -79,6 +79,18 @@ static inline void* Port_ResolveRomData(u32 gbaAddr) {
     return NULL;
 }
 
+/* A pointer into gRomData at the same place in gRomDataRaw, the ROM's own
+ * bytes (other pointers come back as they are). For game code that indexes a
+ * byte table past its bounds, into the object next to it: the GBA reads that
+ * object's bytes as they are in the ROM, which a big-endian host keeps
+ * swapped in gRomData when the object is typed. */
+static inline const u8* Port_RomRawBytes(const void* p) {
+    const u8* b = (const u8*)p;
+    if (gRomData != NULL && gRomDataRaw != NULL && b >= gRomData && b < gRomData + gRomSize)
+        return gRomDataRaw + (b - gRomData);
+    return b;
+}
+
 /* ROM access logging - logs unique ROM addresses accessed at runtime.
  * Declared here (not just in port_gba_mem.h) because port_rom.c owns the
  * implementation. */

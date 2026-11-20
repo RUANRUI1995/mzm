@@ -1,0 +1,32 @@
+# Resumes file A of saves/eu_cutscene_mother_brain_close_up.sav (EU ROM): Brinstar area, Samus by door 57
+# (made with tools/mzm_save.py warp). A taps through the title and file select
+# until the game starts, around frame 400; then she takes the elevator down,
+# which plays the Mother Brain close-up.
+save saves/eu_cutscene_mother_brain_close_up.sav
+
+# frame keys
+0 -
+40 A
+44 -
+80 A
+84 -
+120 A
+124 -
+160 A
+164 -
+200 A
+204 -
+240 A
+244 -
+280 A
+284 -
+320 A
+324 -
+360 A
+364 -
+440 -
+480 DOWN
+520 -
+2200 RIGHT
+2400 -
+2500 -

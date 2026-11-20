@@ -93,7 +93,7 @@ empty or does nothing, and the Options settings are kept in memory only.
 | `--record FILE` | write the input of this run as a replay |
 | `--trace FILE` | one state line per frame (`-` = stdout) |
 | `--shot N PATH` | write frame N as a PPM image (repeatable) |
-| `--dump N DIR` | write frame N's raw GBA memory (`ewram_N.bin`, `io_N.bin`, ...) into DIR |
+| `--dump N DIR` | write frame N's raw GBA memory (`ewram_N.bin`, `io_N.bin`, ...), the sprites, sprite set and events into DIR |
 | `--layout NAME` | first screen layout: `stacked`, `side`, `two-windows`, `game-only` |
 | `--bottom` | run the bottom-screen UI even without a window |
 | `--bottom-shot N PATH` | write frame N's bottom screen (320x240) as a PPM image (repeatable) |
@@ -130,8 +130,11 @@ the first room; `replays/eu_title_demos.txt` leaves the title screen alone, so
 the attract demos play; `replays/eu_pause_map.txt` adds the map and status
 screens to the walk. `replays/eu_area_<area>.txt` resume a save in Kraid,
 Norfair, Ridley, Tourian, Crateria and Chozodia and move around for a while;
-`replays/eu_boss_kraid.txt` fights Kraid. `--record` writes the same format, so
-a recorded run replays as is.
+`replays/eu_boss_<boss>.txt` fight Kraid, Ridley, Mother Brain and Mecha
+Ridley; `replays/eu_cutscene_<name>.txt` go through a door or ride an elevator
+that plays a cutscene (Kraid rising, before the Ruins Test, Mecha Ridley sees
+Samus, the Mother Brain close-up, entering Tourian, Ridley landing, Ridley in
+space). `--record` writes the same format, so a recorded run replays as is.
 
 ### Saves for replays
 
@@ -141,14 +144,16 @@ The others were made from it with `tools/mzm_save.py`, which edits a save:
 ```sh
 python3 tools/mzm_save.py show replays/saves/eu_kraid.sav
 python3 tools/mzm_save.py doors --area ridley          # the area's doors and their rooms
-python3 tools/mzm_save.py warp IN.sav OUT.sav --area ridley --door 8 --items all
+python3 tools/mzm_save.py warp IN.sav OUT.sav --area ridley --door 29 --items all     --event GRAVITY_SUIT_OBTAINED
+python3 tools/mzm_save.py warp IN.sav OUT.sav --area brinstar --door 57 --items all --y 639
 ```
 
 `warp` makes file A resume in the room of a door, Samus where that door lets
-her out, with every item if asked, and writes the checksums back. The rest
-of the game state is a fresh one (no events, nothing collected), so a boss
-that needs an event first is not there. It needs devkitARM (it reads the
-save's layout from its gcc) and runs on the Windows side here.
+her out (or at `--y`: an elevator's door is the shaft under its pad), with
+every item and the events asked for, and writes the checksums back. The rest
+of the game state is a new game's (no events, nothing collected): bosses are
+there, Ridley only with `GRAVITY_SUIT_OBTAINED`. It needs devkitARM (it reads
+the save's layout from its gcc) and runs on the Windows side here.
 
 ## Traces
 

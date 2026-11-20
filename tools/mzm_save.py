@@ -4,15 +4,23 @@ include/structs/save_file.h), for test runs of the PC build (platform/pc).
 
     python3 tools/mzm_save.py show SAVE
     python3 tools/mzm_save.py warp SAVE OUT --area norfair --door 5 [--file 0] [--items all]
+                                  [--event KRAID_KILLED ...] [--y Y]
     python3 tools/mzm_save.py doors --area norfair
 
 `warp` makes a file resume in another room: it sets the area and room of a
 door, puts Samus where that door lets her out (as RoomLoad does in
 src/room.c), aims the camera at her and marks the file as saved, then writes
-the checksums back (main file and its copy). `--items all` gives every item.
-The room's events and the items collected are left as they were, so the rest
-of the game state is a fresh one: good enough to look at other areas, not a
-real playthrough.
+the checksums back (main file and its copy). `--items all` gives every item,
+`--event` sets an event (include/constants/event.h, with or without EVENT_),
+`--y` puts Samus at another height (an elevator's door is the shaft under its
+pad). A file that was never saved gets a new game's world data (no events);
+otherwise the events and the items collected are left as they were, so the
+rest of the game state is a fresh one: good enough to look at other areas,
+bosses and cutscenes, not a real playthrough.
+
+A boss needs only that it is not dead, except Ridley, who also waits for
+EVENT_GRAVITY_SUIT_OBTAINED. Cutscenes play on a door or an elevator ride
+(src/connection.c): put Samus next to the door, or on the elevator's pad.
 
 The field offsets come from devkitARM's gcc (DWARF of struct Sram, as
 tools/gen_sram_byteswap.py reads it); the door table from the ROM
@@ -144,6 +152,14 @@ def area_number(text):
     return AREAS.index(text.lower())
 
 
+def event_numbers():
+    """{"EVENT_NAME": number}, from the Event enum of include/constants/event.h."""
+    text = open(os.path.join(romtypes.ROOT, "include", "constants", "event.h"), encoding="utf-8").read()
+    body = text[text.index("EVENT_NONE"):text.index("EVENT_COUNT")]
+    names = re.findall(r"\b(EVENT_\w+)\s*,", body)
+    return {name: i for i, name in enumerate(names)}
+
+
 def cmd_show(args):
     save = Save(args.save, Layout())
     for n in range(3):
@@ -174,6 +190,18 @@ def cmd_warp(args):
     # Where RoomLoad puts Samus when she comes through the door (src/room.c).
     x = door["xStart"] * BLOCK_SIZE + (door["xExit"] + 8) * 4
     y = (door["yEnd"] + 1) * BLOCK_SIZE + door["yExit"] * 4 - 1
+    if args.y is not None:
+        y = args.y  # e.g. on an elevator, whose door is the shaft under it
+    if not save.get(f + ".hasSaved"):
+        # A file that was never saved has no world data (the SRAM's 0xFF fill:
+        # every event set, every boss dead); a new game starts from no visited
+        # tiles and no events (Sram_InitSaveFile, src/save_file_load.c). Hatches,
+        # broken blocks and items are 0xFF there too, with counts of 0.
+        world = f + ".worldData."
+        for start, end in (("visitedMinimapTiles", "neverReformBlocksBroken"), ("eventsTriggered", None)):
+            first = save.layout.field(world + start + "[0]")[0]
+            last = save.layout.field(world + end + "[0]")[0] if end else first + 8 * 4
+            save.data[first:last] = bytes(last - first)
     save.set(f + ".hasSaved", 1)
     save.set(f + ".currentArea", area)
     save.set(f + ".currentRoom", door["room"])
@@ -195,6 +223,14 @@ def cmd_warp(args):
     elif save.get(f + ".equipment.maxEnergy") == 0:
         save.set(f + ".equipment.maxEnergy", 99)
         save.set(f + ".equipment.currentEnergy", 99)
+    numbers = event_numbers()
+    for name in args.event:
+        key = name.upper() if name.upper().startswith("EVENT_") else "EVENT_" + name.upper()
+        if key not in numbers:
+            sys.exit("unknown event %s (include/constants/event.h)" % name)
+        # The bit EventFunction (src/event.c) checks.
+        word = "%s.worldData.eventsTriggered[%d]" % (f, numbers[key] // 32)
+        save.set(word, save.get(word) | 1 << numbers[key] % 32)
     save.seal(f)
     copy = "filesCopy[%d]" % args.file
     start = save.layout.field(f + ".ZERO_MISSION_010_Text")[0]
@@ -221,6 +257,9 @@ def main():
     p.add_argument("--door", type=int, required=True)
     p.add_argument("--file", type=int, default=0, choices=(0, 1, 2))
     p.add_argument("--items", choices=("keep", "all"), default="keep")
+    p.add_argument("--y", type=int, help="Samus's y position instead of the door's")
+    p.add_argument("--event", action="append", default=[],
+                   help="set this event, e.g. GRAVITY_SUIT_OBTAINED (repeatable)")
     p.set_defaults(run=cmd_warp)
     args = ap.parse_args()
     args.run(args)

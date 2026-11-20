@@ -29,6 +29,9 @@
 #include "structs/connection.h"
 #include "structs/samus.h"
 #include "structs/audio.h"
+#include "structs/sprite.h"
+#include "structs/room.h"
+#include "event.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -318,6 +321,8 @@ bool Trace_DumpMemory(const char* dir, uint32_t frame) {
         { "io", gIoMem, sizeof(gIoMem) },      { "vram", gVram, sizeof(gVram) },
         { "bgpal", gBgPltt, sizeof(gBgPltt) }, { "objpal", gObjPltt, sizeof(gObjPltt) },
         { "oam", gOamMem, sizeof(gOamMem) },
+        { "sprites", gSpriteData, sizeof(gSpriteData) }, { "spriteset", &gSpriteset, 1 },
+        { "events", gEventsTriggered, sizeof(gEventsTriggered) },
     };
     size_t i;
     for (i = 0; i < sizeof(regions) / sizeof(regions[0]); ++i) {

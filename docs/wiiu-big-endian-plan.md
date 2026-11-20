@@ -66,8 +66,25 @@ options), the pause map, the Kraid fight and the demos. It needed no fix in
 timer and battery now come from the frame count in a replay or traced run,
 and the UI is rebuilt when HEAD moves (it printed a stale commit hash).
 
-Next: the cutscenes and the other bosses (they need their events set in the
-save), then the Wii U frontend.
+Bosses and cutscenes: the saves made from the walk's file had the SRAM's
+0xFF fill for world data (the file was never saved), so every event was set
+and every boss dead; `mzm_save.py warp` now gives such a file a new game's
+world data, sets events (`--event`, Ridley needs `GRAVITY_SUIT_OBTAINED`)
+and puts Samus on an elevator's pad (`--y`). PowerPC matches x86 on the four
+boss fights (Kraid, Ridley, Mother Brain, Mecha Ridley, with a game over) and
+on seven cutscenes started by a door or an elevator (Kraid rising, before the
+Ruins Test, Mecha Ridley sees Samus, the Mother Brain close-up, entering
+Tourian, Ridley landing, Ridley in space). The fix: two cutscenes read
+`sRandomNumberTable` out of its bounds (a negative or past-255 index), so the
+GBA reads the ROM objects next to it, `sSineTable` and `sIntrTable`, which a
+big-endian host keeps swapped; those reads take the original bytes
+(`Port_RomRawBytes`, port_rom.h).
+
+Not covered yet: the cutscenes started by a colour fade (statue opening,
+Ridley spawning, the fully powered suit, Samus in the blue ship), the
+escapes and the ending.
+
+Next: the Wii U frontend.
 
 Step 3 (what the replay found):
 

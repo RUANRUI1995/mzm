@@ -34,7 +34,9 @@ bool Trace_WritePpmSized(const char* path, const uint32_t* pixels, int width, in
 
 /* Writes the raw GBA memory of this frame (ewram, iwram, io, vram, bgpal,
  * objpal, oam) as <dir>/<region>_<frame>.bin, to find which bytes a
- * diverging trace column covers. */
+ * diverging trace column covers; also the sprite table (gSpriteData, host
+ * layout: it holds host pointers), the sprite set and the events, which live
+ * outside the GBA's RAM in the port. */
 bool Trace_DumpMemory(const char* dir, uint32_t frame);
 
 void Trace_Close(void);

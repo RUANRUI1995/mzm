@@ -16,6 +16,10 @@
 #include "structs/game_state.h"
 #include "structs/display.h"
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#include "port_rom.h"
+#endif
+
 static void EnterTourianScrollBackground(void);
 static void EnterTourianUpdateMetroid(struct CutsceneOamData* pOam, u8 metroidId);
 static void EnterTourianSwitchMetroidPalette(struct CutscenePaletteData* pPalette, u8 grabbedPal);
@@ -511,7 +515,12 @@ static void EnterTourianUpdatePirate(struct CutsceneOamData* pOam)
                 pOam->xPosition += pOam->xVelocity;
             }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            // Index -1 when the counter is 0: the ROM byte before the table, as the GBA reads it.
+            pOam->unk_16 = Port_RomRawBytes(sRandomNumberTable)[gFrameCounter8Bit - 1] + 8;
+#else
             pOam->unk_16 = sRandomNumberTable[gFrameCounter8Bit - 1] + 8;
+#endif
         }
 
         if (pOam->unk_18 != 0)

@@ -66,7 +66,7 @@ You can use the helper scripts from the repository root:
 
 - **Interactive Menu**: Run without arguments to launch the arrow-key terminal assistant:
   ```sh
-  ./build_3ds.sh        # Linux / macOS
+  ./build_3ds.sh        # Linux / macOS; on Windows from Git Bash or the devkitPro MSYS2 shell
   build_3ds.bat         # Windows
   ```
 - **CLI Options**:
@@ -89,12 +89,16 @@ You can use the helper scripts from the repository root:
 
 #### Manual Compilation with Make
 
-From the repository root:
+From the repository root (on Windows, in the *devkitPro MSYS2* shell: devkitPro's make
+started from Git Bash gets an empty environment):
 
 ```sh
 cd platform/3ds
 make clean && make -j$(nproc)
 ```
+
+The link step runs `tools/gen_state_vars.py`, so Python 3 is needed. On Windows the
+Makefile takes `python3`/`python` from PATH, or else the `py` launcher (`PYTHON=...` overrides it).
 
 This produces `mzm-3ds.cia` (if `makerom` is available) and `mzm-3ds.elf`. The
 default target does not build a `.3dsx`; `make 3dsx` does, for local Homebrew

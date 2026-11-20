@@ -379,12 +379,23 @@ LIBS     := -L$(CTRULIB)/lib -L$(PORTLIBS)/lib -lcitro2d -lcitro3d -lcurl -lmbed
 # error" (make Error 126), so there we must skip them and use the .exe that
 # ships with devkitPro instead. devkitPro's Windows make is an Msys build and
 # scrubs $(OS), so detect via `uname -o` (Msys / Cygwin) rather than $(OS).
+# makerom is the exception: devkitPro's makerom.exe 0.19.0 drops the title
+# version's minor number (3DSGuy/Project_CTR#169), so take the fixed build
+# tools/fetch-makerom.sh prints, and stop if it cannot (no fallback). Recursive
+# on purpose: the script only runs when the CIA is packaged.
 ifneq (,$(filter Msys Cygwin,$(shell uname -o 2>/dev/null)))
-MAKEROM    ?= $(firstword $(wildcard $(DEVKITPRO)/tools/bin/makerom.exe) $(shell which makerom.exe 2>/dev/null))
+MAKEROM    ?= $(or $(shell sh $(ROOT)/tools/fetch-makerom.sh),$(error tools/fetch-makerom.sh gave no makerom))
 BANNERTOOL ?= $(firstword $(wildcard $(DEVKITPRO)/tools/bin/bannertool.exe) $(shell which bannertool.exe 2>/dev/null))
+# devkitPro's MSYS2 has no Python and its PATH leaves out the Windows one, so
+# take a Python 3 from PATH or else the py launcher (in C:\Windows, always on
+# PATH). A Windows Python does not read MSYS paths: hand it Windows ones.
+PYTHON     ?= $(or $(shell for p in python3 python; do $$p -c 'import sys; sys.exit(sys.version_info[0] != 3)' >/dev/null 2>&1 && { echo $$p; break; }; done),$(if $(shell which py 2>/dev/null),py -3),$(error no Python 3 found: install one or pass PYTHON=...))
+HOSTPATH    = $(shell cygpath -m $(1))
 else
 MAKEROM    ?= $(firstword $(wildcard $(ROOT)/tools/bin/makerom $(HOME)/tools/bin/makerom $(DEVKITPRO)/tools/bin/makerom $(shell which makerom 2>/dev/null)))
 BANNERTOOL ?= $(firstword $(wildcard $(ROOT)/tools/bin/bannertool $(HOME)/tools/bin/bannertool $(DEVKITPRO)/tools/bin/bannertool $(shell which bannertool 2>/dev/null)))
+PYTHON     ?= python3
+HOSTPATH    = $(1)
 endif
 
 .PHONY: all clean cia elf 3dsx print-version ftp test
@@ -525,7 +536,7 @@ $(TARGET).elf: $(C_OBJS)
 	@echo "Linking ELF: $(notdir $@)"
 	@for f in $(C_OBJS); do cygpath -m "$$f" 2>/dev/null || echo "$$f"; done > $(BUILD)/objects.rsp
 	@$(LD) $(LDFLAGS) @$(BUILD)/objects.rsp $(LIBS) -o $@
-	@python3 $(ROOT)/tools/gen_state_vars.py $@ --nm $(NM) --objcopy $(OBJCOPY) --readelf $(READELF)
+	@$(PYTHON) $(call HOSTPATH,$(ROOT)/tools/gen_state_vars.py $@) --nm $(call HOSTPATH,$(NM)) --objcopy $(call HOSTPATH,$(OBJCOPY)) --readelf $(call HOSTPATH,$(READELF))
 	@$(NM) -CSn $@ > $(BUILD)/mzm-3ds.lst
 	@echo "Build successful: $(TARGET).elf"
 

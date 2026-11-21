@@ -1960,7 +1960,6 @@ void ProcessCutsceneOam(u8 length, struct CutsceneOamData* pOam, const struct Oa
     nextSlot = gNextOamSlot;
     currSlot = nextSlot;
     dst = (u16*)(&gOamData[nextSlot]);
-
 #ifdef __3DS__
     /* The cutscenes build their OAM from slot 0 each frame: start the frame's position tags
      * (Port_Wide_NoteSlots below) from nothing, as SpriteDrawAll does in play. */

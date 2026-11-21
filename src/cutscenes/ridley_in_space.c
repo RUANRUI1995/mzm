@@ -44,7 +44,6 @@ static void RidleyInSpaceViewOfShipParticles(void);
 static u32 RidleyInSpaceViewOfShipUpdateParticle(struct CutsceneOamData* pOam);
 static void RidleyInSpaceShipLeavingParticles(void);
 static struct CutsceneOamData* RidleyInSpaceShipLeavingUpdateParticle(struct CutsceneOamData* pOam);
-
 #ifdef __3DS__
 /* WIDE: the mother ship seen from behind, kept flying after the game is done with it. The game
  * stops it once it is past the GBA frame's top or right edge and turns the same object into the

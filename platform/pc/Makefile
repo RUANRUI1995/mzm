@@ -86,7 +86,7 @@ else ifeq ($(OS_TARGET),wiiu)
   TARGET := mzm-wiiu.rpx
   WUHB := mzm-wiiu.wuhb
   BUILD := $(CURDIR)/build/wiiu
-  ARCH_FLAGS := -DESPRESSO -mcpu=750 -meabi -mhard-float -D__WIIU__ -D__WUT__
+  ARCH_FLAGS := -DESPRESSO -mcpu=750 -meabi -mhard-float -D__WIIU__ -D__WUT__ -I$(WUT_ROOT)/include
   OPT_FLAGS := -O2
   SDL_CFLAGS := -I$(DEVKITPRO)/portlibs/wiiu/include/SDL2 -I$(DEVKITPRO)/portlibs/wiiu/include -I$(WUT_ROOT)/include
   SDL_LIBS := -L$(DEVKITPRO)/portlibs/wiiu/lib -lSDL2 -L$(WUT_ROOT)/lib -lwut

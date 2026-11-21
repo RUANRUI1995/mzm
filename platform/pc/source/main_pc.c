@@ -330,9 +330,11 @@ int main(int argc, char** argv) {
             fclose(f);
             replayPath = WIIU_REPLAY_FILE;
             forceWindow = true;
-            /* Its saves go to a folder of their own, not over mzm.sav. */
+            /* Its saves go to a folder of their own, not over mzm.sav, and
+             * it leaves a trace to compare with the PC builds'. */
             saveDir = WIIU_DATA_DIR "/replay-run";
             MakeDir(saveDir);
+            tracePath = WIIU_DATA_DIR "/" WIIU_TRACE_FILE;
             fprintf(stdout, "[Wii U] Playing %s\n", WIIU_REPLAY_FILE);
         }
     }

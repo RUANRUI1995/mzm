@@ -10,6 +10,8 @@
 /* When this replay (platform/pc/replays format) is in that folder, it drives
  * the game instead of the controls. */
 #define WIIU_REPLAY_FILE "mzm-replay.txt"
+/* The trace (platform/pc/README.md, "Traces") such a run writes there. */
+#define WIIU_TRACE_FILE "mzm-trace.txt"
 
 /* Sends stdout/stderr to the system console and WIIU_LOG_FILE, creates
  * WIIU_DATA_DIR and moves into it. Returns the folder, or NULL when there is

@@ -64,21 +64,25 @@ writes `mzm.sav` and `mzm-log.txt` (stdout and stderr, each line timed)
 there. The game is on the TV and the bottom-screen UI on the GamePad, whose
 touch screen is the stylus (`source/screens_pc.c`). A `mzm-replay.txt` in that
 folder (a replay, with its `save` file next to it) drives the game instead of
-the controls, on screen; its saves go to `replay-run/`.
+the controls, on screen; its saves go to `replay-run/` and it writes
+`mzm-trace.txt`, which compares with a PC trace of the same replay run with
+`--bottom` (`compare_traces.py --cross-endian`).
 
 Cemu runs either file (`Cemu.exe -g mzm-wiiu.rpx`; the SD card is Cemu's
 `sdcard` folder). What differs from the PC builds: no address-range
 reservation (wut puts only the code at 0x02000000, every data address is at
-0x10000000 and above), no thread-local storage in the PPU (an RPX has none;
-it renders on one thread), the 64-bit atomics in `source/wiiu_support.c`,
-`-O2`, and the TV window skips its buffer swap
-(`SDL_WINDOW_WIIU_PREVENT_SWAP`) so that the two windows wait for one screen
-refresh, not two. The link goes through a response file (Windows'
-command-line limit).
+0x10000000 and above), the PPU renders on the three cores (a thread pinned to
+cores 0 and 2 beside the main one on core 1, as the 3DS does with its cores)
+with its per-thread line buffers as a copy per core, since an RPX has no
+thread-local storage, the 64-bit atomics in `source/wiiu_support.c`, `-O2`,
+and the TV window skips its buffer swap (`SDL_WINDOW_WIIU_PREVENT_SWAP`) so
+that the two windows wait for one screen refresh, not two. The link goes
+through a response file (Windows' command-line limit).
 
-Speed on Cemu: the game logic takes under 1 ms a frame, the PPU the rest, and
-gameplay renders at about 30 ms a frame, so it runs at about 33 fps (the title
-screen at 60). Not measured on a console yet.
+On Cemu its traces match x86 (the Kraid area replay over all its frames, the
+Ridley fight over 2818). Speed there: the game logic takes under 1 ms a frame
+and the PPU the rest; the Kraid area runs at 59.7 fps, the Ridley fight at
+about 55 and its spawn cutscene at about 42. Not measured on a console yet.
 
 ## Play
 

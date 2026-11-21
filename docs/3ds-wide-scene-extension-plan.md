@@ -26,6 +26,36 @@ stands.
   continuous past the old top and right cuts, the ship over it.
 - **Not seen yet.** The room-bound cutscenes 6, 8, 12, 14 with WIDE (they need a save state in their
   rooms); 7, 10 and 11 need their own pass (owner, 2026-10-17).
+- **Cutscenes 7, 10, 11 (2026-11-21, WIDE + AI only).** A cutscene stage can carry several pictures
+  (key `gCurrentCutscene * 16 + stage`), one per layer it extends: `CutscenePictures` /
+  `CollectCutscenePictures` in `port_gpu_renderer.c` keep the view centred, clip every BG to its
+  picture and push each picture as a draw item just behind its BG's tiles, so it takes that BG's
+  priority, stereo plane, brightness and alpha blend (the alpha fades of cutscene 11 work in the
+  margins too). `port_scene_pictures.c` holds up to four at once. Done and seen on the 2DS: 7 (red
+  alert, Ridley suspicious; the space stages repeat their own starfield, `PortScenePic_RepeatBgs`),
+  10 (corridor + see-through pipes, parallax) and all of 11 (both Chozo walls, the carved wall the
+  view travels down, Grey Voice, young Samus, adult Samus eyes closed and eyes open). A stage of
+  these three cutscenes without pictures is not widened (`PortScenePic_StageHasPictures`).
+  The carved wall (11, stage 2) is taller than its BG3 map: past row 256 the map wraps to the
+  wall's top until the game turns on BG2 (the floor with the two figures) at scroll 96, which the
+  GBA frame never shows but the margins did. Its picture holds the game's art too, rebuilt from
+  the game's data when it loads (`RuinsWallArt` in `port_scene_game_art.c`; offline,
+  `ruins_wall_picture.py`), and its layers draw only the GBA frame's tile lines.
+- **Cutscene sprites (2026-11-21).** `ProcessCutsceneOam` tags each object's slots with its true
+  position (`Port_Wide_NoteSlots`, as in play), so a big object's parts far above it no longer
+  read as below it (OAM's 8-bit Y). Ridley in space's mother ship coming down is a scene sprite
+  extended by AI in two passes (`ridley-mothership`: the hull above and the side engines, then
+  the horns; their cross lines painted out by hand). When it leaves, the ship seen from behind
+  keeps flying past the GBA edge until it is out of the wide view (a copy the game does not
+  see), and the ship seen from the front is drawn further right by the margin, an offset that
+  shrinks to nothing as it grows, so it comes in from outside (`ridley_in_space.c`, `__3DS__`).
+  The owner generated the pictures with Gemini by hand from the packages (`make_package.py`
+  `bgs`, `see_through`, `paint_x`); `refit.py` fitted each (Gemini's output is 4-7x the canvas).
+  Adult Samus's packages had their plain background painted in first and the halo repainted
+  afterwards by distance to her silhouette (scripts kept with the packages, outside the repo).
+  Still not widened: cutscene 4 (Mother Brain close-up, bars); 5, 9, 13 and the room-bound ones
+  unchecked. The red alert costs ~2 ms of CPU drawing (55-60 fps on the 2DS during its pan); a
+  palette fade repaints the whole texture each frame (~43 fps for Tourian's opening fade).
 - **Working notes.** Antigravity writes its first variant over the package's `1-template-*` files:
   regenerate them (`make_package.py` / `make_sprite_package.py` from the dumps) before validating a
   variant, and validate against the regenerated template (0 original pixels changed, palette only).

@@ -4,11 +4,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Release tags: "vX.Y.Z" ships for every platform, "<platform>-vX.Y.Z" for that one only (one
+ * version counter for all of them, docs/release-notes/README.md). This build takes the
+ * general tags and its own; another platform's tag is not a version for it. */
+const char* Updater_TagVersion(const char* tag) {
+    static const char kOwn[] = UPDATER_PLATFORM "-";
+    if (strncmp(tag, kOwn, sizeof(kOwn) - 1) == 0) tag += sizeof(kOwn) - 1;
+    if (*tag != 'v' && *tag != 'V') return NULL;
+    tag++;
+    return (*tag >= '0' && *tag <= '9') ? tag : NULL;
+}
+
 static bool ParseVersion(const char* s, long out[3], bool* isDev) {
     char* end;
     int i;
 
-    if (*s == 'v' || *s == 'V') s++;
+    s = Updater_TagVersion(s);
+    if (!s) return false;
     for (i = 0; i < 3; i++) {
         if (*s < '0' || *s > '9') return false;
         out[i] = strtol(s, &end, 10);
@@ -80,8 +92,9 @@ static bool FindCiaUrl(const char* seg, const char* segEnd, char* out, size_t ou
         size_t len;
 
         if (FindString(p, segEnd, "browser_download_url", url, sizeof(url))) {
+            static const char kSuffix[] = UPDATER_ASSET_SUFFIX;
             len = strlen(url);
-            if (len > 4 && strcmp(url + len - 4, ".cia") == 0) {
+            if (len > sizeof(kSuffix) - 1 && strcmp(url + len - (sizeof(kSuffix) - 1), kSuffix) == 0) {
                 strncpy(out, url, outSize - 1);
                 out[outSize - 1] = '\0';
                 return true;
@@ -114,7 +127,7 @@ bool Updater_PickRelease(const char* json, bool allowBeta, UpdaterRelease* out) 
                 flag[4] = '\0';
                 rel.prerelease = (strcmp(flag, "true") == 0);
             }
-            if ((allowBeta || !rel.prerelease) &&
+            if ((allowBeta || !rel.prerelease) && Updater_TagVersion(rel.tag) &&
                 FindCiaUrl(p, segEnd, rel.cia_url, sizeof(rel.cia_url))) {
                 *out = rel;
                 return true;

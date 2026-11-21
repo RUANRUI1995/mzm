@@ -179,12 +179,14 @@ DEPS      := $(C_OBJS:.o=.d)
 $(shell mkdir -p $(BUILD)/tmp $(sort $(dir $(C_OBJS))))
 
 GIT_BRANCH  := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
-EXACT_TAG   := $(shell git describe --tags --exact-match 2>/dev/null)
 # Rama release/* más reciente que contiene HEAD (local u origin): permite
 # que ramas laterales (p.ej. PRs basados en release) hereden su versión
 REL_MERGED := $(shell git for-each-ref --format='%(refname:short)' --merged HEAD refs/heads/'release/*' refs/remotes/'origin/release/*' 2>/dev/null | sort -V | tail -1)
 REL_BASE    := $(shell git rev-parse --verify -q refs/remotes/origin/main >/dev/null && echo refs/remotes/origin/main || echo main)
 
+# Release tags: vX.Y.Z (every platform), 3ds-vX.Y.Z (this one), wiiu-vX.Y.Z (not this one);
+# one version counter for all (docs/release-notes/README.md). The build calls itself vX.Y.Z.
+EXACT_TAG   := $(patsubst 3ds-%,%,$(firstword $(filter v% 3ds-v%,$(shell git tag --points-at HEAD 2>/dev/null))))
 ifneq ($(strip $(EXACT_TAG)),)
   GIT_VERSION := $(EXACT_TAG)
 else
@@ -482,6 +484,8 @@ test: test-state
 		-o $(BUILD)/updater_parse_test \
 		$(CURDIR)/tests/updater_parse_test.c $(CURDIR)/source/port_updater_parse.c
 	@$(BUILD)/updater_parse_test
+	@$(TEST_CC) -std=c11 -O1 -Wall -Wextra -Werror -I$(CURDIR)/source 		-DUPDATER_PLATFORM='"wiiu"' -DUPDATER_ASSET_SUFFIX='".wuhb"' 		-o $(BUILD)/updater_parse_test_wiiu 		$(CURDIR)/tests/updater_parse_test.c $(CURDIR)/source/port_updater_parse.c
+	@$(BUILD)/updater_parse_test_wiiu
 
 # Save state pointer relocation, on its own so it runs without the rest.
 .PHONY: test-state

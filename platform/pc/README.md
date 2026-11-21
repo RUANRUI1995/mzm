@@ -11,9 +11,9 @@ can use too.
 The bottom screen is the 3DS one (`port/ui/port_bottom_ui.c`, shared), drawn
 in software (`port/ui/port_draw2d_soft.c`). The sound engine is the C
 translation of the assembly (`port/audio`, see below). None of the 3DS-only
-features are here: Wide view, save states, RetroAchievements, the updater, FTP
+features are here: Wide view, save states, RetroAchievements, FTP
 (`source/port_hooks_pc.c` and `source/port_services_pc.c` answer for them as
-"off" / "not available").
+"off" / "not available"). The updater is only on the Wii U (below).
 
 ## Sound
 
@@ -55,9 +55,19 @@ The same sources with devkitPPC, wut and devkitPro's SDL2 for Wii U, built
 from devkitPro's MSYS2 shell (issue #39, `docs/wiiu-big-endian-plan.md`):
 
 ```sh
-dkp-pacman -S wut wut-tools wiiu-sdl2 wiiu-pkg-config   # once
+dkp-pacman -S wut wut-tools wiiu-sdl2 wiiu-pkg-config wiiu-curl wiiu-mbedtls   # once
 make -j OS_TARGET=wiiu           # -> mzm-wiiu.rpx and mzm-wiiu.wuhb
 ```
+
+The Wii U updates itself (`source/port_updater_wiiu.c`, the UPDATES tab on the
+GamePad): it reads this repository's releases like the 3DS updater, takes the
+general `vX.Y.Z` releases and the Wii U only `wiiu-vX.Y.Z` ones
+(`docs/release-notes/README.md`), downloads the `.wuhb` to
+`wiiu/apps/mzm/mzm-wiiu.wuhb.part` and puts it in the place of
+`mzm-wiiu.wuhb` once whole; the new version runs from the next launch. Its
+settings are in `updater.ini` in that folder. The build's version comes from
+git as on the 3DS (`make print-version OS_TARGET=wiiu`); the CI passes
+`CHANNEL=beta` for betas.
 
 On the SD card, `wiiu/apps/mzm/` holds the ROM (`mzm_eu.gba`), and the game
 writes `mzm.sav` and `mzm-log.txt` (stdout and stderr, each line timed)

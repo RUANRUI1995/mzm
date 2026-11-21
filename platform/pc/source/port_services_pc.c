@@ -226,7 +226,9 @@ void Port_RA_SetNotificationSound(bool sound) { sRaSound = sound; }
 bool Port_RA_GetNotifyOnTopScreen(void) { return sRaOnTop; }
 void Port_RA_SetNotifyOnTopScreen(bool onTop) { sRaOnTop = onTop; }
 
-/* ---- Updater: idle ------------------------------------------------------------------ */
+/* ---- Updater: idle (the Wii U has its own, port_updater_wiiu.c) ------------------------ */
+
+#ifndef __WIIU__
 
 UpdaterPrompt Port_Updater_GetPrompt(void) { return UPDATER_PROMPT_NONE; }
 bool Port_Updater_KeptCia(void) { return false; }
@@ -246,6 +248,7 @@ bool Port_Updater_GetAuto(void) { return false; }
 void Port_Updater_SetAuto(bool enabled) { (void)enabled; }
 bool Port_Updater_GetBeta(void) { return false; }
 void Port_Updater_SetBeta(bool enabled) { (void)enabled; }
+#endif /* __WIIU__ */
 
 /* ---- FTP install server and DSP firmware prompt: not on PC ----------------------------- */
 

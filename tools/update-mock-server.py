@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Local stand-in for the GitHub releases API, to test the 3DS self-updater.
+"""Local stand-in for the GitHub releases API, to test the 3DS and Wii U self-updaters.
 
 Serves /releases.json in the same shape as
 GET /repos/{owner}/{repo}/releases (newest first) plus the .cia files
@@ -11,6 +11,11 @@ themselves, so the console can be pointed at this machine instead of GitHub.
   # 2. on the 3DS SD card, in mzm3ds.ini (same folder the game runs from):
   #      update_url=http://<this-machine-ip>:8000/releases.json
   #    then UPDATES > CHECK NOW (or relaunch with auto update on).
+
+For the Wii U, --wuhb platform/pc/mzm-wiiu.wuhb (with or without --cia) and, in
+updater.ini next to the ROM, the same update_url line. A tag can be a platform's
+own (--tag wiiu-v9.9.9, --tag 3ds-v9.9.9; docs/release-notes/README.md) to check
+that the other console ignores it.
 
 Add --beta-tag v9.9.10 to also publish a newer prerelease and exercise the
 "releases + betas" channel. Every release carries a release body with a
@@ -55,24 +60,25 @@ def release_body(tag, notes):
     )
 
 
-def make_handler(base, cia_path, releases, notes):
+def make_handler(base, files, releases, notes):
+    """files: asset name -> local path (mzm-3ds.cia, mzm-wiiu.wuhb). A release lists the
+    assets of its platform: a 3ds- tag only the CIA, a wiiu- tag only the WUHB."""
+    def assets(tag):
+        names = [n for n in files if not (tag.startswith("3ds-") and n.endswith(".wuhb"))
+                 and not (tag.startswith("wiiu-") and n.endswith(".cia"))]
+        return [{"name": n, "browser_download_url": f"{base}/{tag}/{n}"} for n in names]
+
     body = json.dumps(
         [
             {
                 "tag_name": tag,
                 "prerelease": pre,
                 "body": release_body(tag, notes),
-                "assets": [
-                    {
-                        "name": "mzm-3ds.cia",
-                        "browser_download_url": f"{base}/{tag}/mzm-3ds.cia",
-                    }
-                ],
+                "assets": assets(tag),
             }
             for tag, pre in releases
         ]
     ).encode()
-    size = os.path.getsize(cia_path)
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
@@ -82,13 +88,14 @@ def make_handler(base, cia_path, releases, notes):
                 self.send_header("Content-Length", str(len(body)))
                 self.end_headers()
                 self.wfile.write(body)
-            elif self.path.endswith("/mzm-3ds.cia"):
+            elif self.path.rsplit("/", 1)[-1] in files:
+                path = files[self.path.rsplit("/", 1)[-1]]
                 self.send_response(200)
                 self.send_header("Content-Type", "application/octet-stream")
-                self.send_header("Content-Length", str(size))
+                self.send_header("Content-Length", str(os.path.getsize(path)))
                 self.end_headers()
                 try:
-                    with open(cia_path, "rb") as f:
+                    with open(path, "rb") as f:
                         while chunk := f.read(65536):
                             self.wfile.write(chunk)
                 except (BrokenPipeError, ConnectionResetError):
@@ -106,12 +113,20 @@ def make_handler(base, cia_path, releases, notes):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--cia", required=True, help="CIA to serve for every release")
+    ap.add_argument("--cia", help="CIA to serve (3DS)")
+    ap.add_argument("--wuhb", help="WUHB to serve (Wii U)")
     ap.add_argument("--tag", default="v9.9.9", help="stable release tag to publish")
     ap.add_argument("--beta-tag", help="also publish this tag as a prerelease (listed first)")
     ap.add_argument("--notes-file", help="text for the notes block of every release (default: a sample)")
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()
+    files = {}
+    if args.cia:
+        files["mzm-3ds.cia"] = args.cia
+    if args.wuhb:
+        files["mzm-wiiu.wuhb"] = args.wuhb
+    if not files:
+        ap.error("give --cia and/or --wuhb")
 
     notes = SAMPLE_NOTES
     if args.notes_file:
@@ -123,9 +138,9 @@ def main():
         releases.append((args.beta_tag, True))
     releases.append((args.tag, False))
 
-    print(f"Serving {args.cia} as {[t for t, _ in releases]}")
-    print(f"Set on the 3DS:  update_url={base}/releases.json")
-    ThreadingHTTPServer(("0.0.0.0", args.port), make_handler(base, args.cia, releases, notes)).serve_forever()
+    print(f"Serving {list(files.values())} as {[t for t, _ in releases]}")
+    print(f"Set on the console (mzm3ds.ini / updater.ini):  update_url={base}/releases.json")
+    ThreadingHTTPServer(("0.0.0.0", args.port), make_handler(base, files, releases, notes)).serve_forever()
 
 
 if __name__ == "__main__":

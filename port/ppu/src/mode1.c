@@ -409,23 +409,31 @@ void virtuappu_mode1_get_bound_gba_memory(VirtuaPPUMode1GbaMemory* memory) {
  * thread keeps the existing single-threaded behavior intact. */
 #ifdef __WIIU__
 /* An RPX has no thread-local storage (elf2rpl rejects its relocations). The
- * Wii U renders on its three cores with one thread pinned to each
- * (mode1_render_lines_wiiu), so the per-thread state below is a copy per core,
- * picked by the core's number (UPIR: 0-2). */
-typedef struct Mode1CoreScratch {
+ * Wii U renders with the main thread and two workers (mode1_render_lines_wiiu),
+ * so the per-thread state below is one copy per render thread, picked by the
+ * stack pointer: each worker runs on a stack of its own here, and everything
+ * else is the main thread. Reading r1 is a plain register move; reading the
+ * core number (mfspr UPIR) on every access cost about 40% of the PPU on Cemu. */
+#define MODE1_WIIU_STACK_SIZE (64 * 1024)
+static uint8_t sMode1WiiUStacks[2][MODE1_WIIU_STACK_SIZE] __attribute__((aligned(16)));
+
+typedef struct Mode1ThreadScratch {
     const uint8_t* io_thread_override;
     uint8_t obj_semitrans[MODE1_GBA_WIDTH];
     uint8_t obj_window[MODE1_GBA_WIDTH];
-} Mode1CoreScratch;
-static Mode1CoreScratch mode1_core_scratch[3];
-static inline unsigned mode1_core_id(void) {
-    unsigned id;
-    __asm__ volatile("mfspr %0, 1007" : "=r"(id));
-    return id & 3u;
+} Mode1ThreadScratch;
+static Mode1ThreadScratch mode1_thread_scratch[3]; /* worker 0, worker 1, the main thread */
+
+static inline Mode1ThreadScratch* mode1_scratch(void) {
+    uintptr_t sp;
+    __asm__("mr %0, 1" : "=r"(sp));
+    if (sp - (uintptr_t)sMode1WiiUStacks[0] < MODE1_WIIU_STACK_SIZE) return &mode1_thread_scratch[0];
+    if (sp - (uintptr_t)sMode1WiiUStacks[1] < MODE1_WIIU_STACK_SIZE) return &mode1_thread_scratch[1];
+    return &mode1_thread_scratch[2];
 }
-#define virtuappu_mode1_io_thread_override (mode1_core_scratch[mode1_core_id()].io_thread_override)
-#define virtuappu_mode1_obj_semitrans (mode1_core_scratch[mode1_core_id()].obj_semitrans)
-#define virtuappu_mode1_obj_window (mode1_core_scratch[mode1_core_id()].obj_window)
+#define virtuappu_mode1_io_thread_override (mode1_scratch()->io_thread_override)
+#define virtuappu_mode1_obj_semitrans (mode1_scratch()->obj_semitrans)
+#define virtuappu_mode1_obj_window (mode1_scratch()->obj_window)
 #else
 #define VPPU_TLS __thread
 VPPU_TLS const uint8_t* virtuappu_mode1_io_thread_override = NULL;
@@ -2893,9 +2901,9 @@ void virtuappu_mode1_shutdown_workers(void) {
 }
 #elif defined(__WIIU__) /* coreinit worker threads, one per spare core */
 /* The main thread runs on core 1; a worker pinned to each of cores 0 and 2
- * takes lines in chunks from a shared counter, as on the 3DS. Each core keeps
- * its own line buffers (Mode1CoreScratch), so a worker must never move to
- * another core: hence the fixed affinity. */
+ * takes lines in chunks from a shared counter, as on the 3DS. Each render
+ * thread keeps its own line buffers (Mode1ThreadScratch, picked by its stack:
+ * the workers run on sMode1WiiUStacks). */
 typedef struct Mode1WiiUWorker {
     OSThread thread;
     OSEvent start;
@@ -2905,9 +2913,7 @@ typedef struct Mode1WiiUWorker {
     bool started;
 } Mode1WiiUWorker;
 
-#define MODE1_WIIU_STACK_SIZE (64 * 1024)
 static Mode1WiiUWorker sMode1WiiUWorkers[2];
-static uint8_t sMode1WiiUStacks[2][MODE1_WIIU_STACK_SIZE] __attribute__((aligned(16)));
 static bool sMode1WiiUWorkersInitialized;
 static volatile int sMode1WiiUNextLine;
 
@@ -2940,10 +2946,10 @@ static void mode1_wiiu_ensure_workers(void) {
     int i;
     if (sMode1WiiUWorkersInitialized) return;
     sMode1WiiUWorkersInitialized = true;
-    /* The layout above assumes the main thread on core 1, and the buffers a
-     * core number that matches coreinit's; otherwise render on one thread. */
-    if (OSGetCoreId() != 1 || mode1_core_id() != OSGetCoreId()) {
-        printf("[PPU] One render thread (core %u, UPIR %u)\n", (unsigned)OSGetCoreId(), mode1_core_id());
+    /* The cores below assume the main thread on core 1; otherwise render on
+     * one thread. */
+    if (OSGetCoreId() != 1) {
+        printf("[PPU] One render thread (main thread on core %u)\n", (unsigned)OSGetCoreId());
         return;
     }
     printf("[PPU] Rendering on cores 0, 1 and 2\n");

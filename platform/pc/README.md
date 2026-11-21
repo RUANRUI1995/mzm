@@ -73,16 +73,18 @@ Cemu runs either file (`Cemu.exe -g mzm-wiiu.rpx`; the SD card is Cemu's
 reservation (wut puts only the code at 0x02000000, every data address is at
 0x10000000 and above), the PPU renders on the three cores (a thread pinned to
 cores 0 and 2 beside the main one on core 1, as the 3DS does with its cores)
-with its per-thread line buffers as a copy per core, since an RPX has no
-thread-local storage, the 64-bit atomics in `source/wiiu_support.c`, `-O2`,
+with its per-thread line buffers as a copy per render thread, picked by the
+stack pointer, since an RPX has no thread-local storage, the 64-bit atomics in `source/wiiu_support.c`, `-O2`,
 and the TV window skips its buffer swap (`SDL_WINDOW_WIIU_PREVENT_SWAP`) so
 that the two windows wait for one screen refresh, not two. The link goes
 through a response file (Windows' command-line limit).
 
-On Cemu its traces match x86 (the Kraid area replay over all its frames, the
-Ridley fight over 2818). Speed there: the game logic takes under 1 ms a frame
-and the PPU the rest; the Kraid area runs at 59.7 fps, the Ridley fight at
-about 55 and its spawn cutscene at about 42. Not measured on a console yet.
+On Cemu its traces match x86 (the Kraid area and the Ridley fight replays,
+every frame). Speed there: the game logic takes under 1 ms a frame and the
+PPU most of the rest (the Ridley fight, the heaviest scene measured, 9-12 ms);
+the intro, the title screen, the demos, the Kraid area and the Ridley fight
+with its spawn cutscene all run at the GBA's 59.7 fps. Not measured on a
+console yet.
 
 ## Play
 

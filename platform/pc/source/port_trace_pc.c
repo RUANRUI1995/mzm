@@ -271,6 +271,10 @@ bool Trace_OpenLog(const char* path) {
         fprintf(stderr, "[Trace] Cannot write '%s'\n", path);
         return false;
     }
+    /* Large writes: on the Wii U's SD card the default buffer cost about
+     * 16 ms a frame (a crash still leaves a usable trace: compare_traces.py
+     * drops an incomplete last line). */
+    if (sLog != stdout) setvbuf(sLog, NULL, _IOFBF, 64 * 1024);
     fprintf(sLog, "# frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io\n");
     return true;
 }

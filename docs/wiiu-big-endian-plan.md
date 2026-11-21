@@ -109,14 +109,19 @@ GamePad, and writes `mzm.sav`.
 Speed: on one thread gameplay took about 30 ms a frame on Cemu, nearly all
 of it in the PPU (about 33 fps). The PPU now spreads its lines over the three
 cores (`mode1_render_lines_wiiu`, after the 3DS's), with the thread-local
-line buffers as a copy per core picked by the core number; the Kraid area runs
-at 59.7 fps, the Ridley fight at about 55, its spawn cutscene at about 42.
-A replay on the SD card also writes a trace: the Wii U build on Cemu matches
-x86 frame for frame (the Kraid area, 1801 frames; the Ridley fight, 2818).
+line buffers as a copy per render thread. Picking the copy by the core number
+(`mfspr` UPIR on every access) cost about 40% of the PPU on Cemu (45 ms against
+26 on one thread in the Ridley fight); by the stack pointer it costs a register
+move. Everything measured now runs at 59.7 fps on Cemu: the intro, the title
+screen, the demos, the Kraid area and the Ridley fight with its spawn
+cutscene (the PPU at 9-12 ms there). A replay on the SD card also writes a
+trace: the Wii U build on Cemu matches x86 frame for frame (the Kraid area,
+1801 frames; the Ridley fight, 3101). The slow first seconds of a replay run
+were its own trace, written to the SD card in small pieces (a 64 KB buffer
+now).
 
-Next: the cutscenes and heavy scenes that stay under 60 on Cemu, the
-GamePad's buttons (untested: Cemu has no controller set up here) and a
-console run.
+Next: the GamePad's buttons (untested: Cemu has no controller set up here)
+and a console run.
 
 Step 3 (what the replay found):
 

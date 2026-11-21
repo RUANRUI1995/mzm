@@ -41,7 +41,10 @@ import zlib
 
 REPO = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 ELF = os.path.join(REPO, 'platform', '3ds', 'mzm-3ds.elf')
-NM = '/opt/devkitpro/devkitARM/bin/arm-none-eabi-nm'
+# devkitARM's nm, from the Linux or the Windows install (Git Bash / native Python).
+NM = next((p for p in ('/opt/devkitpro/devkitARM/bin/arm-none-eabi-nm',
+                       'C:/devkitPro/devkitARM/bin/arm-none-eabi-nm.exe') if os.path.exists(p)),
+          'arm-none-eabi-nm')
 DATA = '/3ds/Metroid Zero Mission 3DS'
 PORT = 5000
 

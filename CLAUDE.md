@@ -70,7 +70,16 @@ checked in — if a fresh clone starts resolving to `metroidret/mzm` again, run:
 gh repo set-default tinaut1986/mzm
 ```
 
-## Release process (3DS port)
+## Release process (3DS and Wii U)
+
+**Three kinds of tag, one version counter** (`docs/release-notes/README.md`):
+`vX.Y.Z` ships both platforms (one release page with the CIA and the WUHB),
+`3ds-vX.Y.Z` the 3DS only, `wiiu-vX.Y.Z` the Wii U only. A number is used once,
+by whichever kind needs it; each console's updater takes the general tags and
+its own and never offers the other platform's. Tag only what changed: a fix
+that touches one platform gets that platform's tag. The examples below use
+`vX.Y.Z`; the other two kinds follow the same steps (notes file named after the
+full tag, the release branch renamed to the next number afterwards).
 
 Version numbers are meaningful, not sequential: a **minor** bump marks a
 milestone (v0.4.0 followed v0.3.4 because the port became playable start to

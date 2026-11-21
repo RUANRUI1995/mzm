@@ -513,6 +513,15 @@ int main(int argc, char** argv) {
         Port_LoadSram();
     }
 
+#ifdef __WIIU__
+    /* The self-updater's check at boot (port_updater_wiiu.c), as the 3DS does once its
+     * config is loaded. Not during a replay: a test run stays offline. */
+    if (!replayPath) {
+        extern void Port_Updater_Init(void);
+        Port_Updater_Init();
+    }
+#endif
+
     /* 5. Run; the platform layer exits once --frames is reached. */
     agbmain();
 

@@ -89,10 +89,13 @@ else ifeq ($(OS_TARGET),wiiu)
   ARCH_FLAGS := -DESPRESSO -mcpu=750 -meabi -mhard-float -D__WIIU__ -D__WUT__ -I$(WUT_ROOT)/include
   OPT_FLAGS := -O2
   SDL_CFLAGS := -I$(DEVKITPRO)/portlibs/wiiu/include/SDL2 -I$(DEVKITPRO)/portlibs/wiiu/include -I$(WUT_ROOT)/include
-  SDL_LIBS := -L$(DEVKITPRO)/portlibs/wiiu/lib -lSDL2 -L$(WUT_ROOT)/lib -lwut
+  # libcurl + mbedtls (wiiu-curl, wiiu-mbedtls; zlib from the ppc portlibs): the updater.
+  SDL_LIBS := -L$(DEVKITPRO)/portlibs/wiiu/lib -L$(DEVKITPRO)/portlibs/ppc/lib -lSDL2 \
+	-lcurl -lmbedtls -lmbedx509 -lmbedcrypto -lbrotlidec -lbrotlicommon -lz -L$(WUT_ROOT)/lib -lwut
   SYM_PREFIX :=
   OS_LDFLAGS := -specs=$(WUT_ROOT)/share/wut.specs
-  OS_SRCS := $(CURDIR)/source/wiiu_support.c
+  OS_SRCS := $(CURDIR)/source/wiiu_support.c $(CURDIR)/source/port_updater_wiiu.c
+  OS_UI_SRCS := $(ROOT)/platform/3ds/source/port_updater_parse.c
 else
   $(error OS_TARGET must be linux, windows, linux-ppc or wiiu)
 endif
@@ -121,9 +124,30 @@ CFLAGS := $(ARCH_FLAGS) $(OPT_FLAGS) -g -fcommon -fno-omit-frame-pointer \
 # Shown by the bottom-screen UI (Options footer); the 3DS derives it from the
 # release branch, here the git description is enough.
 PC_VERSION := $(shell git -C $(ROOT) rev-parse --short HEAD 2>/dev/null || echo unknown)
+PORT_VERSION := PC-$(PC_VERSION)
+
+ifeq ($(OS_TARGET),wiiu)
+# The Wii U updates itself (port_updater_wiiu.c), so it carries a release version as the
+# 3DS does (platform/3ds/Makefile): its release tag, vX.Y.Z (every platform) or wiiu-vX.Y.Z
+# (this one; one version counter for all, docs/release-notes/README.md), else
+# <release branch>-dev+<hash>. CHANNEL=beta marks a beta (the CI).
+WIIU_TAG := $(patsubst wiiu-%,%,$(firstword $(filter v% wiiu-v%,$(shell git -C $(ROOT) tag --points-at HEAD 2>/dev/null))))
+ifneq ($(strip $(WIIU_TAG)),)
+  PORT_VERSION := $(WIIU_TAG)
+else
+  WIIU_BRANCH := $(shell git -C $(ROOT) rev-parse --abbrev-ref HEAD 2>/dev/null)
+  WIIU_REL := $(if $(filter release/%,$(WIIU_BRANCH)),$(WIIU_BRANCH),$(subst origin/,,$(shell git -C $(ROOT) for-each-ref --format='%(refname:short)' --merged HEAD refs/heads/'release/*' refs/remotes/'origin/release/*' 2>/dev/null | sort -V | tail -1)))
+  ifneq ($(filter release/%,$(WIIU_REL)),)
+    PORT_VERSION := $(patsubst release/%,%,$(WIIU_REL))-dev+$(PC_VERSION)
+  endif
+endif
+CHANNEL ?=
+WIIU_DEFS := -DUPDATER_PLATFORM=\"wiiu\" -DUPDATER_ASSET_SUFFIX=\".wuhb\" $(if $(filter beta,$(CHANNEL)),-DMZM_PORT_BETA=1)
+endif
 
 CPPFLAGS := \
-	-DMZM_PORT_VERSION=\"PC-$(PC_VERSION)\" \
+	-DMZM_PORT_VERSION=\"$(PORT_VERSION)\" \
+	$(WIIU_DEFS) \
 	-DREGION_EU \
 	-DPORT_NATIVE \
 	-DNON_MATCHING=1 \
@@ -185,7 +209,8 @@ SRCS_ROOT := \
 SRCS_UI := \
 	$(ROOT)/port/ui/port_bottom_ui.c \
 	$(ROOT)/port/ui/port_ui_game.c \
-	$(ROOT)/port/ui/port_draw2d_soft.c
+	$(ROOT)/port/ui/port_draw2d_soft.c \
+	$(OS_UI_SRCS)
 
 SRCS_PC := \
 	$(CURDIR)/source/main_pc.c \
@@ -204,7 +229,7 @@ OBJS := $(OBJS_ROOT) $(OBJS_UI) $(OBJS_PC)
 
 UNIT_TEST_TARGET := port_gba_mem_test
 
-.PHONY: all clean test test-unit test-psg replay-check
+.PHONY: all clean test test-unit test-psg replay-check print-version
 
 ifeq ($(OS_TARGET),wiiu)
 all: $(TARGET) $(WUHB)
@@ -261,9 +286,17 @@ $(BUILD)/ui/%.o: $(ROOT)/%.c
 	@echo "CC $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -I$(ROOT)/platform/3ds/source -c -o $@ $<
 
+ifeq ($(OS_TARGET),wiiu)
+# port/generated/*_rom.c are one function each that points thousands of tables at the ROM,
+# run once at boot. At -O2 devkitPPC's GCC 16 spends about an hour and 7.5 GB on the biggest
+# (samus_samus_graphics_rom.c, a 41 MB object); at -O1 it is 26 seconds and 0.9 MB. The later
+# -O1 wins over OPT_FLAGS's -O2.
+$(BUILD)/root/port/generated/%.o: CFLAGS += -O1
+endif
+
 # The UI prints PC_VERSION: a stamp named after it rebuilds the UI when HEAD
 # moves, so a binary never shows an older commit's hash.
-VERSION_STAMP := $(BUILD)/version-$(PC_VERSION).stamp
+VERSION_STAMP := $(BUILD)/version-$(subst +,_,$(PORT_VERSION))$(CHANNEL).stamp
 $(VERSION_STAMP):
 	@mkdir -p $(dir $@)
 	@rm -f $(BUILD)/version-*.stamp
@@ -314,3 +347,6 @@ test-psg: $(BUILD)/psg-synth-test
 
 clean:
 	@rm -rf $(BUILD) $(TARGET) $(ELF) $(WUHB) $(if $(filter windows,$(OS_TARGET)),$(CURDIR)/SDL2.dll)
+
+print-version:
+	@echo $(PORT_VERSION)

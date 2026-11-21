@@ -1678,7 +1678,12 @@ void SamusUpdateEnvironmentalEffect(struct SamusData* pData)
         // Update animation
         pEnv->animationDurationCounter++;
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        /* The table's entries are GBA ROM addresses. */
+        pOam = RESOLVE_SAMUS_PTR(sSamusEnvEffectsFrameDataPointers[effect - 1]);
+#else
         pOam = sSamusEnvEffectsFrameDataPointers[effect - 1];
+#endif
         pOam += pEnv->currentAnimationFrame;
 
         subAnimEnded = FALSE;

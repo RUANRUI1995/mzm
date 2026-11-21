@@ -18,30 +18,74 @@
 #include <time.h>
 
 #include "port_ui_platform.h"
+#include "platform_pc_options.h"
+#include "port_trace_pc.h"
 #include "port_save_state.h"
 #include "port_updater_3ds.h"
 #include "port_retroachievements_3ds.h"
 #include "port_dsp_firm_prompt_3ds.h"
 
+#ifndef PC_NO_SDL
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#endif
 
 /* ---- port_ui_platform.h ------------------------------------------------------ */
 
-uint64_t PortUi_NowMs(void) { return SDL_GetTicks64(); }
+/* A run fed by a replay or writing a trace has to give the same bottom screen
+ * on every host and at any hour: its clock, timer and battery come from the
+ * frame count (a GBA frame is 280896 cycles of 16.78 MHz), not the machine. */
+static bool FrameClock(void) {
+    return Trace_HasReplay() || Trace_LogEnabled();
+}
+
+static uint64_t FrameMs(void) {
+    return (uint64_t)Platform_PC_CurrentFrame() * 280896u * 1000u / 16777216u;
+}
+
+#ifdef PC_NO_SDL
+/* Builds without SDL (the headless PowerPC one): a monotonic clock, no battery. */
+uint64_t PortUi_NowMs(void) {
+    struct timespec ts;
+    if (FrameClock()) return FrameMs();
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (uint64_t)ts.tv_sec * 1000u + (uint64_t)ts.tv_nsec / 1000000u;
+}
+
+bool PortUi_PollBattery(uint8_t* level, bool* charging) {
+    (void)level;
+    (void)charging;
+    return false;
+}
+#else
+uint64_t PortUi_NowMs(void) { return FrameClock() ? FrameMs() : SDL_GetTicks64(); }
 
 bool PortUi_PollBattery(uint8_t* level, bool* charging) {
     int percent = -1;
-    SDL_PowerState state = SDL_GetPowerInfo(NULL, &percent);
+    SDL_PowerState state;
+    if (FrameClock()) return false;
+    state = SDL_GetPowerInfo(NULL, &percent);
     if (state == SDL_POWERSTATE_UNKNOWN || state == SDL_POWERSTATE_NO_BATTERY || percent < 0) return false;
     *level = (uint8_t)((percent + 10) / 20 > 5 ? 5 : (percent + 10) / 20);
     *charging = (state == SDL_POWERSTATE_CHARGING);
     return true;
 }
+#endif
 
 int PortUi_WifiStrength(void) { return 3; }
 
 bool PortUi_LocalTime(time_t t, struct tm* out) {
+    if (FrameClock()) {
+        /* 12:00:00 when the run starts. */
+        uint64_t seconds = FrameMs() / 1000u;
+        memset(out, 0, sizeof(*out));
+        out->tm_sec = (int)(seconds % 60u);
+        out->tm_min = (int)(seconds / 60u % 60u);
+        out->tm_hour = (int)((12u + seconds / 3600u) % 24u);
+        out->tm_mday = 1;
+        out->tm_year = 100;
+        return true;
+    }
 #ifdef _WIN32
     return localtime_s(out, &t) == 0;
 #else

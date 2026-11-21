@@ -18,6 +18,7 @@
 #include "port_gba_mem.h"
 
 u8* gRomData;
+u8* gRomDataRaw;
 u32 gRomSize;
 
 /* Test double for the real platform_3ds.c/platform_3ds_minimal.c
@@ -43,6 +44,7 @@ int main(void) {
     u32 stackValue = 0x12345678;
 
     gRomData = fakeRom;
+    gRomDataRaw = fakeRom;
     gRomSize = sizeof(fakeRom);
     sFakeStackAddr = 0;
 

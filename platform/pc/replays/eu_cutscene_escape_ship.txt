@@ -1,0 +1,32 @@
+# Resumes file A of saves/eu_cutscene_escape_ship.sav (EU ROM): Chozodia, next
+# to the escape ship, Mecha Ridley dead (made with tools/mzm_save.py warp).
+# A taps through the title and file select until the game starts, around
+# frame 400; the ship opens as she comes near, she jumps on it and gets in:
+# Samus in the blue ship, the escape from Chozodia and the credits.
+save saves/eu_cutscene_escape_ship.sav
+
+# frame keys
+0 -
+40 A
+44 -
+80 A
+84 -
+120 A
+124 -
+160 A
+164 -
+200 A
+204 -
+240 A
+244 -
+280 A
+284 -
+320 A
+324 -
+360 A
+364 -
+440 -
+560 RIGHT+A
+572 A
+620 -
+13500 -

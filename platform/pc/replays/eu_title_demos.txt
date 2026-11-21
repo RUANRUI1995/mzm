@@ -1,0 +1,7 @@
+# No input from power-on (EU ROM): the intro, then the title screen left
+# alone, which plays the attract demos (game mode 0xb) in several areas
+# and goes back to the intro between them.
+#
+# frame keys
+0 -
+8000 -

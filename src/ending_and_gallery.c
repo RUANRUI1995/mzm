@@ -1766,6 +1766,10 @@ static void EndingImageDisplayText(void)
         }
 
         src = ENDING_DATA.oamFramePointers[i];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        // Copied from the ROM's ending OAM tables: GBA addresses.
+        src = GBA_RESOLVE(src);
+#endif
         part = *src++;
         nextSlot += MOD_AND(part, 0x100);
 

@@ -42,8 +42,9 @@ static void CanvasSize(ScreensLayout layout, int* w, int* h) {
     }
 }
 
-static bool CreateWindow(ScreenWindow* sw, const char* title, int w, int h, bool withTop, bool withBottom) {
-    sw->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, SDL_WINDOW_RESIZABLE);
+static bool CreateWindow(ScreenWindow* sw, const char* title, int w, int h, Uint32 flags, bool withTop,
+                         bool withBottom) {
+    sw->window = SDL_CreateWindow(title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, w, h, flags);
     if (!sw->window) goto fail;
     sw->renderer = SDL_CreateRenderer(sw->window, -1, 0);
     if (!sw->renderer) goto fail;
@@ -78,16 +79,32 @@ static bool CreateLayout(ScreensLayout layout) {
     bool ok;
     sLayout = layout;
     CanvasSize(layout, &cw, &ch);
-    ok = CreateWindow(&sMain, "Metroid: Zero Mission (PC reference build)", cw * sScale, ch * sScale, true,
-                      layout == SCREENS_STACKED || layout == SCREENS_SIDE);
+#ifdef __WIIU__
+    /* The TV (1280x720) and the GamePad (854x480). Two windows: the game on
+     * the TV, the UI on the GamePad; otherwise one window shown on both. */
+    (void)cw;
+    (void)ch;
+    /* With two windows each present would swap and wait for the screen's
+     * refresh, halving the frame rate: the TV's skips the swap, and the
+     * GamePad's, presented after it (Screens_Present), swaps both. */
+    ok = CreateWindow(&sMain, "Metroid: Zero Mission", 1280, 720,
+                      layout == SCREENS_TWO_WINDOWS ? SDL_WINDOW_WIIU_TV_ONLY | SDL_WINDOW_WIIU_PREVENT_SWAP : 0,
+                      true, layout == SCREENS_STACKED || layout == SCREENS_SIDE);
+    if (ok && layout == SCREENS_TWO_WINDOWS)
+        ok = CreateWindow(&sSecond, "Bottom screen", 854, 480, SDL_WINDOW_WIIU_GAMEPAD_ONLY, false, true);
+#else
+    ok = CreateWindow(&sMain, "Metroid: Zero Mission (PC reference build)", cw * sScale, ch * sScale,
+                      SDL_WINDOW_RESIZABLE, true, layout == SCREENS_STACKED || layout == SCREENS_SIDE);
     if (ok && layout == SCREENS_TWO_WINDOWS) {
-        ok = CreateWindow(&sSecond, "Bottom screen", BOTTOM_W * sScale, BOTTOM_H * sScale, false, true);
+        ok = CreateWindow(&sSecond, "Bottom screen", BOTTOM_W * sScale, BOTTOM_H * sScale, SDL_WINDOW_RESIZABLE,
+                          false, true);
         if (ok) {
             int x, y;
             SDL_GetWindowPosition(sMain.window, &x, &y);
             SDL_SetWindowPosition(sSecond.window, x + TOP_W * sScale + 16, y);
         }
     }
+#endif
     printf("[PC] Screens: %s (F2 changes it)\n", kLayoutNames[layout]);
     fflush(stdout);
     return ok;
@@ -96,6 +113,10 @@ static bool CreateLayout(ScreensLayout layout) {
 bool Screens_Open(int scale, ScreensLayout layout) {
     sScale = scale;
     SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "nearest");
+#ifdef __WIIU__
+    SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0"); /* the touch screen arrives as SDL_FINGER* */
+    SDL_SetHint(SDL_HINT_RENDER_VSYNC, "0");
+#endif
     return CreateLayout(layout);
 }
 
@@ -202,6 +223,36 @@ bool Screens_HandleEvent(const void* event) {
                 sTouchReleased = true;
             }
             break;
+#ifdef __WIIU__
+        /* The GamePad's touch screen: positions from 0 to 1 over the GamePad,
+         * which shows the UI's window (or the only one). */
+        case SDL_FINGERDOWN:
+        case SDL_FINGERMOTION: {
+            const ScreenWindow* pad = sSecond.window ? &sSecond : &sMain;
+            int lw, lh;
+            bool down = ev->type == SDL_FINGERDOWN;
+            if (!pad->window) break;
+            SDL_GetWindowSize(pad->window, &lw, &lh);
+            if (ToBottom(SDL_GetWindowID(pad->window), (int)(ev->tfinger.x * lw), (int)(ev->tfinger.y * lh), &bx,
+                         &by, !down)) {
+                if (down) {
+                    sTouchHeld = true;
+                    sTouchNew = true;
+                }
+                if (sTouchHeld) {
+                    sTouchX = bx;
+                    sTouchY = by;
+                }
+            }
+            break;
+        }
+        case SDL_FINGERUP:
+            if (sTouchHeld) {
+                sTouchHeld = false;
+                sTouchReleased = true;
+            }
+            break;
+#endif
         case SDL_WINDOWEVENT:
             if (ev->window.event == SDL_WINDOWEVENT_CLOSE) return true;
             if (ev->window.event == SDL_WINDOWEVENT_SIZE_CHANGED) Port_BottomUI_MarkDirty();

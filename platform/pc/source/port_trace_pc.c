@@ -29,6 +29,9 @@
 #include "structs/connection.h"
 #include "structs/samus.h"
 #include "structs/audio.h"
+#include "structs/sprite.h"
+#include "structs/room.h"
+#include "event.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -147,6 +150,28 @@ static void FormatKeys(uint16_t keys, char* out, size_t size) {
     }
 }
 
+/* The save a replay starts from (a 'save FILE' line), relative to the replay's directory. */
+static char sReplaySave[1024];
+
+static bool SetReplaySave(const char* replayPath, const char* text) {
+    const char* slash = strrchr(replayPath, '/');
+    const char* backslash = strrchr(replayPath, '\\');
+    size_t dirLength, nameLength;
+    while (isspace((unsigned char)*text)) text++;
+    nameLength = strlen(text);
+    while (nameLength && isspace((unsigned char)text[nameLength - 1])) nameLength--;
+    if (nameLength == 0) return false;
+    if (backslash && (!slash || backslash > slash)) slash = backslash;
+    dirLength = slash && text[0] != '/' ? (size_t)(slash - replayPath + 1) : 0;
+    if (dirLength + nameLength >= sizeof(sReplaySave)) return false;
+    memcpy(sReplaySave, replayPath, dirLength);
+    memcpy(sReplaySave + dirLength, text, nameLength);
+    sReplaySave[dirLength + nameLength] = '\0';
+    return true;
+}
+
+const char* Trace_ReplaySave(void) { return sReplaySave[0] ? sReplaySave : NULL; }
+
 bool Trace_LoadReplay(const char* path) {
     FILE* f = fopen(path, "rb");
     char line[256];
@@ -164,6 +189,14 @@ bool Trace_LoadReplay(const char* path) {
         lineNo++;
         while (isspace((unsigned char)*p)) p++;
         if (*p == '\0' || *p == '#') continue;
+        if (strncmp(p, "save", 4) == 0 && isspace((unsigned char)p[4])) {
+            if (!SetReplaySave(path, p + 5)) {
+                fprintf(stderr, "[Trace] %s:%u: expected 'save <file>'\n", path, lineNo);
+                fclose(f);
+                return false;
+            }
+            continue;
+        }
         if (sscanf(p, "%lu %127s", &frame, keysText) != 2) {
             fprintf(stderr, "[Trace] %s:%u: expected '<frame> <keys>'\n", path, lineNo);
             fclose(f);
@@ -238,6 +271,10 @@ bool Trace_OpenLog(const char* path) {
         fprintf(stderr, "[Trace] Cannot write '%s'\n", path);
         return false;
     }
+    /* Large writes: on the Wii U's SD card the default buffer cost about
+     * 16 ms a frame (a crash still leaves a usable trace: compare_traces.py
+     * drops an incomplete last line). */
+    if (sLog != stdout) setvbuf(sLog, NULL, _IOFBF, 64 * 1024);
     fprintf(sLog, "# frame keys mode sub area room x y energy fc16 | fb vram bgpal objpal oam snd | ewram iwram io\n");
     return true;
 }
@@ -256,25 +293,28 @@ static uint32_t HashIo(void) {
     return HashBytes(FNV_OFFSET, io, sizeof(io));
 }
 
-void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer) {
+void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer, const uint32_t* bottom) {
     uint32_t fb;
 
     if (!sLog) return;
     fb = framebuffer ? HashU32Values(framebuffer, 240u * 160u) : 0;
-    fprintf(sLog, "%u %03x %x %x %x %x %x %x %x %x | %08x %08x %08x %08x %08x %08x | %08x %08x %08x\n",
+    fprintf(sLog, "%u %03x %x %x %x %x %x %x %x %x | %08x %08x %08x %08x %08x %08x | %08x %08x %08x",
             (unsigned)frame, (unsigned)keys,
             (unsigned)gMainGameMode, (unsigned)(u16)gSubGameMode1,
             (unsigned)gCurrentArea, (unsigned)gCurrentRoom,
             (unsigned)gSamusData.xPosition, (unsigned)gSamusData.yPosition,
             (unsigned)gEquipment.currentEnergy, (unsigned)gFrameCounter16Bit,
             fb,
-            HashBytes(FNV_OFFSET, gVram, sizeof(gVram)),
+            HashU16Values((const uint16_t*)gVram, sizeof(gVram) / 2),
             HashU16Values(gBgPltt, 256), HashU16Values(gObjPltt, 256),
             HashU16Values(gOamMem, 0x200),
             HashBytes(FNV_OFFSET, gMusicInfo.soundRawData, sizeof(gMusicInfo.soundRawData)),
             HashBytes(FNV_OFFSET, gEwram, sizeof(gEwram)),
             HashBytes(FNV_OFFSET, gIwram, sizeof(gIwram)),
             HashIo());
+    /* The bottom screen only when the UI runs, so other traces keep their lines. */
+    if (bottom) fprintf(sLog, " | %08x", HashU32Values(bottom, 320u * 240u));
+    fputc('\n', sLog);
 }
 
 /* ---- Screenshots ----------------------------------------------------------- */
@@ -285,6 +325,8 @@ bool Trace_DumpMemory(const char* dir, uint32_t frame) {
         { "io", gIoMem, sizeof(gIoMem) },      { "vram", gVram, sizeof(gVram) },
         { "bgpal", gBgPltt, sizeof(gBgPltt) }, { "objpal", gObjPltt, sizeof(gObjPltt) },
         { "oam", gOamMem, sizeof(gOamMem) },
+        { "sprites", gSpriteData, sizeof(gSpriteData) }, { "spriteset", &gSpriteset, 1 },
+        { "events", gEventsTriggered, sizeof(gEventsTriggered) },
     };
     size_t i;
     for (i = 0; i < sizeof(regions) / sizeof(regions[0]); ++i) {

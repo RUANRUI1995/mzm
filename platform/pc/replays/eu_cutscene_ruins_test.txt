@@ -1,0 +1,55 @@
+# Resumes file A of saves/eu_cutscene_ruins_test.sav (EU ROM): Chozodia area, Samus by door 88
+# (made with tools/mzm_save.py warp). A taps through the title and file select
+# until the game starts, around frame 400; then she walks left through the door,
+# firing missiles to open the hatch, which plays the cutscene before the Ruins Test.
+save saves/eu_cutscene_ruins_test.sav
+
+# frame keys
+0 -
+40 A
+44 -
+80 A
+84 -
+120 A
+124 -
+160 A
+164 -
+200 A
+204 -
+240 A
+244 -
+280 A
+284 -
+320 A
+324 -
+360 A
+364 -
+440 -
+480 LEFT+R+B
+484 LEFT+R
+504 LEFT+R+B
+508 LEFT+R
+528 LEFT+R+B
+532 LEFT+R
+552 LEFT+R+B
+556 LEFT+R
+576 LEFT+R+B
+580 LEFT+R
+600 LEFT+R+B
+604 LEFT+R
+624 LEFT+R+B
+628 LEFT+R
+648 LEFT+R+B
+652 LEFT+R
+672 LEFT+R+B
+676 LEFT+R
+696 LEFT+R+B
+700 LEFT+R
+720 LEFT+R+B
+724 LEFT+R
+744 LEFT+R+B
+748 LEFT+R
+760 -
+2200 LEFT
+2400 -
+2500 -

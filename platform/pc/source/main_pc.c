@@ -20,6 +20,10 @@
 #include <io.h>
 #define chdir _chdir
 #define getcwd _getcwd
+#elif defined(__WIIU__)
+#include <sys/stat.h>
+#include <unistd.h>
+#include "wiiu_support.h"
 #else
 #include <execinfo.h>
 #include <sys/mman.h>
@@ -48,6 +52,11 @@ static const struct { uintptr_t base, size; } kGbaRanges[] = {
 };
 
 static void ReserveGbaRanges(void) {
+#ifdef __WIIU__
+    /* Nothing to reserve: wut's layout keeps every data address at
+     * 0x10000000 and above (the code, at 0x02000000, is never resolved).
+     * CheckHostBuffers still checks the buffers. */
+#else
     size_t i;
     for (i = 0; i < sizeof(kGbaRanges) / sizeof(kGbaRanges[0]); ++i) {
         const uintptr_t end = kGbaRanges[i].base + kGbaRanges[i].size;
@@ -71,6 +80,7 @@ static void ReserveGbaRanges(void) {
                     (unsigned long)kGbaRanges[i].base, (unsigned long)end);
 #endif
     }
+#endif /* __WIIU__ */
 }
 
 /* The ROM buffer (port_rom.c). On Windows the C heap is the process heap,
@@ -145,6 +155,9 @@ static LONG WINAPI HandleCrash(EXCEPTION_POINTERS* info) {
 static void InstallCrashHandler(void) {
     SetUnhandledExceptionFilter(HandleCrash);
 }
+#elif defined(__WIIU__)
+/* The system's own crash screen (and Cemu's log) say where it stopped. */
+static void InstallCrashHandler(void) {}
 #else
 static void HandleCrash(int sig) {
     void* frames[64];
@@ -226,6 +239,26 @@ static const char* SaveDirForRun(void) {
     return NULL;
 }
 
+/* The save a run starts from (--load-save). */
+static bool CopyFileTo(const char* from, const char* to) {
+    char buffer[4096];
+    size_t n;
+    bool ok = true;
+    FILE* in = fopen(from, "rb");
+    FILE* out;
+    if (!in) return false;
+    out = fopen(to, "wb");
+    if (!out) {
+        fclose(in);
+        return false;
+    }
+    while ((n = fread(buffer, 1, sizeof(buffer), in)) > 0)
+        ok = ok && fwrite(buffer, 1, n, out) == n;
+    ok = !ferror(in) && ok;
+    fclose(in);
+    return (fclose(out) == 0) && ok;
+}
+
 /* ---- Command line ------------------------------------------------------------------ */
 
 static void Usage(const char* argv0) {
@@ -250,6 +283,8 @@ static void Usage(const char* argv0) {
            "  --tap N X Y           touch the bottom screen at (X, Y) on frame N (repeatable)\n"
            "  --save-dir DIR        directory for mzm.sav (replay and trace runs default\n"
            "                        to a new empty one, so they start from a blank save)\n"
+           "  --load-save FILE      start from a copy of FILE as mzm.sav (a replay's\n"
+           "                        'save FILE' line does the same)\n"
            "  --mute                no sound (the sound engine still runs)\n"
            "  --wav PATH            also write the sound to a WAV file\n"
            "  --quiet               no progress lines\n"
@@ -270,6 +305,7 @@ int main(int argc, char** argv) {
     const char* recordPath = NULL;
     const char* tracePath = NULL;
     const char* saveDir = NULL;
+    const char* loadSave = NULL;
     bool headless = false;
     bool forceWindow = false;
     bool framesGiven = false;
@@ -281,6 +317,28 @@ int main(int argc, char** argv) {
     signal(SIGINT, HandleInterrupt);
     signal(SIGTERM, HandleInterrupt);
     gPcOptions.scale = 3;
+#ifdef __WIIU__
+    /* No command line: the ROM and mzm.sav are in the SD card's folder, the
+     * game on the TV and the bottom-screen UI on the GamePad. */
+    if (!WiiU_Init()) fprintf(stderr, "[Wii U] No SD card folder %s\n", WIIU_DATA_DIR);
+    gPcOptions.layout = SCREENS_TWO_WINDOWS;
+    /* A replay in that folder plays instead of the pad, on screen (for
+     * testing on Cemu or a console without touching the controls). */
+    {
+        FILE* f = fopen(WIIU_REPLAY_FILE, "rb");
+        if (f) {
+            fclose(f);
+            replayPath = WIIU_REPLAY_FILE;
+            forceWindow = true;
+            /* Its saves go to a folder of their own, not over mzm.sav, and
+             * it leaves a trace to compare with the PC builds'. */
+            saveDir = WIIU_DATA_DIR "/replay-run";
+            MakeDir(saveDir);
+            tracePath = WIIU_DATA_DIR "/" WIIU_TRACE_FILE;
+            fprintf(stdout, "[Wii U] Playing %s\n", WIIU_REPLAY_FILE);
+        }
+    }
+#endif
 
     for (i = 1; i < argc; i++) {
         const char* a = argv[i];
@@ -314,6 +372,8 @@ int main(int argc, char** argv) {
             tracePath = argv[++i];
         } else if (strcmp(a, "--save-dir") == 0 && hasValue) {
             saveDir = argv[++i];
+        } else if (strcmp(a, "--load-save") == 0 && hasValue) {
+            loadSave = argv[++i];
         } else if (strcmp(a, "--shot") == 0 && i + 2 < argc) {
             if (gPcOptions.shotCount >= PC_MAX_SHOTS ||
                 !ParseUInt(argv[i + 1], &gPcOptions.shots[gPcOptions.shotCount].frame)) {
@@ -386,7 +446,10 @@ int main(int argc, char** argv) {
     if (replayPath) {
         if (!Trace_LoadReplay(replayPath)) return 2;
         if (!framesGiven) gPcOptions.maxFrames = Trace_ReplayLength();
+        if (!loadSave) loadSave = Trace_ReplaySave();
     }
+    /* Opened after the run moves into its save directory. */
+    if (loadSave) loadSave = Absolute(loadSave);
     gPcOptions.pulseA = testMode && !replayPath;
     if (recordPath && !Trace_OpenRecord(recordPath)) return 2;
     if (tracePath && !Trace_OpenLog(tracePath)) return 2;
@@ -433,11 +496,24 @@ int main(int argc, char** argv) {
         }
         fprintf(info, "[PC] Save directory: %s\n", saveDir);
     }
+    if (loadSave) {
+        if (!CopyFileTo(loadSave, "mzm.sav")) {
+            fprintf(stderr, "FATAL: cannot copy '%s' to mzm.sav\n", loadSave);
+            return 1;
+        }
+        fprintf(info, "[PC] Starting from the save '%s'\n", loadSave);
+    }
 
     /* 3. Platform */
     if (!Platform_PC_Init(headless)) return 1;
 
-    /* 4. Run; the platform layer exits once --frames is reached. */
+    /* 4. The save (mzm.sav in the current directory; none on a blank run), as the 3DS does */
+    {
+        extern void Port_LoadSram(void);
+        Port_LoadSram();
+    }
+
+    /* 5. Run; the platform layer exits once --frames is reached. */
     agbmain();
 
     Platform_PC_Cleanup();

@@ -12,6 +12,8 @@
 /* Loads a replay file. Returns false (and prints why) on a bad file. */
 bool Trace_LoadReplay(const char* path);
 bool Trace_HasReplay(void);
+/* The save file the loaded replay starts from (its 'save FILE' line), or NULL. */
+const char* Trace_ReplaySave(void);
 /* Keys (GBA KEY_* mask, 1 = pressed) the replay holds on this frame. */
 uint16_t Trace_ReplayKeys(uint32_t frame);
 /* Frame after the replay's last line, 0 without a replay. */
@@ -22,8 +24,9 @@ void Trace_RecordKeys(uint32_t frame, uint16_t keys);
 
 bool Trace_OpenLog(const char* path);
 bool Trace_LogEnabled(void);
-/* Appends this frame's line. framebuffer: 240x160 ABGR8888 pixels, or NULL. */
-void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer);
+/* Appends this frame's line. framebuffer: 240x160 ABGR8888 pixels, or NULL.
+ * bottom: the 320x240 bottom screen when the UI runs (adds a fourth group), or NULL. */
+void Trace_LogFrame(uint32_t frame, uint16_t keys, const uint32_t* framebuffer, const uint32_t* bottom);
 
 bool Trace_WritePpm(const char* path, const uint32_t* framebuffer);
 /* Any size, e.g. the 320x240 bottom screen. */
@@ -31,7 +34,9 @@ bool Trace_WritePpmSized(const char* path, const uint32_t* pixels, int width, in
 
 /* Writes the raw GBA memory of this frame (ewram, iwram, io, vram, bgpal,
  * objpal, oam) as <dir>/<region>_<frame>.bin, to find which bytes a
- * diverging trace column covers. */
+ * diverging trace column covers; also the sprite table (gSpriteData, host
+ * layout: it holds host pointers), the sprite set and the events, which live
+ * outside the GBA's RAM in the port. */
 bool Trace_DumpMemory(const char* dir, uint32_t frame);
 
 void Trace_Close(void);

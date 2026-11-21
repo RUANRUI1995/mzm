@@ -1,9 +1,12 @@
-# PC reference build of the Metroid: Zero Mission port (32-bit x86), for
-# Linux and Windows. See README.md.
+# PC reference build of the Metroid: Zero Mission port (32-bit), for Linux
+# and Windows on x86, and headless big-endian PowerPC. See README.md.
 #
 #   make                         Linux build  -> mzm-linux
 #   make OS_TARGET=windows       Windows build (MinGW cross-compiler, from
 #                                Linux/WSL)   -> mzm-windows.exe + SDL2.dll
+#   make OS_TARGET=linux-ppc     PowerPC build, run with qemu-ppc -> mzm-linux-ppc
+#   make OS_TARGET=wiiu          Wii U build (devkitPPC + wut + SDL2 for Wii U, from
+#                                devkitPro's MSYS2 shell) -> mzm-wiiu.rpx, mzm-wiiu.wuhb
 #
 # Deliberately 32-bit: several structs (e.g. struct SoundEntry in
 # include/structs/audio.h) are overlaid directly on raw GBA ROM bytes and
@@ -55,13 +58,59 @@ else ifeq ($(OS_TARGET),linux)
   # Init_sScrollTables) for GBA ROM addresses and translated them into
   # garbage. 0x20000000 is above every GBA region.
   OS_LDFLAGS := -no-pie -Wl,-Ttext-segment=0x20000000 -lrt -lpthread
+else ifeq ($(OS_TARGET),linux-ppc)
+  # 32-bit big-endian PowerPC, the Wii U's byte order, run under qemu-ppc
+  # (qemu-user). Headless only: no SDL, frontend_none.c. Static, so qemu needs
+  # no PowerPC libraries.
+  CC := powerpc-linux-gnu-gcc
+  TARGET := mzm-linux-ppc
+  BUILD := $(CURDIR)/build/linux-ppc
+  NO_SDL := 1
+  ARCH_FLAGS :=
+  SYM_PREFIX :=
+  # -latomic: 64-bit __atomic operations (port/ui/port_bottom_ui.c) are library
+  # calls on 32-bit PowerPC.
+  OS_LDFLAGS := -static -Wl,-Ttext-segment=0x20000000 -lrt -lpthread -latomic
+else ifeq ($(OS_TARGET),wiiu)
+  # The Wii U's Espresso: 32-bit big-endian PowerPC, as linux-ppc, with
+  # devkitPPC, wut and devkitPro's SDL2 for Wii U (the packages wut, wut-tools,
+  # wiiu-sdl2). wut's linker script puts the code at 0x02000000, inside the
+  # GBA ranges, but only the code: data, .rodata, the stacks and the heap are
+  # at 0x10000000 and above, so no data pointer looks like a GBA address.
+  DEVKITPRO ?= /opt/devkitpro
+  DEVKITPPC ?= $(DEVKITPRO)/devkitPPC
+  WUT_ROOT ?= $(DEVKITPRO)/wut
+  export DEVKITPRO
+  CC := $(DEVKITPPC)/bin/powerpc-eabi-gcc
+  ELF := mzm-wiiu.elf
+  TARGET := mzm-wiiu.rpx
+  WUHB := mzm-wiiu.wuhb
+  BUILD := $(CURDIR)/build/wiiu
+  ARCH_FLAGS := -DESPRESSO -mcpu=750 -meabi -mhard-float -D__WIIU__ -D__WUT__ -I$(WUT_ROOT)/include
+  OPT_FLAGS := -O2
+  SDL_CFLAGS := -I$(DEVKITPRO)/portlibs/wiiu/include/SDL2 -I$(DEVKITPRO)/portlibs/wiiu/include -I$(WUT_ROOT)/include
+  SDL_LIBS := -L$(DEVKITPRO)/portlibs/wiiu/lib -lSDL2 -L$(WUT_ROOT)/lib -lwut
+  SYM_PREFIX :=
+  OS_LDFLAGS := -specs=$(WUT_ROOT)/share/wut.specs
+  OS_SRCS := $(CURDIR)/source/wiiu_support.c
 else
-  $(error OS_TARGET must be linux or windows)
+  $(error OS_TARGET must be linux, windows, linux-ppc or wiiu)
+endif
+
+ifeq ($(NO_SDL),1)
+  SDL_CFLAGS := -DPC_NO_SDL
+  SDL_LIBS :=
+  FRONTEND_SRCS := $(CURDIR)/source/frontend_none.c
+else
+  FRONTEND_SRCS := $(CURDIR)/source/frontend_sdl.c $(CURDIR)/source/screens_pc.c
 endif
 
 # No -std: the compiler's default dialect, as in the 3DS build (the port
 # sources use C99+ features). Warning suppressions mirror the 3DS ones.
-CFLAGS := $(ARCH_FLAGS) -O1 -g -fcommon -fno-omit-frame-pointer \
+# -O1 on the reference builds (the traces were made with it); the Wii U, which
+# has to keep up with the screen, sets OPT_FLAGS.
+OPT_FLAGS ?= -O1
+CFLAGS := $(ARCH_FLAGS) $(OPT_FLAGS) -g -fcommon -fno-omit-frame-pointer \
 	-Wno-return-mismatch -Wno-int-conversion -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast \
 	-Wno-maybe-uninitialized -Wno-misleading-indentation -Wno-pointer-sign -Wno-parentheses \
 	-Wall -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function \
@@ -79,6 +128,7 @@ CPPFLAGS := \
 	-DPORT_NATIVE \
 	-DNON_MATCHING=1 \
 	-DPLATFORM_PC \
+	-DPORT_ROM_SWAP \
 	-DMZM_3DS \
 	-I$(ROOT) \
 	-I$(ROOT)/port \
@@ -115,6 +165,9 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_gba_mem.c \
 	$(ROOT)/port/port_sram_legacy.c \
 	$(ROOT)/port/port_bios.c \
+	$(ROOT)/port/port_rom_swap.c \
+	$(ROOT)/port/port_sram_swap.c \
+	$(wildcard $(ROOT)/port/generated/byteswap/*.c) \
 	$(ROOT)/port/port_mzm_audio_glue.c \
 	$(ROOT)/port/port_psg_synth.c \
 	$(ROOT)/port/audio/port_audio_engine.c \
@@ -139,9 +192,10 @@ SRCS_PC := \
 	$(CURDIR)/source/platform_pc.c \
 	$(CURDIR)/source/port_hooks_pc.c \
 	$(CURDIR)/source/port_services_pc.c \
-	$(CURDIR)/source/screens_pc.c \
+	$(FRONTEND_SRCS) \
 	$(CURDIR)/source/audio_pc.c \
-	$(CURDIR)/source/port_trace_pc.c
+	$(CURDIR)/source/port_trace_pc.c \
+	$(OS_SRCS)
 
 OBJS_ROOT := $(patsubst $(ROOT)/%.c, $(BUILD)/root/%.o, $(SRCS_ROOT))
 OBJS_UI   := $(patsubst $(ROOT)/%.c, $(BUILD)/ui/%.o, $(SRCS_UI))
@@ -152,6 +206,26 @@ UNIT_TEST_TARGET := port_gba_mem_test
 
 .PHONY: all clean test test-unit test-psg replay-check
 
+ifeq ($(OS_TARGET),wiiu)
+all: $(TARGET) $(WUHB)
+
+# The ELF, then the RPX the console loads, then a WUHB (the RPX bundled with
+# its name, for the Aroma menu). Cemu runs either.
+# The object list passes Windows' command-line limit: a response file, with
+# paths relative to this directory (the native gcc reads no MSYS paths there).
+$(ELF): $(OBJS)
+	@echo "Linking $(OS_TARGET): $@"
+	$(file >$(BUILD)/objects.rsp,$(patsubst $(CURDIR)/%,%,$^))
+	@$(CC) $(CFLAGS) -o $@ @$(patsubst $(CURDIR)/%,%,$(BUILD))/objects.rsp $(LDFLAGS)
+
+$(TARGET): $(ELF)
+	@$(DEVKITPRO)/tools/bin/elf2rpl $< $@
+	@echo "Build successful: $(CURDIR)/$@"
+
+$(WUHB): $(TARGET)
+	@$(DEVKITPRO)/tools/bin/wuhbtool $< $@ --name "Metroid: Zero Mission" --short-name "MZM" --author "mzm port"
+	@echo "Build successful: $(CURDIR)/$@"
+else
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
@@ -161,6 +235,7 @@ ifeq ($(OS_TARGET),windows)
 	@cp $(SDL2_MINGW)/bin/SDL2.dll $(CURDIR)/SDL2.dll
 endif
 	@echo "Build successful: $(CURDIR)/$@"
+endif
 
 ifeq ($(OS_TARGET),windows)
 # port/generated defines its ROM pointers as uninitialised weak globals.
@@ -185,6 +260,15 @@ $(BUILD)/ui/%.o: $(ROOT)/%.c
 	@mkdir -p $(dir $@)
 	@echo "CC $<"
 	@$(CC) $(CFLAGS) $(CPPFLAGS) -I$(ROOT)/platform/3ds/source -c -o $@ $<
+
+# The UI prints PC_VERSION: a stamp named after it rebuilds the UI when HEAD
+# moves, so a binary never shows an older commit's hash.
+VERSION_STAMP := $(BUILD)/version-$(PC_VERSION).stamp
+$(VERSION_STAMP):
+	@mkdir -p $(dir $@)
+	@rm -f $(BUILD)/version-*.stamp
+	@touch $@
+$(BUILD)/ui/port/ui/port_bottom_ui.o: $(VERSION_STAMP)
 
 $(BUILD)/pc/%.o: $(CURDIR)/%.c
 	@mkdir -p $(dir $@)
@@ -229,4 +313,4 @@ test-psg: $(BUILD)/psg-synth-test
 	@$(BUILD)/psg-synth-test
 
 clean:
-	@rm -rf $(BUILD) $(TARGET) $(if $(filter windows,$(OS_TARGET)),$(CURDIR)/SDL2.dll)
+	@rm -rf $(BUILD) $(TARGET) $(ELF) $(WUHB) $(if $(filter windows,$(OS_TARGET)),$(CURDIR)/SDL2.dll)

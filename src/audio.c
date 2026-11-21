@@ -184,8 +184,10 @@ void UpdateMusic(void)
 #endif
                 {
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
+                    /* The sample header is sound data (assembly, not in the
+                     * ROM type map): its words stay little-endian. */
                     if (pChannel->unk_1 == 0x20)
-                        pChannel->unk_18 = pChannel->pSample[3] << 14;
+                        pChannel->unk_18 = port_read32le(&pChannel->pSample[3]) << 14;
                     else
                         pChannel->unk_18 = 0;
 #else
@@ -1679,8 +1681,20 @@ void AudioCommand_Voice(struct TrackData* pTrack, struct TrackVariables* pVariab
 {
     struct Voice* pVoice;
     u32 channel;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    struct Voice decodedVoice;
+#endif
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    // [PORT] The voice table is little-endian ROM data (sound/*.s): read its
+    // 32-bit pSample as such, which a big-endian host's native read would
+    // reverse. The byte fields and the envelope are copied as they are.
+    decodedVoice = pTrack->pVoice[*pVariables->pRawData];
+    decodedVoice.pSample = (u32*)(uintptr_t)port_read32le(&pTrack->pVoice[*pVariables->pRawData].pSample);
+    pVoice = &decodedVoice;
+#else
     pVoice = &pTrack->pVoice[*pVariables->pRawData];
+#endif
     pVariables->channel = pVoice->instrumentType;
 
     if (pVariables->channel > 0x3F)
@@ -1713,7 +1727,7 @@ void AudioCommand_Voice(struct TrackData* pTrack, struct TrackVariables* pVariab
             // pVoice->envelope is a raw GBA ROM pointer (u8*) to a 128-byte
             // keymap table, dereferenced directly in unk_4e10 (asm/audio_internal.s)
             // via ldrb [envelope2 + note]. Must be resolved through GBA_RESOLVE.
-            rawKeymapPtr = *(const uintptr_t*)&pVoice->envelope;
+            rawKeymapPtr = port_read32le(&pVoice->envelope); // little-endian, as in the ROM
             resolvedKeymap = (uintptr_t)GBA_RESOLVE((const void*)rawKeymapPtr);
             pVariables->envelope2 = *(const struct Envelope*)&resolvedKeymap;
 #else

@@ -2,6 +2,7 @@
 #include "macros.h"
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_rom.h"
 #endif
 #include "animated_graphics.h"
 #include "audio_wrappers.h"
@@ -601,8 +602,15 @@ static u8 TourianEscapeZebesExploding(void)
             {
                 TOURIAN_ESCAPE_DATA.unk_8[i] = TRUE;
                 TOURIAN_ESCAPE_DATA.oamFrames[i] = i;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                // Frame 8 is past the table's 8 entries: the GBA reads the pointer table
+                // after it (sTourianEscape_47cf70) as halfwords, in the ROM's byte order.
+                TOURIAN_ESCAPE_DATA.oamXPositions[i] = Port_RomRawU16(&sTourianEscape_47cf50[TOURIAN_ESCAPE_DATA.oamFrames[i]][0]);
+                TOURIAN_ESCAPE_DATA.oamYPositions[i] = Port_RomRawU16(&sTourianEscape_47cf50[TOURIAN_ESCAPE_DATA.oamFrames[i]][1]);
+#else
                 TOURIAN_ESCAPE_DATA.oamXPositions[i] = sTourianEscape_47cf50[TOURIAN_ESCAPE_DATA.oamFrames[i]][0];
                 TOURIAN_ESCAPE_DATA.oamYPositions[i] = sTourianEscape_47cf50[TOURIAN_ESCAPE_DATA.oamFrames[i]][1];
+#endif
             }
 
             SoundPlay(SOUND_TOURIAN_ESCAPE_FIRST_ROOM_EXPLODING);

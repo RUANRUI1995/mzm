@@ -5,12 +5,16 @@
 #include "structs/audio.h"
 #include "port_mzm_audio_glue.h"
 
+#ifndef PC_NO_SDL
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#endif
 
 #include <stdio.h>
 
+#ifndef PC_NO_SDL
 static SDL_AudioDeviceID sDevice;
+#endif
 static bool sWantDevice;
 static unsigned int sDeviceRate;
 static unsigned int sPendingRate;
@@ -63,6 +67,13 @@ void Port_AudioStateLock_Release(void) {}
 
 static void OnEngineRate(unsigned int rate) { sPendingRate = rate; }
 
+#ifdef PC_NO_SDL
+/* No sound device in builds without SDL (the headless PowerPC one). */
+static void OpenDevice(unsigned int rate) {
+    (void)rate;
+    sWantDevice = false;
+}
+#else
 static void OpenDevice(unsigned int rate) {
     SDL_AudioSpec want, have;
     if (sDevice) {
@@ -93,20 +104,25 @@ static void OpenDevice(unsigned int rate) {
         if (name) SDL_free(name);
     }
 }
+#endif
 
 void Audio_PC_Init(bool openDevice) {
     sWantDevice = openDevice;
+#ifndef PC_NO_SDL
     if (sWantDevice && SDL_InitSubSystem(SDL_INIT_AUDIO) != 0) {
         fprintf(stderr, "[PC] SDL audio: %s\n", SDL_GetError());
         sWantDevice = false;
     }
+#endif
     Port_MzmAudio_InitGlue();
     Port_MzmAudio_SetRateHook(OnEngineRate);
 }
 
 void Audio_PC_Shutdown(void) {
+#ifndef PC_NO_SDL
     if (sDevice) SDL_CloseAudioDevice(sDevice);
     sDevice = 0;
+#endif
     if (sWav) {
         WriteWavHeader(sWav, sWavRate, sWavFrames);
         fclose(sWav);
@@ -141,6 +157,7 @@ void Audio_PC_EndFrame(void) {
         }
     }
 
+#ifndef PC_NO_SDL
     if (sDevice) {
         /* Keep the device about 3 frames behind the game; past ~10, drop the
          * oldest instead of letting the delay grow (the game is paced by the
@@ -156,5 +173,6 @@ void Audio_PC_EndFrame(void) {
             read += run;
         }
     }
+#endif
     Port_MzmAudio_AdvanceReadIndex(write);
 }

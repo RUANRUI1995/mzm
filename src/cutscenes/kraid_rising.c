@@ -18,6 +18,10 @@
 #include "structs/display.h"
 #include "structs/samus.h"
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#include "port_rom.h"
+#endif
+
 #define KRAID_RISING_PUFF_AMOUNT 11
 #define KRAID_RISING_DEBRIS_AMOUNT 6
 
@@ -146,7 +150,12 @@ static u8 KraidRisingRising(void)
             {
                 CUTSCENE_DATA.oam[i].xPosition = sKraidRisingDebrisSpawnXPosition[i];
                 CUTSCENE_DATA.oam[i].yPosition = -HALF_BLOCK_SIZE;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                // The index passes 255: the ROM bytes after the table, as the GBA reads them.
+                CUTSCENE_DATA.oam[i].timer = MOD_AND(Port_RomRawBytes(sRandomNumberTable)[gFrameCounter8Bit + i], 128);
+#else
                 CUTSCENE_DATA.oam[i].timer = MOD_AND(sRandomNumberTable[gFrameCounter8Bit + i], 128);
+#endif
             }
 
             CUTSCENE_DATA.timeInfo.subStage++;
@@ -259,7 +268,12 @@ static struct CutsceneOamData* KraidRisingUpdatePuff(struct CutsceneOamData* pOa
 
     // Set new timer
     // CONVERT_SECONDS(.25f) + 1 * DELTA_TIME
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    // The index passes 255: the ROM bytes after the table, as the GBA reads them.
+    pOam->timer = MOD_AND(Port_RomRawBytes(sRandomNumberTable)[gFrameCounter8Bit + puffId], 16) + 1 * DELTA_TIME;
+#else
     pOam->timer = MOD_AND(sRandomNumberTable[gFrameCounter8Bit + puffId], 16) + 1 * DELTA_TIME;
+#endif
 
     // Update OAM id
     UpdateCutsceneOamDataId(pOam, sKraidRisingPuffData[puffId][2]);
@@ -288,7 +302,12 @@ static struct CutsceneOamData* KraidRisingUpdateDebris(struct CutsceneOamData* p
         // Initialize debris
 
         // Set spawn X (base + [0-64])
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        // The index is negative (~): the ROM bytes before the table, as the GBA reads them.
+        pOam->xPosition = sKraidRisingDebrisSpawnXPosition[debrisId] + MOD_AND(Port_RomRawBytes(sRandomNumberTable)[~MOD_AND(gFrameCounter8Bit + debrisId, ARRAY_SIZE(sRandomNumberTable))], 64);
+#else
         pOam->xPosition = sKraidRisingDebrisSpawnXPosition[debrisId] + MOD_AND(sRandomNumberTable[~MOD_AND(gFrameCounter8Bit + debrisId, ARRAY_SIZE(sRandomNumberTable))], 64);
+#endif
         
         // Start above ceiling
         pOam->yPosition = -HALF_BLOCK_SIZE;

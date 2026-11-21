@@ -7,6 +7,19 @@
 
 typedef u32 (*HazeFunc_T)(void);
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct Haze {
+    void* pAffected;
+    u16 unk_4;
+    u8 size;
+    u8 active:1;
+    u8 enabled:7;
+};
+#else
 struct Haze {
     void* pAffected;
     u16 unk_4;
@@ -14,6 +27,16 @@ struct Haze {
     u8 enabled:7;
     u8 active:1;
 };
+#endif
+#else
+struct Haze {
+    void* pAffected;
+    u16 unk_4;
+    u8 size;
+    u8 enabled:7;
+    u8 active:1;
+};
+#endif
 
 struct HazeLoop {
     s16 timer;

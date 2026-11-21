@@ -271,21 +271,24 @@ SCENES = {
         over="nothing (the whole picture is background)"),
     'ruins-wall-rise': dict(
         name="before the ruins test, the Chozo wall the view travels down (cutscene 11, stage 2)",
-        bg=3, bgs=[2, 3], dumps=['c11/s2a/1'], final='c11/s2a/1',  # before the grey ramp; the map wraps
+        bg=3, bgs=[2, 3], dumps=['c11/s2a/1'], final='c11/s2a/1',  # before the grey ramp
+        original='c11/wallrise/full.png',  # BG3's map wraps at 256: ruins_wall_picture.py
         picture=(0, 0, 240, 320), canvas=(-80, -40, 320, 360),
-        about="A huge carved Chozo wall in the ruins, in faded colours: a big oval frame with a "
-              "Chozo statue in orange holding a white glowing orb, beams of light going down, round "
-              "blue glyphs and small Chozo figures on both sides, and rubble at the foot of the "
-              "wall. At the bottom of the picture, in grey, a small child and a tall cloaked figure "
-              "walk towards the wall in a misty light. The game moves the view down this tall "
-              "picture, so the canvas is the whole height with room around it. During the scene "
-              "the game turns every colour grey, so shapes matter more than colours.",
+        about="A huge carved Chozo wall at the back of a dim cave in the ruins: a big oval frame with "
+              "a Chozo statue in orange holding a white glowing orb, beams of light going down, round "
+              "blue glyphs and small Chozo figures on both sides. The wall stands between the cave's "
+              "dark brown rock walls, which slope in from both sides, and at its foot is a floor of "
+              "golden sand and rubble where two small figures (a child and a tall cloaked figure) walk "
+              "towards the wall. The game moves the view down this tall picture, from the top of the "
+              "wall to the floor, so the canvas is the whole height with room around it. During the "
+              "scene the game turns every colour grey, so shapes matter more than colours.",
         sides=[
-            "Left and right, along the whole height: more of the carved wall: the round blue "
-            "glyphs, small Chozo figures and carved bands continue at the same sizes and spacing, "
-            "darker towards the edges. Do not add a second oval frame or statue.",
-            "Above: the top of the wall, darker. Below: more of the misty grey ground and rubble "
-            "where the two figures walk; no more figures.",
+            "Left and right, along the whole height: more of the cave's dark rock walls around the "
+            "carved wall, getting darker towards the edges; the carved wall itself ends where it "
+            "ends in the original. Near the bottom, the sandy floor carries on sideways. Do not add "
+            "a second carved wall, oval frame or statue.",
+            "Above: the cave's rock ceiling over the top of the wall, darker. Below: more of the "
+            "golden sand and rubble floor, darker towards the edge; no more figures.",
         ],
         over="nothing (the whole picture is background)"),
     'ruins-greyvoice': dict(
@@ -436,7 +439,14 @@ def build(scene, sc, dumps_dir, out_dir):
     got = Image.new('1', (w, h), 0)
     layers = sc.get('bgs', [bg])
     see_through = sc.get('see_through', False)
-    for name in sc['dumps']:
+    # original: the picture as a PNG under DUMPS_DIR, for a scene no single dump holds whole
+    # (made by another tool from the game's data, e.g. ruins_wall_picture.py).
+    if sc.get('original'):
+        pic = Image.open(os.path.join(dumps_dir, sc['original'])).convert('RGBA')
+        if pic.size != (w, h):
+            sys.exit(f"{scene}: {sc['original']} is {pic.size[0]}x{pic.size[1]}, the picture is {w}x{h}")
+        got = Image.new('1', (w, h), 1)
+    for name in ([] if sc.get('original') else sc['dumps']):
         d = Dump(os.path.join(dumps_dir, name))
         ox, oy = d.bg_scroll(bg)
         bw, bh = d.bg_size(bg)

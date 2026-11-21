@@ -3412,8 +3412,11 @@ static void CollectSprite(int oamIndex, bool obj1D) {
     int y = attr0 & 0xFFu;
     int x = (int)(attr1 & 0x1FFu);
     int originY, originX;
-    /* Only rooms tag their sprites; a scene's tags would be left over from play. */
-    if (sWideOn && !sWideScene && PortWide_SlotOrigin(oamIndex, &originY, &originX)) {
+    /* Rooms and cutscenes tag their sprites (sprite.c, ProcessCutsceneOam), each from a clean
+     * slate every frame; the other scenes do not, and their tags would be left over from play. */
+    extern s16 gMainGameMode;
+    const bool tagged = !sWideScene || gMainGameMode == 10; /* GM_CUTSCENE */
+    if (sWideOn && tagged && PortWide_SlotOrigin(oamIndex, &originY, &originX)) {
         /* The game recorded where this sprite really is, so pick the wrap of
          * y / x that lands nearest it. Exact for any part within 128 px
          * vertically / 256 horizontally of the origin, i.e. all of them. */
@@ -3708,6 +3711,16 @@ static void CollectSceneSprite(bool obj1D, bool hide[128]) {
     if (!def || !PortSceneSprite_Match(def, oam, hide, &frame, &ax, &ay, &slot)) {
         PortSceneSprite_Release();
         return;
+    }
+    /* The anchor comes out of OAM's 8-bit Y / 9-bit X: a cutscene tags the object's true
+     * position (ProcessCutsceneOam), else the same cut-over as the sprites' (CollectSprite). */
+    int originY, originX;
+    if (gMainGameMode == 10 && PortWide_SlotOrigin(slot, &originY, &originX)) {
+        ay = originY;
+        ax = originX;
+    } else {
+        if (ay >= 160 + sExtB) ay -= 256;
+        if (ax >= 240 + sExtR) ax -= 512;
     }
     C3D_Tex* tex = PortSceneSprite_Texture(def, frame, (const uint16_t*)gObjPltt, obj1D);
     if (!tex) {
@@ -4401,11 +4414,26 @@ static bool CutscenePictures(uint16_t dispcnt) {
         if (!haveFirst) { firstX0 = fx0; firstX1 = fx1; firstY0 = fy0; firstY1 = fy1; haveFirst = true; }
         const int mask = PortScenePic_BgMask(pic);
         covered |= mask;
+        /* A picture whose texture holds the game's own art too (built from the game's data,
+         * PortScenePic_FillGameArt): its layers draw only the tile lines of the GBA frame,
+         * the one part VRAM is sure to hold. The Chozo wall of cutscene 11 is taller than its
+         * map: past row 256 the map wraps to the wall's top until the game turns on the layer
+         * that covers it, which the GBA frame never shows but the margins would. */
+        const bool frameOnly = PortScenePic_HasGameArtSource(pic);
         for (int b = 0; b < 4; ++b) {
             if (!(mask & (1 << b))) continue;
             int bw, bh, bOx, bOy;
             BgScroll(b, &bw, &bh, &bOx, &bOy);
-            sSceneSpan[b] = (SceneSpan){ true, fx0 + bOx, fx1 + bOx, fy0 + bOy, fy1 + bOy };
+            SceneSpan sp = { true, fx0 + bOx, fx1 + bOx, fy0 + bOy, fy1 + bOy };
+            if (frameOnly) {
+                const int tx0 = (bOx >> 3) * 8, tx1 = (((bOx + 239) >> 3) + 1) * 8;
+                const int ty0 = (bOy >> 3) * 8, ty1 = (((bOy + 159) >> 3) + 1) * 8;
+                if (sp.loX < tx0) sp.loX = tx0;
+                if (sp.hiX > tx1) sp.hiX = tx1;
+                if (sp.loY < ty0) sp.loY = ty0;
+                if (sp.hiY > ty1) sp.hiY = ty1;
+            }
+            sSceneSpan[b] = sp;
         }
     }
     for (int b = 0; b < 4; ++b) {

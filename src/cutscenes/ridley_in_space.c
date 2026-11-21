@@ -45,6 +45,16 @@ static u32 RidleyInSpaceViewOfShipUpdateParticle(struct CutsceneOamData* pOam);
 static void RidleyInSpaceShipLeavingParticles(void);
 static struct CutsceneOamData* RidleyInSpaceShipLeavingUpdateParticle(struct CutsceneOamData* pOam);
 
+#ifdef __3DS__
+/* WIDE: the mother ship seen from behind, kept flying after the game is done with it. The game
+ * stops it once it is past the GBA frame's top or right edge and turns the same object into the
+ * ship seen from the front, so in the WIDE margins it vanished on the spot. This copy carries on
+ * the same way until it is out of the wide view too; the game's own object is not touched. */
+static struct CutsceneOamData sWideShipLeavingGhost;
+extern int PortWide_MarginX(void);
+extern int PortWide_MarginY(void);
+#endif
+
 static struct Coordinates sRidleyInSpaceShipLeavingPosition = {
     .x = -(BLOCK_SIZE * 4 + QUARTER_BLOCK_SIZE),
     .y = BLOCK_SIZE * 6 + HALF_BLOCK_SIZE
@@ -103,6 +113,9 @@ static u8 RidleyInSpaceShipLeaving(void)
 
             // Enable for scaling
             CUTSCENE_DATA.oam[RIDLEY_IN_SPACE_MOTHER_SHIP_SLOT].rotationScaling = TRUE;
+#ifdef __3DS__
+            sWideShipLeavingGhost.exists = FALSE;
+#endif
 
             UpdateCutsceneOamDataId(&CUTSCENE_DATA.oam[RIDLEY_IN_SPACE_MOTHER_SHIP_SLOT], RIDLEY_IN_SPACE_OAM_ID_MOTHER_SHIP_LEAVING_BACK);
 
@@ -204,6 +217,18 @@ static u8 RidleyInSpaceShipLeaving(void)
 
     // Update mother ship
     RidleyInSpaceUpdateShipLeaving(&CUTSCENE_DATA.oam[RIDLEY_IN_SPACE_MOTHER_SHIP_SLOT]);
+#ifdef __3DS__
+    if (sWideShipLeavingGhost.exists)
+    {
+        // Same steps as RidleyInSpaceUpdateShipLeaving; gone once past the wide view (the
+        // ship's 64x64 halves reach 64 px right of and 24 px below its position)
+        sWideShipLeavingGhost.xPosition += EIGHTH_BLOCK_SIZE;
+        sWideShipLeavingGhost.yPosition += -(PIXEL_SIZE - ONE_SUB_PIXEL);
+        if (sWideShipLeavingGhost.xPosition > PIXEL_TO_SUB_PIXEL(SCREEN_SIZE_X + PortWide_MarginX() + 64) ||
+            sWideShipLeavingGhost.yPosition < -PIXEL_TO_SUB_PIXEL(PortWide_MarginY() + 24))
+            sWideShipLeavingGhost.exists = FALSE;
+    }
+#endif
 
 #ifdef DEBUG
     CutsceneCheckSkipStage(1);
@@ -249,6 +274,13 @@ static void RidleyInSpaceUpdateShipLeaving(struct CutsceneOamData* pOam)
         if (pOam->actions == CUTSCENE_OAM_ACTION_NONE)
         {
             // Either one of the destination was reached, setup zoom animation
+#ifdef __3DS__
+            if (PortWide_MarginX() != 0 || PortWide_MarginY() != 0)
+            {
+                sWideShipLeavingGhost = *pOam;
+                sWideShipLeavingGhost.actions = MOTHER_SHIP_ACTION_MOVE;
+            }
+#endif
 
             pOam->oamId = RIDLEY_IN_SPACE_OAM_ID_MOTHER_SHIP_LEAVING_FRONT;
 
@@ -808,7 +840,28 @@ u8 RidleyInSpaceHandler(void)
 static void RidleyInSpaceProcessOam(void)
 {
     gNextOamSlot = 0;
+#ifdef __3DS__
+    /* WIDE: the ship seen from the front waits 2 seconds just past the GBA frame's right edge,
+     * then grows to twice its size while it comes in. In the WIDE margin it sat there in plain
+     * view; it is drawn further right by the margin, an offset that shrinks to nothing as it
+     * grows, so it comes in from outside the wide view and ends where the game puts it. Only
+     * how it is drawn: the game's own position is put back right after. */
+    struct CutsceneOamData* pShip = &CUTSCENE_DATA.oam[RIDLEY_IN_SPACE_MOTHER_SHIP_SLOT];
+    s32 wideShipOffset = 0;
+    if (pShip->oamId == RIDLEY_IN_SPACE_OAM_ID_MOTHER_SHIP_LEAVING_FRONT && PortWide_MarginX() != 0 &&
+        gCurrentOamScaling < Q_8_8(2.f))
+    {
+        wideShipOffset = PIXEL_TO_SUB_PIXEL(PortWide_MarginX()) * (Q_8_8(2.f) - gCurrentOamScaling) / Q_8_8(1.f);
+        pShip->xPosition += wideShipOffset;
+    }
+#endif
     ProcessCutsceneOam(sRidleyInSpaceStageData[CUTSCENE_DATA.timeInfo.stage].oamLength, CUTSCENE_DATA.oam, sRidleyInSpaceCutsceneOam);
+#ifdef __3DS__
+    pShip->xPosition -= wideShipOffset;
+    // After the game's objects: the ship seen from the front draws over it
+    if (sWideShipLeavingGhost.exists && (CUTSCENE_DATA.dispcnt & DCNT_OBJ))
+        ProcessCutsceneOam(1, &sWideShipLeavingGhost, sRidleyInSpaceCutsceneOam);
+#endif
 
     ResetFreeOam();
     CalculateOamPart4(gCurrentOamRotation, gCurrentOamScaling, 0);

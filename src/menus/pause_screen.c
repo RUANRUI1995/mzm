@@ -1961,6 +1961,16 @@ void ProcessCutsceneOam(u8 length, struct CutsceneOamData* pOam, const struct Oa
     currSlot = nextSlot;
     dst = (u16*)(&gOamData[nextSlot]);
 
+#ifdef __3DS__
+    /* The cutscenes build their OAM from slot 0 each frame: start the frame's position tags
+     * (Port_Wide_NoteSlots below) from nothing, as SpriteDrawAll does in play. */
+    if (nextSlot == 0)
+    {
+        extern void Port_Wide_BeginFrame(void);
+        Port_Wide_BeginFrame();
+    }
+#endif
+
     for (i = 0; i < length; i++, pOam++)
     {
         // No id, don't process
@@ -2210,6 +2220,16 @@ void ProcessCutsceneOam(u8 length, struct CutsceneOamData* pOam, const struct Oa
         if (nextSlot + *src > 0x7F)
             break;
 
+#ifdef __3DS__
+        {
+            /* OAM keeps Y in 8 bits and X in 9, and nothing here leaves out the parts past
+             * the frame: a big object (Ridley in space's mother ship) has parts far enough
+             * above it that their Y reads as below it. Hand the WIDE renderer the object's
+             * true position, which undoes the wrap (as sprite.c does in play). */
+            extern void Port_Wide_NoteSlots(int firstSlot, int endSlot, int originY, int originX);
+            Port_Wide_NoteSlots(nextSlot, nextSlot + *src, yPosition, xPosition);
+        }
+#endif
         // Add part count
         nextSlot += *src++;
 

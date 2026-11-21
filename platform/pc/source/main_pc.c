@@ -20,6 +20,10 @@
 #include <io.h>
 #define chdir _chdir
 #define getcwd _getcwd
+#elif defined(__WIIU__)
+#include <sys/stat.h>
+#include <unistd.h>
+#include "wiiu_support.h"
 #else
 #include <execinfo.h>
 #include <sys/mman.h>
@@ -48,6 +52,11 @@ static const struct { uintptr_t base, size; } kGbaRanges[] = {
 };
 
 static void ReserveGbaRanges(void) {
+#ifdef __WIIU__
+    /* Nothing to reserve: wut's layout keeps every data address at
+     * 0x10000000 and above (the code, at 0x02000000, is never resolved).
+     * CheckHostBuffers still checks the buffers. */
+#else
     size_t i;
     for (i = 0; i < sizeof(kGbaRanges) / sizeof(kGbaRanges[0]); ++i) {
         const uintptr_t end = kGbaRanges[i].base + kGbaRanges[i].size;
@@ -71,6 +80,7 @@ static void ReserveGbaRanges(void) {
                     (unsigned long)kGbaRanges[i].base, (unsigned long)end);
 #endif
     }
+#endif /* __WIIU__ */
 }
 
 /* The ROM buffer (port_rom.c). On Windows the C heap is the process heap,
@@ -145,6 +155,9 @@ static LONG WINAPI HandleCrash(EXCEPTION_POINTERS* info) {
 static void InstallCrashHandler(void) {
     SetUnhandledExceptionFilter(HandleCrash);
 }
+#elif defined(__WIIU__)
+/* The system's own crash screen (and Cemu's log) say where it stopped. */
+static void InstallCrashHandler(void) {}
 #else
 static void HandleCrash(int sig) {
     void* frames[64];
@@ -304,6 +317,26 @@ int main(int argc, char** argv) {
     signal(SIGINT, HandleInterrupt);
     signal(SIGTERM, HandleInterrupt);
     gPcOptions.scale = 3;
+#ifdef __WIIU__
+    /* No command line: the ROM and mzm.sav are in the SD card's folder, the
+     * game on the TV and the bottom-screen UI on the GamePad. */
+    if (!WiiU_Init()) fprintf(stderr, "[Wii U] No SD card folder %s\n", WIIU_DATA_DIR);
+    gPcOptions.layout = SCREENS_TWO_WINDOWS;
+    /* A replay in that folder plays instead of the pad, on screen (for
+     * testing on Cemu or a console without touching the controls). */
+    {
+        FILE* f = fopen(WIIU_REPLAY_FILE, "rb");
+        if (f) {
+            fclose(f);
+            replayPath = WIIU_REPLAY_FILE;
+            forceWindow = true;
+            /* Its saves go to a folder of their own, not over mzm.sav. */
+            saveDir = WIIU_DATA_DIR "/replay-run";
+            MakeDir(saveDir);
+            fprintf(stdout, "[Wii U] Playing %s\n", WIIU_REPLAY_FILE);
+        }
+    }
+#endif
 
     for (i = 1; i < argc; i++) {
         const char* a = argv[i];

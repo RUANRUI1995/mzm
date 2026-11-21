@@ -402,7 +402,13 @@ void virtuappu_mode1_get_bound_gba_memory(VirtuaPPUMode1GbaMemory* memory) {
  * threads while still seeing the correct HDMA-mutated register state
  * (BG SCROLL, BLDY, etc.) for that scanline. NULL on the main / setup
  * thread keeps the existing single-threaded behavior intact. */
+#ifdef __WIIU__
+/* The Wii U renders on one thread, and an RPX has no thread-local storage
+ * (elf2rpl rejects its relocations): plain globals. */
+#define VPPU_TLS
+#else
 #define VPPU_TLS __thread
+#endif
 VPPU_TLS const uint8_t* virtuappu_mode1_io_thread_override = NULL;
 
 /* Per-scanline scratch (one slot per screen column) marking which OBJ pixels

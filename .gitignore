@@ -39,6 +39,9 @@ platform/pc/build/
 platform/pc/mzm-linux
 platform/pc/mzm-windows.exe
 platform/pc/mzm-linux-ppc
+platform/pc/mzm-wiiu.elf
+platform/pc/mzm-wiiu.rpx
+platform/pc/mzm-wiiu.wuhb
 platform/pc/SDL2.dll
 platform/pc/*.sav.bak
 scratch/

@@ -99,7 +99,18 @@ gunship replay Samus falls through the ship after a hop and only gets in
 once her y wraps around, about 4600 frames later; it is deterministic, but
 not how a player gets there.
 
-Next: the Wii U frontend.
+Step 5, the Wii U frontend: `make OS_TARGET=wiiu` in `platform/pc` builds
+`mzm-wiiu.rpx`/`.wuhb` with wut and SDL2 for Wii U, from the same sources as
+the PC builds (`platform/pc/README.md`, "Wii U"). On Cemu 2.6 it boots, loads
+the ROM from the SD card and swaps it, plays the intro, the title screen and
+a replayed area with sound, the game on the TV and the bottom-screen UI on the
+GamePad, and writes `mzm.sav`.
+
+Next: speed. Gameplay takes about 30 ms a frame on Cemu, nearly all of it in
+the PPU, so it runs at about 33 fps; the 3DS spreads the PPU's lines over its
+cores (`mode1_render_lines_3ds`), and the Wii U has three, which needs the
+three thread-local PPU buffers as per-core copies. Then the GamePad's buttons
+(untested: Cemu has no controller set up here) and a console run.
 
 Step 3 (what the replay found):
 

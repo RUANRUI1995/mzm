@@ -49,6 +49,37 @@ make -j OS_TARGET=windows        # -> mzm-windows.exe + SDL2.dll
 `fetch_sdl2_mingw.sh` downloads SDL2's MinGW package from SDL's GitHub
 releases and checks it against `sdl2_mingw.sha256`.
 
+### Wii U
+
+The same sources with devkitPPC, wut and devkitPro's SDL2 for Wii U, built
+from devkitPro's MSYS2 shell (issue #39, `docs/wiiu-big-endian-plan.md`):
+
+```sh
+dkp-pacman -S wut wut-tools wiiu-sdl2 wiiu-pkg-config   # once
+make -j OS_TARGET=wiiu           # -> mzm-wiiu.rpx and mzm-wiiu.wuhb
+```
+
+On the SD card, `wiiu/apps/mzm/` holds the ROM (`mzm_eu.gba`), and the game
+writes `mzm.sav` and `mzm-log.txt` (stdout and stderr, each line timed)
+there. The game is on the TV and the bottom-screen UI on the GamePad, whose
+touch screen is the stylus (`source/screens_pc.c`). A `mzm-replay.txt` in that
+folder (a replay, with its `save` file next to it) drives the game instead of
+the controls, on screen; its saves go to `replay-run/`.
+
+Cemu runs either file (`Cemu.exe -g mzm-wiiu.rpx`; the SD card is Cemu's
+`sdcard` folder). What differs from the PC builds: no address-range
+reservation (wut puts only the code at 0x02000000, every data address is at
+0x10000000 and above), no thread-local storage in the PPU (an RPX has none;
+it renders on one thread), the 64-bit atomics in `source/wiiu_support.c`,
+`-O2`, and the TV window skips its buffer swap
+(`SDL_WINDOW_WIIU_PREVENT_SWAP`) so that the two windows wait for one screen
+refresh, not two. The link goes through a response file (Windows'
+command-line limit).
+
+Speed on Cemu: the game logic takes under 1 ms a frame, the PPU the rest, and
+gameplay renders at about 30 ms a frame, so it runs at about 33 fps (the title
+screen at 60). Not measured on a console yet.
+
 ## Play
 
 ```sh

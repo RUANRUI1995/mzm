@@ -15,7 +15,8 @@ extern uint8_t* sNonGameplayRamPointer;
 
 extern int16_t gSubGameMode1; /* include/structs/game_state.h */
 
-enum { GM_INTRO = 1, GM_TITLE = 2, GM_INGAME = 4 }; /* include/constants/game_state.h */
+enum { GM_INTRO = 1, GM_TITLE = 2, GM_INGAME = 4, GM_CUTSCENE = 10 }; /* include/constants/game_state.h */
+extern signed char gCurrentCutscene; /* include/constants/cutscene.h */
 
 /* No picture matches this key. */
 enum { SCENE_NOT_READY = -2 };
@@ -28,6 +29,9 @@ int PortScenePic_SceneKey(int gameMode) {
      * has not run yet (sub mode 0): memory and VRAM are still the previous
      * scene's, and the picture would be built from them and kept. */
     if (gameMode == GM_TITLE && gSubGameMode1 == 0) return SCENE_NOT_READY;
+    /* A cutscene: which one and its stage (struct CutsceneData's timeInfo.stage, the first byte of
+     * the same union, include/structs/cutscene.h). */
+    if (gameMode == GM_CUTSCENE && sNonGameplayRamPointer) return gCurrentCutscene * 16 + sNonGameplayRamPointer[0];
     /* In game, 1 while Samus's close-up is on screen (the cutscene when she lands, issue #35):
      * its picture is the only one that belongs to a room. */
     if (gameMode == GM_INGAME) {
@@ -97,6 +101,14 @@ extern uint8_t gIoMem[];
 
 const PortScenePictureDef* PortScenePic_FindFuzz(int gameMode) {
     return gameMode == GM_INTRO && PortScenePic_SceneKey(GM_INTRO) == FUZZ_STAGE ? &sFuzzDef : NULL;
+}
+
+/* Stages whose starfield wraps seamlessly: Ridley in space (cutscene 7), the view of the
+ * mothership (stage 1) and the ship leaving (stage 4), both on BG3 (src/cutscenes/ridley_in_space.c). */
+int PortScenePic_RepeatBgs(int gameMode) {
+    if (gameMode != GM_CUTSCENE) return 0;
+    const int key = PortScenePic_SceneKey(gameMode);
+    return key == 7 * 16 + 1 || key == 7 * 16 + 4 ? 1 << 3 : 0;
 }
 
 bool PortScenePic_UsesObjPalette(const PortScenePictureDef* def) { return def == &sFuzzDef; }

@@ -4343,6 +4343,130 @@ static SceneSpan SceneLayerSpan(int bg, uint16_t cnt) {
     return out;
 }
 
+/* A cutscene stage with generated pictures, one per layer it extends (WIDE + AI,
+ * PortScenePic_FindAll), or with a background that repeats on its own across the view
+ * (PortScenePic_RepeatBgs). The view stays centred on the GBA frame and nothing is masked:
+ * the pictures fill the margins. Each picture is drawn just behind its back BG's tiles
+ * (CollectCutscenePictures), so it takes that BG's priority, stereo plane, brightness and
+ * alpha blend; every BG draws only inside its picture (a BG no picture extends, such as
+ * Ridley's other eyes, inside the first one), where VRAM holds the game's own art. False when
+ * the stage has neither. */
+enum { MAX_CUT_PICS = 4 };
+static const PortScenePictureDef* sCutPics[MAX_CUT_PICS];
+static C3D_Tex* sCutPicTex[MAX_CUT_PICS];
+static int sCutPicX[MAX_CUT_PICS], sCutPicY[MAX_CUT_PICS]; /* canvas top-left, GBA frame px */
+static Tex3DS_SubTexture sCutPicSubtex[MAX_CUT_PICS];
+static int sCutPicCount;
+
+/* Where (in BG px) the copy of a BG-px span nearest the frame's centre starts. */
+static int NearestCopy(int ofs, int frame, int lo, int span, int size) {
+    return (int)floorf((float)(ofs + frame / 2 - (lo + span / 2)) / (float)size + 0.5f) * size;
+}
+
+static void BgScroll(int bg, int* w, int* h, int* ox, int* oy) {
+    const uint16_t cnt = (uint16_t)(gIoMem[0x08 + bg * 2] | (gIoMem[0x09 + bg * 2] << 8));
+    *w = (cnt & 0x4000) ? 512 : 256;
+    *h = (cnt & 0x8000) ? 512 : 256;
+    *ox = (int)(gIoMem[0x10 + bg * 4] | (gIoMem[0x11 + bg * 4] << 8)) & (*w - 1);
+    *oy = (int)(gIoMem[0x12 + bg * 4] | (gIoMem[0x13 + bg * 4] << 8)) & (*h - 1);
+}
+
+static bool CutscenePictures(uint16_t dispcnt) {
+    enum { GM_CUTSCENE_MODE = 10 };
+    extern s16 gMainGameMode;
+    sCutPicCount = 0;
+    if (gMainGameMode != GM_CUTSCENE_MODE) return false;
+    const PortScenePictureDef* found[MAX_CUT_PICS];
+    const int n = PortScenePic_FindAll(gMainGameMode, found, MAX_CUT_PICS);
+    const int repeat = PortScenePic_RepeatBgs(gMainGameMode);
+    if (n == 0 && !repeat) return false;
+
+    int covered = 0;
+    int firstX0 = 0, firstY0 = 0, firstX1 = 240, firstY1 = 160; /* frame px */
+    bool haveFirst = false;
+    for (int i = 0; i < n; ++i) {
+        const PortScenePictureDef* pic = found[i];
+        if (!(dispcnt & (0x100u << pic->bg))) continue; /* its layer is off: so is its picture */
+        int w, h, ox, oy;
+        BgScroll(pic->bg, &w, &h, &ox, &oy);
+        const int dx = NearestCopy(ox, 240, pic->canvasX, pic->width, w);
+        const int dy = NearestCopy(oy, 160, pic->canvasY, pic->height, h);
+        const int k = sCutPicCount++;
+        sCutPics[k] = pic;
+        sCutPicX[k] = pic->canvasX + dx - ox;
+        sCutPicY[k] = pic->canvasY + dy - oy;
+        /* The game's own part, in frame px (the layers it covers scroll with it). */
+        const int fx0 = pic->pictureX0 + dx - ox, fx1 = pic->pictureX1 + dx - ox;
+        const int fy0 = pic->pictureY0 + dy - oy, fy1 = pic->pictureY1 + dy - oy;
+        if (!haveFirst) { firstX0 = fx0; firstX1 = fx1; firstY0 = fy0; firstY1 = fy1; haveFirst = true; }
+        const int mask = PortScenePic_BgMask(pic);
+        covered |= mask;
+        for (int b = 0; b < 4; ++b) {
+            if (!(mask & (1 << b))) continue;
+            int bw, bh, bOx, bOy;
+            BgScroll(b, &bw, &bh, &bOx, &bOy);
+            sSceneSpan[b] = (SceneSpan){ true, fx0 + bOx, fx1 + bOx, fy0 + bOy, fy1 + bOy };
+        }
+    }
+    for (int b = 0; b < 4; ++b) {
+        if (covered & (1 << b)) continue;
+        int w, h, ox, oy;
+        BgScroll(b, &w, &h, &ox, &oy);
+        if (repeat & (1 << b)) {
+            /* The whole view and a tile more: the map wraps, the starfield with it. */
+            sSceneSpan[b] = (SceneSpan){ true, ox - sWideMarginX - 8, ox + 240 + sWideMarginX + 8,
+                                         oy - sWideMarginY - 8, oy + 160 + sWideMarginY + 8 };
+        } else {
+            sSceneSpan[b] = (SceneSpan){ true, firstX0 + ox, firstX1 + ox, firstY0 + oy, firstY1 + oy };
+        }
+    }
+    WideView* v = &sWideView;
+    v->originX = 0; v->originY = 0;
+    v->shiftX = 0; v->shiftY = 0;
+    v->loX = -sWideMarginX; v->hiX = 240 + sWideMarginX;
+    v->loY = -sWideMarginY; v->hiY = 160 + sWideMarginY;
+    v->maskL = v->loX; v->maskR = v->hiX; v->maskT = v->loY; v->maskB = v->hiY;
+    return true;
+}
+
+/* The cutscene pictures whose back BG is `bg`, pushed just before that BG's tiles (same sort
+ * key, and a bucket keeps the order items arrive in), with what the BG's own items get. */
+static void CollectCutscenePictures(int bg) {
+    for (int i = 0; i < sCutPicCount; ++i) {
+        const PortScenePictureDef* pic = sCutPics[i];
+        if (pic->bg != bg || !sCutPicTex[i]) continue;
+        const uint16_t bgcnt = (uint16_t)(gIoMem[0x08 + bg * 2] | (gIoMem[0x09 + bg * 2] << 8));
+        const bool firstTarget = sBldEffect != 0 && BldIsFirstTarget(sIoBldcnt, bg);
+        sCutPicSubtex[i] = (Tex3DS_SubTexture){
+            .width = (u16)pic->width,
+            .height = (u16)pic->height,
+            .left = 0.0f,
+            .top = 1.0f,
+            .right = (float)pic->width / (float)pic->texWidth,
+            .bottom = 1.0f - (float)pic->height / (float)pic->texHeight,
+        };
+        const int idx = AllocDrawItemSubtex(&sCutPicSubtex[i], (3 - (bgcnt & 3)) * 10 + (3 - bg));
+        if (idx < 0) continue;
+        DrawItem* item = &sDrawItems[idx];
+        item->img.tex = sCutPicTex[i];
+        item->x = (float)sCutPicX[i];
+        item->y = (float)sCutPicY[i];
+        item->w = (float)pic->width;
+        item->h = (float)pic->height;
+        item->angle = 0.0f;
+        item->depthTier = (int8_t)PortStereoDepth_BgTier(&sDepthState, bg);
+        item->blendAlpha = firstTarget && sBldEffect == 1;
+        item->affine = false;
+        item->affBleedEdges = 0;
+        item->winVis = WIN_VIS_ALWAYS;
+        item->isHud = false;
+        item->plainEnv = false;
+        /* The texture is painted with the palette RAM, palette fades included: only the
+         * brighten / darken is left for draw time. */
+        item->gpuFx = (firstTarget && (sBldEffect == 2 || sBldEffect == 3)) ? ITEM_FX_BRIGHT : 0;
+    }
+}
+
 static void ComputeSceneWideView(uint16_t dispcnt) {
     static const int kSizeW[4] = { 256, 512, 256, 512 };
     static const int kSizeH[4] = { 256, 256, 512, 512 };
@@ -4351,6 +4475,13 @@ static void ComputeSceneWideView(uint16_t dispcnt) {
     static int sKeyBg = -1, sKeyCnt, sKeyX, sKeyW, sKeyY, sKeyH, sHeldX, sHeldY;
     WideView* v = &sWideView;
     *v = (WideView){ 0 };
+    sScenePic = NULL;
+    /* Before the layers' own extents: a stage with pictures sets every span itself, and
+     * SceneLayerSpan's hashing of whole maps is the costliest part of this on the Old 3DS. */
+    if (CutscenePictures(dispcnt)) {
+        sKeyBg = -1;
+        return;
+    }
     const unsigned mode = dispcnt & 7u;
     const int textBgs = mode == 0 ? 4 : mode == 1 ? 2 : 0; /* mode 1: BG2 is affine */
     int best = -1, bestArea = 0, bestPrio = -1;
@@ -4368,7 +4499,6 @@ static void ComputeSceneWideView(uint16_t dispcnt) {
     v->loX = 0; v->hiX = 240;
     v->loY = 0; v->hiY = 160;
     v->maskL = 0; v->maskR = 240; v->maskT = 0; v->maskB = 160;
-    sScenePic = NULL;
     if (best < 0) {
         sKeyBg = -1;
         /* The intro's fuzz is sprites only: no BG to extend, a procedural picture around them. */
@@ -4750,6 +4880,7 @@ void Port_GpuRenderer_CollectFrame(void) {
     PortWide_SetFrameDrawn(sWideOn);
     sScenePic = NULL;
     sScenePicOnTop = false;
+    sCutPicCount = 0;
     if (!sWideOn) sWideView = (WideView){ 0 };
     else if (sWideScene) ComputeSceneWideView(dispcnt);
     else {
@@ -4773,11 +4904,12 @@ void Port_GpuRenderer_CollectFrame(void) {
      * the game's); released as soon as no scene shows it. */
     sScenePicTex = sScenePic ? PortScenePic_Texture(sScenePic, (const uint16_t*)(PortScenePic_UsesObjPalette(sScenePic) ? gObjPltt : gBgPltt))
                              : NULL;
-    if (!sScenePic) PortScenePic_Release();
+    for (int i = 0; i < sCutPicCount; ++i) sCutPicTex[i] = PortScenePic_Texture(sCutPics[i], (const uint16_t*)gBgPltt);
+    PortScenePic_ReleaseUnused(); /* the scene, or the stage, is over */
     /* The texture holds the game's own picture too (built from the game's
      * memory): the BG draws only the tile lines of the GBA frame, the one
      * part its VRAM is sure to hold while the scene streams the rest. */
-    if (sScenePicTex && PortScenePic_HasGameArt()) {
+    if (sScenePicTex && PortScenePic_HasGameArt(sScenePic)) {
         const int bg = sScenePic->bg;
         const uint16_t cnt = (uint16_t)(gIoMem[0x08 + bg * 2] | (gIoMem[0x09 + bg * 2] << 8));
         const int w = (cnt & 0x4000) ? 512 : 256, h = (cnt & 0x8000) ? 512 : 256;
@@ -4863,6 +4995,7 @@ void Port_GpuRenderer_CollectFrame(void) {
         if (sHazeActive && bg == 3) continue; /* drawn via the offscreen strip pass */
         if (sAffineBg2Active && bg == 2) { CollectAffineBg2(); continue; }
         const u64 tLayer = svcGetSystemTick();
+        CollectCutscenePictures(bg); /* behind the layer's own tiles */
         CollectBgLayer(bg);
         sPerfCount[PERF_COUNT_BG_LAYERS_US] += TicksToUs(svcGetSystemTick() - tLayer);
     }

@@ -28,6 +28,9 @@ typedef struct PortScenePictureDef {
     int texWidth, texHeight;
     const uint8_t* packed; /* LZ4, palette entries in texture order */
     size_t packedSize;
+    /* The BGs whose picture this one continues (they scroll together, drawn into it as one);
+     * 0 = only `bg`. A cutscene's picture is drawn just behind `bg`'s tiles, the back one. */
+    int bgMask;
 } PortScenePictureDef;
 
 extern const PortScenePictureDef gPortScenePictures[];
@@ -44,28 +47,50 @@ const PortScenePictureDef* PortScenePic_Find(int gameMode, int bg);
  * painted with the OBJ palette. NULL when that scene is not showing. */
 const PortScenePictureDef* PortScenePic_FindFuzz(int gameMode);
 
+/* Every picture of this game mode's current scene (PortScenePic_SceneKey), at most `max`;
+ * none without WIDE + AI. For cutscenes, which extend several layers at once. */
+int PortScenePic_FindAll(int gameMode, const PortScenePictureDef** out, int max);
+
+/* Whether the current scene of `gameMode` has a picture (WIDE + AI) or a background that
+ * repeats on its own: the cutscenes that widen only that way stay ORIGINAL in their other
+ * stages (port_wide_view.c). */
+bool PortScenePic_StageHasPictures(int gameMode);
+
+/* The BGs `def` continues (PortScenePictureDef.bgMask, or just its `bg`). */
+int PortScenePic_BgMask(const PortScenePictureDef* def);
+
+/* The BGs of this game mode's current scene that repeat on their own across the wide view
+ * (a starfield that wraps seamlessly needs no picture). In port_scene_game_art.c. */
+int PortScenePic_RepeatBgs(int gameMode);
+
 /* Whether `def` is painted with the OBJ palette (gObjPltt) instead of the BG one. */
 bool PortScenePic_UsesObjPalette(const PortScenePictureDef* def);
 
 /* Which scene of `gameMode` is showing, for modes that play several scenes on the same BG
- * (the intro: its stage); 0 for the others. In port_scene_game_art.c. */
+ * (the intro: its stage; a cutscene: gCurrentCutscene * 16 + its stage); 0 for the others.
+ * In port_scene_game_art.c. */
 int PortScenePic_SceneKey(int gameMode);
 
 /* The texture of `def` painted with `bgPalette` (the GBA's 256 BG colours, BGR555). Loaded
- * on first use; repainted only when a colour it uses changed. NULL if it could not be made. */
+ * on first use (up to four at once); repainted only when a colour it uses changed. NULL if it
+ * could not be made. */
 C3D_Tex* PortScenePic_Texture(const PortScenePictureDef* def, const uint16_t* bgPalette);
 
 /* Unpacks a standard LZ4 block of exactly dstLen bytes (the pictures' and the scene sprites'
  * data). */
 bool PortScenePic_Lz4Decompress(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen);
 
-/* Frees the loaded picture, if any (the scene is over). */
+/* Frees every loaded picture. */
 void PortScenePic_Release(void);
 
-/* Whether the loaded picture also holds the game's own picture, built from the game's memory
+/* Frees the pictures no PortScenePic_Texture asked for since the last call: once a frame,
+ * after the frame's pictures were asked for (a scene over, a stage changed). */
+void PortScenePic_ReleaseUnused(void);
+
+/* Whether the loaded `def` also holds the game's own picture, built from the game's memory
  * when it was loaded (PortScenePic_FillGameArt): then the renderer draws the BG only inside
  * the GBA frame, where VRAM is sure to hold it, and the texture gives the rest. */
-bool PortScenePic_HasGameArt(void);
+bool PortScenePic_HasGameArt(const PortScenePictureDef* def);
 
 /* Writes the game's own picture of `def` into `codes` (texture order, the same codes as the
  * generated parts) from the game's memory, for scenes whose VRAM does not hold all of it at

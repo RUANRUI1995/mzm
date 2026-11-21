@@ -977,7 +977,6 @@ static u8 IntroFuzz(void)
     if (!(MOD_AND(INTRO_DATA.unk_A, 8) & 1))
         Port_SwapHalfwordBytes(INTRO_DATA.fuzzPalette, ARRAY_SIZE(INTRO_DATA.fuzzPalette));
 #endif
-
     INTRO_DATA.unk_A++;
     IntroFuzzProcessOam();
     return FALSE;

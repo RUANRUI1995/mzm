@@ -15,7 +15,6 @@
 
 #include "structs/game_state.h"
 #include "structs/display.h"
-
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_rom.h"
 #endif

@@ -1,0 +1,2 @@
+- The Wii U version now plays the US and Japanese ROMs, not only the European one.
+- The ROM can be named mzm_eu.gba, mzm_us.gba, mzm_jp.gba or mzm.gba in sd:/wiiu/apps/mzm/.

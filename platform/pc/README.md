@@ -69,7 +69,8 @@ settings are in `updater.ini` in that folder. The build's version comes from
 git as on the 3DS (`make print-version OS_TARGET=wiiu`); the CI passes
 `CHANNEL=beta` for betas.
 
-On the SD card, `wiiu/apps/mzm/` holds the ROM (`mzm_eu.gba`), and the game
+On the SD card, `wiiu/apps/mzm/` holds the ROM (`mzm_eu.gba`, `mzm_us.gba`,
+`mzm_jp.gba` or `mzm.gba`: any region, see "Regions" below), and the game
 writes `mzm.sav` and `mzm-log.txt` (stdout and stderr, each line timed)
 there. The game is on the TV and the bottom-screen UI on the GamePad, whose
 touch screen is the stylus (`source/screens_pc.c`). A `mzm-replay.txt` in that
@@ -95,6 +96,17 @@ PPU most of the rest (the Ridley fight, the heaviest scene measured, 9-12 ms);
 the intro, the title screen, the demos, the Kraid area and the Ridley fight
 with its spawn cutscene all run at the GBA's 59.7 fps. Not measured on a
 console yet.
+
+## Regions
+
+One binary plays the EU, US and JP ROMs: no `REGION_*` is defined, so the game
+picks each region's behaviour from the ROM's header at runtime (`gRomRegion`,
+`include/region.h`), as the 3DS's default `REGION=any` build does. A big-endian
+host needs the region's type map (`port/generated/byteswap/rom_type_map_<region>.c`,
+made by `tools/gen_rom_type_map.py` from `mzm_<region>.map` and
+`mzm_<region>_baserom.gba`). With the US and JP ROMs, every replay below gives the
+same trace on x86 and PowerPC (`--cross-endian`), as with the EU one; the
+replays were recorded on the EU ROM but reach the same rooms on the others.
 
 ## Play
 
@@ -130,7 +142,7 @@ empty or does nothing, and the Options settings are kept in memory only.
 
 | Option | |
 |---|---|
-| `--rom PATH` | ROM to load (EU is what has been tried) |
+| `--rom PATH` | ROM to load (EU, US or JP; default: the first of `mzm_eu.gba`, `mzm_us.gba`, `mzm_jp.gba`, `mzm.gba`, `baserom.gba`) |
 | `--scale N` | window scale (default 3) |
 | `--headless` | no window |
 | `--window` | show the window even with `--replay` or `--frames` |

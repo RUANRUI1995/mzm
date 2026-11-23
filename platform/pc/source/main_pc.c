@@ -263,7 +263,7 @@ static bool CopyFileTo(const char* from, const char* to) {
 
 static void Usage(const char* argv0) {
     printf("Usage: %s [options]\n"
-           "  --rom PATH            ROM to load (default: mzm_eu.gba, then baserom.gba)\n"
+           "  --rom PATH            ROM to load (default: mzm_eu/us/jp.gba, mzm.gba, baserom.gba)\n"
            "  --headless            no window\n"
            "  --scale N             window scale (default 3)\n"
            "  --frames N            run N frames, then exit (implies --headless)\n"
@@ -459,7 +459,9 @@ int main(int argc, char** argv) {
 
     /* 1. Load the ROM */
     {
-        const char* candidatePaths[] = { romPath, "mzm_eu.gba", "baserom.gba", "../mzm_eu.gba", "../../mzm_eu.gba", NULL };
+        /* Any region's ROM: the region comes from its header, not the name. */
+        const char* candidatePaths[] = { romPath, "mzm_eu.gba", "mzm_us.gba", "mzm_jp.gba", "mzm.gba", "baserom.gba",
+                                         "../mzm_eu.gba", "../../mzm_eu.gba", NULL };
         bool romLoaded = false;
         for (i = 0; candidatePaths[i] != NULL; i++) {
             FILE* f = fopen(candidatePaths[i], "rb");
@@ -473,7 +475,7 @@ int main(int argc, char** argv) {
             }
         }
         if (!romLoaded) {
-            fprintf(stderr, "FATAL: Could not load Metroid Zero Mission ROM (tried %s, baserom.gba).\n", romPath);
+            fprintf(stderr, "FATAL: Could not load Metroid Zero Mission ROM (tried %s, mzm_eu/us/jp.gba, mzm.gba, baserom.gba).\n", romPath);
             return 1;
         }
         fprintf(info, "[PC] ROM loaded (region %d, %u bytes at %p; EWRAM at %p)\n", gRomRegion,

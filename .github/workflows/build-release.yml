@@ -111,13 +111,13 @@ jobs:
           export PATH=$GITHUB_WORKSPACE/tools/bin:/opt/devkitpro/tools/bin:$PATH
           make -C platform/3ds clean
           make -C platform/3ds -j$(nproc) RENDERER=gpu CHANNEL=${{ needs.vars.outputs.prerelease == 'true' && 'beta' || 'release' }} BANNERTOOL=$GITHUB_WORKSPACE/tools/bin/bannertool MAKEROM=$GITHUB_WORKSPACE/tools/bin/makerom
-          cp platform/3ds/mzm-3ds.cia "mzm-3ds-${{ needs.vars.outputs.tag }}.cia"
+          cp platform/3ds/mzm-3ds.cia "mzm-3ds-${{ needs.vars.outputs.version }}.cia"
 
       - name: Upload the CIA
         uses: actions/upload-artifact@v4
         with:
           name: mzm-3ds
-          path: mzm-3ds-${{ needs.vars.outputs.tag }}.cia
+          path: mzm-3ds-${{ needs.vars.outputs.version }}.cia
 
   build-wiiu:
     needs: vars
@@ -142,13 +142,13 @@ jobs:
           export DEVKITPRO=/opt/devkitpro
           export DEVKITPPC=/opt/devkitpro/devkitPPC
           make -C platform/pc OS_TARGET=wiiu -j$(nproc) CHANNEL=${{ needs.vars.outputs.prerelease == 'true' && 'beta' || 'release' }}
-          cp platform/pc/mzm-wiiu.wuhb "mzm-wiiu-${{ needs.vars.outputs.tag }}.wuhb"
+          cp platform/pc/mzm-wiiu.wuhb "mzm-wiiu-${{ needs.vars.outputs.version }}.wuhb"
 
       - name: Upload the WUHB
         uses: actions/upload-artifact@v4
         with:
           name: mzm-wiiu
-          path: mzm-wiiu-${{ needs.vars.outputs.tag }}.wuhb
+          path: mzm-wiiu-${{ needs.vars.outputs.version }}.wuhb
 
   release:
     needs: [vars, build-3ds, build-wiiu]
@@ -174,6 +174,10 @@ jobs:
       - name: Generate the release page
         env:
           TAG: ${{ needs.vars.outputs.tag }}
+          # The files are named after the version, without the tag's platform
+          # prefix (mzm-wiiu-v0.8.3.wuhb, not mzm-wiiu-wiiu-v0.8.3.wuhb). The
+          # updaters pick the asset by its extension only.
+          VERSION: ${{ needs.vars.outputs.version }}
           PRERELEASE: ${{ needs.vars.outputs.prerelease }}
           B3DS: ${{ needs.vars.outputs.build_3ds }}
           BWIIU: ${{ needs.vars.outputs.build_wiiu }}
@@ -209,9 +213,9 @@ jobs:
             if [ "$B3DS" = "true" ]; then
               echo "### 3DS"
               echo
-              echo "![QR code for the ${TAG} CIA](${BASE}/QR-${TAG}.png)"
+              echo "![QR code for the ${VERSION} CIA](${BASE}/QR-${VERSION}.png)"
               echo
-              echo "- [mzm-3ds-${TAG}.cia](${BASE}/mzm-3ds-${TAG}.cia)"
+              echo "- [mzm-3ds-${VERSION}.cia](${BASE}/mzm-3ds-${VERSION}.cia)"
               echo
               echo "Install the CIA. No \`.3dsx\` is published: a 3dsx cannot"
               echo "declare its own memory budget, so it inherits whatever the"
@@ -223,10 +227,10 @@ jobs:
             if [ "$BWIIU" = "true" ]; then
               echo "### Wii U"
               echo
-              echo "- [mzm-wiiu-${TAG}.wuhb](${BASE}/mzm-wiiu-${TAG}.wuhb)"
+              echo "- [mzm-wiiu-${VERSION}.wuhb](${BASE}/mzm-wiiu-${VERSION}.wuhb)"
               echo
               echo "Copy it to \`sd:/wiiu/apps/mzm/mzm-wiiu.wuhb\` (Aroma), next to the ROM"
-              echo "(\`mzm_eu.gba\`). Later versions update themselves from the game."
+              echo "(\`mzm_eu.gba\`, \`mzm_us.gba\`, \`mzm_jp.gba\` or \`mzm.gba\`). Later versions update themselves from the game."
               echo
             fi
             echo "## Changelog"
@@ -235,7 +239,7 @@ jobs:
           } > release_notes.md
           if [ "$B3DS" = "true" ]; then
             sudo apt-get update -qq && sudo apt-get install -y -qq qrencode > /dev/null
-            qrencode -s 10 -o "dist/QR-${TAG}.png" "${BASE}/mzm-3ds-${TAG}.cia"
+            qrencode -s 10 -o "dist/QR-${VERSION}.png" "${BASE}/mzm-3ds-${VERSION}.cia"
           fi
           ls -l dist
 

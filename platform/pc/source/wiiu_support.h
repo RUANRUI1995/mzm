@@ -3,7 +3,7 @@
 
 /* The Wii U build (OS_TARGET=wiiu, wiiu_support.c). */
 
-/* The SD card folder that holds the ROM (mzm_eu.gba) and the save (mzm.sav). */
+/* The SD card folder that holds the ROM (mzm_eu.gba, mzm_us.gba or mzm_jp.gba) and the save (mzm.sav). */
 #define WIIU_DATA_DIR "fs:/vol/external01/wiiu/apps/mzm"
 /* stdout and stderr of the last run, in that folder, each line timed. */
 #define WIIU_LOG_FILE "mzm-log.txt"

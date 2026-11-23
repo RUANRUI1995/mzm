@@ -148,7 +148,6 @@ endif
 CPPFLAGS := \
 	-DMZM_PORT_VERSION=\"$(PORT_VERSION)\" \
 	$(WIIU_DEFS) \
-	-DREGION_EU \
 	-DPORT_NATIVE \
 	-DNON_MATCHING=1 \
 	-DPLATFORM_PC \
@@ -274,6 +273,14 @@ ifeq ($(OS_TARGET),windows)
 # src/ links before port/generated). The Linux build still rejects any real
 # duplicate.
 $(BUILD)/root/port/generated/%.o: CFLAGS += -fno-common -Dweak=
+endif
+
+ifeq ($(OS_TARGET),wiiu)
+# port/generated is start-up code that binds ROM pointers, one long function
+# per file. At -O2 devkitPPC's gcc spent over 50 minutes and 5.7 GB on
+# samus_samus_graphics_rom.c alone; -O1 (the last -O wins) is enough for code
+# that runs once.
+$(BUILD)/root/port/generated/%.o: CFLAGS += -O1
 endif
 
 $(BUILD)/root/%.o: $(ROOT)/%.c

@@ -33,5 +33,7 @@ typedef struct {
 } PortRomTypeMap;
 
 extern const PortRomTypeMap gPortRomTypeMap_eu;
+extern const PortRomTypeMap gPortRomTypeMap_us;
+extern const PortRomTypeMap gPortRomTypeMap_jp;
 
 #endif /* PORT_ROM_TYPE_MAP_H */

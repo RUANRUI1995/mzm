@@ -57,6 +57,8 @@ static void Swap4(uint8_t* p) {
 static const PortRomTypeMap* MapForRegion(int region) {
     switch (region) {
         case PORT_ROM_REGION_EU: return &gPortRomTypeMap_eu;
+        case PORT_ROM_REGION_US: return &gPortRomTypeMap_us;
+        case PORT_ROM_REGION_JP: return &gPortRomTypeMap_jp;
         default: return NULL;
     }
 }

@@ -882,8 +882,11 @@ static int DispCellHit(int x, int y);
 static uint16_t sOtherAreaTiles[32 * 32];
 static uint8_t sCachedOtherArea = 0xFF;
 
-/* Language helpers (0=JP, 1=HIRA, 2=EN, 3=DE, 4=FR, 5=IT, 6=ES) */
+/* Language helpers (0=JP, 1=HIRA, 2=EN, 3=DE, 4=FR, 5=IT, 6=ES, 7=PT-BR).
+ * 7 is the port's own Brazilian Portuguese (port_lang.h); the game runs in
+ * English under it. */
 static inline int GetLang(void) {
+    if (Port_Lang_Get() == PORT_TEXT_LANGUAGE_PT_BR) return 7;
     if (gLanguage >= 0 && gLanguage <= 6) return (int)gLanguage;
     return 2; /* Default English */
 }
@@ -2614,18 +2617,18 @@ static void Port_Config_CycleLanguage(void) {
 static const char* GetAspectRatioDisplayName(int lang) {
     /* Same order as the language ids used across this file: 0/1/2 EN, 3 DE,
      * 4 FR, 5 IT, 6 ES. */
-    static const char* const originalL[7] = { "ORIGINAL (3:2)", "ORIGINAL (3:2)", "ORIGINAL (3:2)", "ORIGINAL (3:2)",
-                                              "ORIGINAL (3:2)", "ORIGINALE (3:2)", "ORIGINAL (3:2)" };
-    static const char* const originalPixelL[7] = { "ORIGINAL (1:1)", "ORIGINAL (1:1)", "ORIGINAL (1:1)", "ORIGINAL (1:1)",
-                                                   "ORIGINAL (1:1)", "ORIGINALE (1:1)", "ORIGINAL (1:1)" };
+    static const char* const originalL[8] = { "ORIGINAL (3:2)", "ORIGINAL (3:2)", "ORIGINAL (3:2)", "ORIGINAL (3:2)",
+                                              "ORIGINAL (3:2)", "ORIGINALE (3:2)", "ORIGINAL (3:2)", "ORIGINAL (3:2)" };
+    static const char* const originalPixelL[8] = { "ORIGINAL (1:1)", "ORIGINAL (1:1)", "ORIGINAL (1:1)", "ORIGINAL (1:1)",
+                                                   "ORIGINAL (1:1)", "ORIGINALE (1:1)", "ORIGINAL (1:1)", "ORIGINAL (1:1)" };
     /* WIDE shows the world the GBA hides past its frame instead of stretching. */
-    static const char* const wideL[7] = { "WIDE", "WIDE", "WIDE", "WEIT", "LARGE", "AMPIO", "AMPLIO" };
+    static const char* const wideL[8] = { "WIDE", "WIDE", "WIDE", "WEIT", "LARGE", "AMPIO", "AMPLIO", "AMPLO" };
     /* WIDE + AI: WIDE that also shows the scene art an image AI generated (off by default). */
-    static const char* const wideAiL[7] = { "WIDE + AI", "WIDE + AI", "WIDE + AI", "WEIT + KI", "LARGE + IA",
-                                            "AMPIO + IA", "AMPLIO + IA" };
+    static const char* const wideAiL[8] = { "WIDE + AI", "WIDE + AI", "WIDE + AI", "WEIT + KI", "LARGE + IA",
+                                            "AMPIO + IA", "AMPLIO + IA", "AMPLO + IA" };
     extern bool Port_Config_GetWideAi(void);
 
-    if (lang < 0 || lang > 6) lang = 0;
+    if (lang < 0 || lang > 7) lang = 0;
     int ar = Port_Config_Get3DSAspectRatio();
     if (ar == 3) return Port_Config_GetWideAi() ? wideAiL[lang] : wideL[lang];
     return Port_Config_Get3DSDisplayStyle() == 0 ? originalPixelL[lang] : originalL[lang];
@@ -2670,6 +2673,13 @@ static const char* GetDisplayStyleDisplayName(int lang) {
                 case 2: return "SUAVIZADO";
                 default: return "ESCALADO";
             }
+        case 7: /* PT-BR */
+            switch (ds) {
+                case 0: return "PIXEL PERFECT (1:1)";
+                case 1: return "ESCALADO NÍTIDO";
+                case 2: return "SUAVIZADO";
+                default: return "ESCALADO";
+            }
         default: /* EN */
             switch (ds) {
                 case 0: return "PIXEL PERFECT (1:1)";
@@ -2689,6 +2699,7 @@ static const char* GetFpsOverlayDisplayName(int lang) {
                 case 4: return "BAS GAUCHE";
                 case 5: return "BASSO SINISTRA";
                 case 6: return "INF. IZQ.";
+                case 7: return "INF. ESQ.";
                 default: return "BOTTOM-LEFT";
             }
         case 2: /* BOTTOM-RIGHT */
@@ -2697,6 +2708,7 @@ static const char* GetFpsOverlayDisplayName(int lang) {
                 case 4: return "BAS DROITE";
                 case 5: return "BASSO DESTRA";
                 case 6: return "INF. DER.";
+                case 7: return "INF. DIR.";
                 default: return "BOTTOM-RIGHT";
             }
         case 3: /* TOP-LEFT */
@@ -2705,6 +2717,7 @@ static const char* GetFpsOverlayDisplayName(int lang) {
                 case 4: return "HAUT GAUCHE";
                 case 5: return "ALTO SINISTRA";
                 case 6: return "SUP. IZQ.";
+                case 7: return "SUP. ESQ.";
                 default: return "TOP-LEFT";
             }
         case 4: /* TOP-RIGHT */
@@ -2713,6 +2726,7 @@ static const char* GetFpsOverlayDisplayName(int lang) {
                 case 4: return "HAUT DROITE";
                 case 5: return "ALTO DESTRA";
                 case 6: return "SUP. DER.";
+                case 7: return "SUP. DIR.";
                 default: return "TOP-RIGHT";
             }
         case 0:
@@ -2722,6 +2736,7 @@ static const char* GetFpsOverlayDisplayName(int lang) {
                 case 4: return "DESACTIVE";
                 case 5: return "DISATTIVO";
                 case 6: return "DESACTIVADO";
+                case 7: return "DESATIVADO";
                 default: return "OFF";
             }
     }
@@ -2809,9 +2824,9 @@ static void RenderCollectiblesModal(int lang) {
     struct AreaItemStats globalStats;
     GetGlobalItemStats(&globalStats);
     char globTitle[64];
-    static const char* const collTitles[7] = {
+    static const char* const collTitles[8] = {
         "COLLECTIBLES BY AREA", "COLLECTIBLES BY AREA", "COLLECTIBLES BY AREA",
-        "OBJEKTE NACH GEBIET", "OBJETS PAR REGION", "OGGETTI PER AREA", "COLECCIONABLES POR ZONA"
+        "OBJEKTE NACH GEBIET", "OBJETS PAR REGION", "OGGETTI PER AREA", "COLECCIONABLES POR ZONA", "COLECIONÁVEIS POR ÁREA"
     };
     if (hideSpoilers) {
         snprintf(globTitle, sizeof(globTitle), "%s: %u", collTitles[lang],
@@ -2824,9 +2839,9 @@ static void RenderCollectiblesModal(int lang) {
     DrawText(18.0f, 32.0f, 1.0f, globTitle, Draw2D_Color32(255, 215, 0, 255));
 
     /* Table Headers */
-    static const char* const areaHeaderTitles[7] = {
+    static const char* const areaHeaderTitles[8] = {
         "AREA", "AREA", "AREA",
-        "GEBIET", "REGION", "AREA", "ZONA"
+        "GEBIET", "REGION", "AREA", "ZONA", "ÁREA"
     };
     DrawText(18.0f, 48.0f, 1.0f, areaHeaderTitles[lang], Draw2D_Color32(100, 220, 255, 255));
     DrawEnergyIcon(108.0f, 46.0f);
@@ -2885,9 +2900,9 @@ static void RenderCollectiblesModal(int lang) {
         }
     }
 
-    static const char* const closeCollectiblesLabels[7] = {
+    static const char* const closeCollectiblesLabels[8] = {
         "CLOSE", "CLOSE", "CLOSE",
-        "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR"
+        "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR", "FECHAR"
     };
     DrawButton(116.0f, 204.0f, 88.0f, 20.0f, closeCollectiblesLabels[lang],
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
@@ -2895,11 +2910,11 @@ static void RenderCollectiblesModal(int lang) {
 
 static const char* AchSortLabel(int lang) {
     /* [sort mode][lang]; langs 0-2 English, 3 DE, 4 FR, 5 IT, 6 ES. */
-    static const char* labels[RA_SORT_COUNT][7] = {
-        { "DEFAULT", "DEFAULT", "DEFAULT", "STANDARD", "DEFAUT", "PREDEFINITO", "POR DEFECTO" },
-        { "A-Z", "A-Z", "A-Z", "A-Z", "A-Z", "A-Z", "A-Z" },
-        { "POINTS", "POINTS", "POINTS", "PUNKTE", "POINTS", "PUNTI", "PUNTOS" },
-        { "RECENT", "RECENT", "RECENT", "NEUESTE", "RECENTS", "RECENTI", "RECIENTES" },
+    static const char* labels[RA_SORT_COUNT][8] = {
+        { "DEFAULT", "DEFAULT", "DEFAULT", "STANDARD", "DEFAUT", "PREDEFINITO", "POR DEFECTO", "PADRÃO" },
+        { "A-Z", "A-Z", "A-Z", "A-Z", "A-Z", "A-Z", "A-Z", "A-Z" },
+        { "POINTS", "POINTS", "POINTS", "PUNKTE", "POINTS", "PUNTI", "PUNTOS", "PONTOS" },
+        { "RECENT", "RECENT", "RECENT", "NEUESTE", "RECENTS", "RECENTI", "RECIENTES", "RECENTES" },
     };
     RetroAchievementSort sort = Port_RA_GetListSort();
     if (sort >= RA_SORT_COUNT) sort = RA_SORT_DEFAULT;
@@ -2910,9 +2925,9 @@ static const char* AchSortLabel(int lang) {
  * strip is free in both, so the settings need no room from the list itself.
  * ACH_SETTINGS_BTN_* (above) is also the touch hit box. */
 static void DrawAchSettingsButton(int lang) {
-    static const char* const labels[7] = {
+    static const char* const labels[8] = {
         "SETTINGS", "SETTINGS", "SETTINGS",
-        "OPTIONEN", "REGLAGES", "OPZIONI", "AJUSTES"
+        "OPTIONEN", "REGLAGES", "OPZIONI", "AJUSTES", "AJUSTES"
     };
     DrawButton((float)ACH_SETTINGS_BTN_X, 204.0f, (float)ACH_SETTINGS_BTN_W, 20.0f, labels[lang],
                Draw2D_Color32(120, 255, 175, 255), Draw2D_Color32(16, 50, 32, 255), Draw2D_Color32(55, 150, 95, 255));
@@ -2930,15 +2945,15 @@ static void RenderAchPacksModal(int lang) {
     Draw2D_Rect(mX, mY, 0.85f, mW, mH, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(mX, mY, 0.84f, mW, mH, Draw2D_Color32(40, 70, 120, 255));
 
-    static const char* titles[7] = {
+    static const char* titles[8] = {
         "ACHIEVEMENT SETS", "ACHIEVEMENT SETS", "ACHIEVEMENT SETS",
-        "ERFOLGSSAETZE", "SERIES DE SUCCES", "SERIE DI OBIETTIVI", "SERIES DE LOGROS"
+        "ERFOLGSSAETZE", "SERIES DE SUCCES", "SERIE DI OBIETTIVI", "SERIES DE LOGROS", "SÉRIES DE CONQUISTAS"
     };
     DrawText(20.0f, 32.0f, 1.0f, titles[lang], Draw2D_Color32(255, 215, 0, 255));
 
-    static const char* allLabels[7] = {
+    static const char* allLabels[8] = {
         "ALL SETS", "ALL SETS", "ALL SETS",
-        "ALLE SAETZE", "TOUTES LES SERIES", "TUTTE LE SERIE", "TODAS LAS SERIES"
+        "ALLE SAETZE", "TOUTES LES SERIES", "TUTTE LE SERIE", "TODAS LAS SERIES", "TODAS AS SÉRIES"
     };
 
     float maxScroll = AchPacksMaxScroll();
@@ -3012,18 +3027,18 @@ static uint32_t AchTypeColor(RetroAchievementType type) {
 static const char* AchTypeName(RetroAchievementType type, int lang) {
     switch (type) {
         case RA_ACH_TYPE_MISSABLE: {
-            static const char* l[7] = { "MISSABLE", "MISSABLE", "MISSABLE",
-                                        "VERPASSBAR", "MANQUABLE", "MANCABILE", "PERDIBLE" };
+            static const char* l[8] = { "MISSABLE", "MISSABLE", "MISSABLE",
+                                        "VERPASSBAR", "MANQUABLE", "MANCABILE", "PERDIBLE", "PERDÍVEL" };
             return l[lang];
         }
         case RA_ACH_TYPE_PROGRESSION: {
-            static const char* l[7] = { "PROGRESSION", "PROGRESSION", "PROGRESSION",
-                                        "FORTSCHRITT", "PROGRESSION", "PROGRESSO", "PROGRESO" };
+            static const char* l[8] = { "PROGRESSION", "PROGRESSION", "PROGRESSION",
+                                        "FORTSCHRITT", "PROGRESSION", "PROGRESSO", "PROGRESO", "PROGRESSO" };
             return l[lang];
         }
         case RA_ACH_TYPE_WIN_CONDITION: {
-            static const char* l[7] = { "BEATEN GAME", "BEATEN GAME", "BEATEN GAME",
-                                        "SPIEL BEENDET", "JEU TERMINE", "GIOCO FINITO", "JUEGO TERMINADO" };
+            static const char* l[8] = { "BEATEN GAME", "BEATEN GAME", "BEATEN GAME",
+                                        "SPIEL BEENDET", "JEU TERMINE", "GIOCO FINITO", "JUEGO TERMINADO", "JOGO ZERADO" };
             return l[lang];
         }
         default:
@@ -3086,9 +3101,9 @@ static void RenderAchievementsModal(int lang) {
 
     /* Header: the set's name when the list is filtered to one, the generic
      * title when it is showing everything. */
-    const char* titles[7] = {
+    const char* titles[8] = {
         "ACHIEVEMENT LIST", "ACHIEVEMENT LIST", "ACHIEVEMENT LIST",
-        "ERFOLGSLISTE", "LISTE DES SUCCES", "LISTA DEGLI OBIETTIVI", "LISTA DE LOGROS"
+        "ERFOLGSLISTE", "LISTE DES SUCCES", "LISTA DEGLI OBIETTIVI", "LISTA DE LOGROS", "LISTA DE CONQUISTAS"
     };
     const char* header = titles[lang];
     uint32_t filter = Port_RA_GetListSubset();
@@ -3249,9 +3264,9 @@ static void RenderAchievementsModal(int lang) {
     DrawAchSettingsButton(lang);
 
     if (sAchFromPacks) {
-        const char* backLabels[7] = {
+        const char* backLabels[8] = {
             "BACK", "BACK", "BACK",
-            "ZURUECK", "RETOUR", "INDIETRO", "VOLVER"
+            "ZURUECK", "RETOUR", "INDIETRO", "VOLVER", "VOLTAR"
         };
         DrawButton(116.0f, 204.0f, 88.0f, 20.0f, backLabels[lang],
                    Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
@@ -3326,18 +3341,18 @@ static void RenderAchievementDetailModal(int lang) {
     snprintf(buf, sizeof(buf), "%u PTS", (unsigned)a->points);
     DrawText(tX, pY + 46.0f, 1.0f, buf, Draw2D_Color32(120, 255, 160, 255));
 
-    static const char* const stHardcore[7] = {
+    static const char* const stHardcore[8] = {
         "UNLOCKED (HARDCORE)", "UNLOCKED (HARDCORE)", "UNLOCKED (HARDCORE)",
         "FREIGESCHALTET (HARDCORE)", "DEBLOQUE (HARDCORE)", "SBLOCCATO (HARDCORE)",
-        "DESBLOQUEADO (HARDCORE)"
+        "DESBLOQUEADO (HARDCORE)", "DESBLOQUEADO (HARDCORE)"
     };
-    static const char* const stUnlocked[7] = {
+    static const char* const stUnlocked[8] = {
         "UNLOCKED", "UNLOCKED", "UNLOCKED",
-        "FREIGESCHALTET", "DEBLOQUE", "SBLOCCATO", "DESBLOQUEADO"
+        "FREIGESCHALTET", "DEBLOQUE", "SBLOCCATO", "DESBLOQUEADO", "DESBLOQUEADO"
     };
-    static const char* const stLocked[7] = {
+    static const char* const stLocked[8] = {
         "LOCKED", "LOCKED", "LOCKED",
-        "GESPERRT", "VERROUILLE", "BLOCCATO", "BLOQUEADO"
+        "GESPERRT", "VERROUILLE", "BLOCCATO", "BLOQUEADO", "BLOQUEADO"
     };
     const char* stTxt;
     uint32_t stCol;
@@ -3367,8 +3382,8 @@ static void RenderAchievementDetailModal(int lang) {
                            pW - 24.0f, 12.0f, Draw2D_Color32(220, 235, 255, 255), clip0, clip1 - 26.0f);
 
     {
-        static const char* backLabels[7] = {
-            "BACK", "BACK", "BACK", "ZURUECK", "RETOUR", "INDIETRO", "VOLVER"
+        static const char* backLabels[8] = {
+            "BACK", "BACK", "BACK", "ZURUECK", "RETOUR", "INDIETRO", "VOLVER", "VOLTAR"
         };
         DrawButton(116.0f, 208.0f, 88.0f, 20.0f, backLabels[lang],
                    Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
@@ -3380,50 +3395,50 @@ static void RenderConfirmModal(int lang) {
     Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
-    static const char* const restartTitles[7] = {
+    static const char* const restartTitles[8] = {
         "RESTART GAME", "RESTART GAME", "RESTART GAME",
-        "SPIEL NEUSTARTEN", "RECOMMENCER PARTIE", "RIAVVIA PARTITA", "REINICIAR PARTIDA"
+        "SPIEL NEUSTARTEN", "RECOMMENCER PARTIE", "RIAVVIA PARTITA", "REINICIAR PARTIDA", "REINICIAR JOGO"
     };
-    static const char* const hcTitles[7] = {
+    static const char* const hcTitles[8] = {
         "HARDCORE MODE", "HARDCORE MODE", "HARDCORE MODE",
-        "HARDCORE-MODUS", "MODE HARDCORE", "MODO HARDCORE", "MODO HARDCORE"
+        "HARDCORE-MODUS", "MODE HARDCORE", "MODO HARDCORE", "MODO HARDCORE", "MODO HARDCORE"
     };
     const char* title = sConfirmIsRestart ? restartTitles[lang] : hcTitles[lang];
     DrawTextCentered(160.0f, 60.0f, 1.0f, title, Draw2D_Color32(255, 215, 0, 255));
 
-    static const char* const restartMsgs[7] = {
+    static const char* const restartMsgs[8] = {
         "THE GAME WILL BE RESTARTED. ALL UNSAVED PROGRESS WILL BE LOST. CONTINUE?",
         "THE GAME WILL BE RESTARTED. ALL UNSAVED PROGRESS WILL BE LOST. CONTINUE?",
         "THE GAME WILL BE RESTARTED. ALL UNSAVED PROGRESS WILL BE LOST. CONTINUE?",
         "DAS SPIEL WIRD NEU GESTARTET. NICHT GESPEICHERTER FORTSCHRITT GEHT VERLOREN. WEITER?",
         "LA PARTIE VA RECOMMENCER. TOUTE PROGRESSION NON SAUVEGARDEE SERA PERDUE. CONTINUER?",
         "LA PARTITA VERRA RIAVVIATA. TUTTI I PROGRESSI NON SALVATI ANDRANNO PERSI. CONTINUARE?",
-        "SE REINICIARA LA PARTIDA. TODO EL PROGRESO NO GUARDADO SE PERDERA. CONTINUAR?"
+        "SE REINICIARA LA PARTIDA. TODO EL PROGRESO NO GUARDADO SE PERDERA. CONTINUAR?", "O JOGO SERÁ REINICIADO. TODO O PROGRESSO NÃO SALVO SERÁ PERDIDO. CONTINUAR?"
     };
-    static const char* const hcMsgs[7] = {
+    static const char* const hcMsgs[8] = {
         "ENABLING HARDCORE MODE WILL RESTART THE GAME FROM THE BEGINNING. CONTINUE?",
         "ENABLING HARDCORE MODE WILL RESTART THE GAME FROM THE BEGINNING. CONTINUE?",
         "ENABLING HARDCORE MODE WILL RESTART THE GAME FROM THE BEGINNING. CONTINUE?",
         "DAS AKTIVIEREN DES HARDCORE-MODUS STARTET DAS SPIEL VON VORN. WEITER?",
         "ACTIVER LE MODE HARDCORE RECOMMENCERA LE JEU DEPUIS LE DEBUT. CONTINUER?",
         "ATTIVARE LA MODALITA HARDCORE RIAVVIERA IL GIOCO DALL'INIZIO. CONTINUARE?",
-        "AL ACTIVAR EL MODO HARDCORE LA PARTIDA SE REINICIARA DESDE EL PRINCIPIO. CONTINUAR?"
+        "AL ACTIVAR EL MODO HARDCORE LA PARTIDA SE REINICIARA DESDE EL PRINCIPIO. CONTINUAR?", "AO ATIVAR O MODO HARDCORE O JOGO RECOMEÇARÁ DO INÍCIO. CONTINUAR?"
     };
     const char* msg = sConfirmIsRestart ? restartMsgs[lang] : hcMsgs[lang];
     DrawWrappedTextClipped(30.0f, 84.0f, 1.0f, msg, 260.0f, 11.0f, Draw2D_Color32(220, 235, 255, 255), 50.0f, 136.0f);
 
     /* ACCEPT button */
-    static const char* const acceptLabels[7] = {
+    static const char* const acceptLabels[8] = {
         "ACCEPT", "ACCEPT", "ACCEPT",
-        "JA", "ACCEPTER", "ACCETTA", "ACEPTAR"
+        "JA", "ACCEPTER", "ACCETTA", "ACEPTAR", "ACEITAR"
     };
     DrawButton(40.0f, 140.0f, 110.0f, 28.0f, acceptLabels[lang], Draw2D_Color32(255, 255, 255, 255),
                Draw2D_Color32(20, 90, 45, 255), Draw2D_Color32(70, 180, 100, 255));
 
     /* CANCEL button */
-    static const char* const cancelModalLabels[7] = {
+    static const char* const cancelModalLabels[8] = {
         "CANCEL", "CANCEL", "CANCEL",
-        "NEIN", "ANNULER", "ANNULLA", "CANCELAR"
+        "NEIN", "ANNULER", "ANNULLA", "CANCELAR", "CANCELAR"
     };
     DrawButton(170.0f, 140.0f, 110.0f, 28.0f, cancelModalLabels[lang], Draw2D_Color32(255, 255, 255, 255),
                Draw2D_Color32(110, 30, 30, 255), Draw2D_Color32(200, 80, 80, 255));
@@ -3471,10 +3486,10 @@ static int DispCellHit(int x, int y) {
 /* OFF / LOW / MEDIUM / HIGH label for a GBA-effect level (0..3). */
 static const char* GbaFxLevelName(int lang, int level) {
     switch (level) {
-        case 1:  return (lang == 6) ? "BAJO" : "LOW";
-        case 2:  return (lang == 6) ? "MEDIO" : "MED";
-        case 3:  return (lang == 6) ? "ALTO" : "HIGH";
-        default: return (lang == 6) ? "NO" : "OFF";
+        case 1:  return (lang == 7) ? "BAIXO" : (lang == 6) ? "BAJO" : "LOW";
+        case 2:  return (lang == 7) ? "MÉDIO" : (lang == 6) ? "MEDIO" : "MED";
+        case 3:  return (lang == 7) ? "ALTO" : (lang == 6) ? "ALTO" : "HIGH";
+        default: return (lang == 7) ? "NÃO" : (lang == 6) ? "NO" : "OFF";
     }
 }
 
@@ -3484,9 +3499,9 @@ static void RenderDisplayModal(int lang) {
     Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
-    static const char* const titles[7] = {
+    static const char* const titles[8] = {
         "DISPLAY SETTINGS", "DISPLAY SETTINGS", "DISPLAY SETTINGS",
-        "BILDSCHIRMEINSTELLUNGEN", "PARAMETRES D'AFFICHAGE", "IMPOSTAZIONI SCHERMO", "CONFIGURACION DE PANTALLA"
+        "BILDSCHIRMEINSTELLUNGEN", "PARAMETRES D'AFFICHAGE", "IMPOSTAZIONI SCHERMO", "CONFIGURACION DE PANTALLA", "CONFIGURAÇÃO DE TELA"
     };
     DrawText(20.0f, 30.0f, 1.0f, titles[lang], Draw2D_Color32(255, 215, 0, 255));
 
@@ -3495,15 +3510,15 @@ static void RenderDisplayModal(int lang) {
     const uint32_t offCol  = Draw2D_Color32(255, 100, 100, 255);
     const uint32_t idleCol = Draw2D_Color32(150, 150, 150, 255);
 
-    const char* onTxt  = (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "EIN" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ON")));
-    const char* offTxt = (lang == 6) ? "DESACT." : ((lang == 3) ? "AUS" : ((lang == 4) ? "DESACT." : ((lang == 5) ? "DISATT." : "OFF")));
+    const char* onTxt  = (lang == 7) ? "ATIVADO" : (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "EIN" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ON")));
+    const char* offTxt = (lang == 7) ? "DESAT." : (lang == 6) ? "DESACT." : ((lang == 3) ? "AUS" : ((lang == 4) ? "DESACT." : ((lang == 5) ? "DISATT." : "OFF")));
 
-    static const char* const langL[7]  = { "LANGUAGE","LANGUAGE","LANGUAGE","SPRACHE","LANGUE","LINGUA","IDIOMA" };
-    static const char* const aspL[7]   = { "ASPECT","ASPECT","ASPECT","BILDFORMAT","FORMAT","FORMATO","ASPECTO" };
-    static const char* const styL[7]   = { "DISPLAY STYLE","DISPLAY STYLE","DISPLAY STYLE","DARSTELLUNG","STYLE","STILE","ESTILO" };
-    static const char* const fpsL[7]   = { "SHOW FPS","SHOW FPS","SHOW FPS","FPS ANZEIGEN","AFFICHER FPS","MOSTRA FPS","MOSTRAR FPS" };
-    static const char* const hudL[7]   = { "AUTO-HIDE HUD","AUTO-HIDE HUD","AUTO-HIDE HUD","HUD AUTO-AUS","MASQUER HUD","NASCONDI HUD","AUTOOCULTAR HUD" };
-    static const char* const spoL[7]   = { "HIDE SPOILERS","HIDE SPOILERS","HIDE SPOILERS","SPOILER AUS","MASQ. SPOILERS","NASC. SPOILER","OCULTAR SPOILERS" };
+    static const char* const langL[8]  = { "LANGUAGE","LANGUAGE","LANGUAGE","SPRACHE","LANGUE","LINGUA","IDIOMA", "IDIOMA" };
+    static const char* const aspL[8]   = { "ASPECT","ASPECT","ASPECT","BILDFORMAT","FORMAT","FORMATO","ASPECTO", "PROPORÇÃO" };
+    static const char* const styL[8]   = { "DISPLAY STYLE","DISPLAY STYLE","DISPLAY STYLE","DARSTELLUNG","STYLE","STILE","ESTILO", "ESTILO" };
+    static const char* const fpsL[8]   = { "SHOW FPS","SHOW FPS","SHOW FPS","FPS ANZEIGEN","AFFICHER FPS","MOSTRA FPS","MOSTRAR FPS", "MOSTRAR FPS" };
+    static const char* const hudL[8]   = { "AUTO-HIDE HUD","AUTO-HIDE HUD","AUTO-HIDE HUD","HUD AUTO-AUS","MASQUER HUD","NASCONDI HUD","AUTOOCULTAR HUD", "OCULTAR HUD AUTO" };
+    static const char* const spoL[8]   = { "HIDE SPOILERS","HIDE SPOILERS","HIDE SPOILERS","SPOILER AUS","MASQ. SPOILERS","NASC. SPOILER","OCULTAR SPOILERS", "OCULTAR SPOILERS" };
 
     DispCell(0, langL[lang], Port_Config_GetLanguageDisplayName(Port_Config_GetLanguageOption()), valCol);
     bool wideOn = (Port_Config_Get3DSAspectRatio() == 3);
@@ -3517,9 +3532,9 @@ static void RenderDisplayModal(int lang) {
     bool spOn = Port_Config_GetHideSpoilers();
     DispCell(5, spoL[lang], spOn ? onTxt : offTxt, spOn ? onCol : offCol);
 
-    static const char* const gradeL[7] = { "GBA COLOR","GBA COLOR","GBA COLOR","GBA-FARBE","COULEUR GBA","COLORE GBA","COLOR GBA" };
-    static const char* const gridL[7]  = { "GBA GRID","GBA GRID","GBA GRID","GBA-GITTER","GRILLE GBA","GRIGLIA GBA","REJILLA GBA" };
-    static const char* const vigL[7]   = { "VIGNETTE","VIGNETTE","VIGNETTE","VIGNETTE","VIGNETTAGE","VIGNETTA","VINETA" };
+    static const char* const gradeL[8] = { "GBA COLOR","GBA COLOR","GBA COLOR","GBA-FARBE","COULEUR GBA","COLORE GBA","COLOR GBA", "COR GBA" };
+    static const char* const gridL[8]  = { "GBA GRID","GBA GRID","GBA GRID","GBA-GITTER","GRILLE GBA","GRIGLIA GBA","REJILLA GBA", "GRADE GBA" };
+    static const char* const vigL[8]   = { "VIGNETTE","VIGNETTE","VIGNETTE","VIGNETTE","VIGNETTAGE","VIGNETTA","VINETA", "VINHETA" };
 
     int fx0 = Port_Config_GetGbaFxGrade();
     int fx1 = Port_Config_GetGbaFxGrid();
@@ -3528,10 +3543,10 @@ static void RenderDisplayModal(int lang) {
     DispCell(7, gridL[lang],  GbaFxLevelName(lang, fx1), fx1 ? onCol : idleCol);
     DispCell(8, vigL[lang],   GbaFxLevelName(lang, fx2), fx2 ? onCol : idleCol);
 
-    static const char* const hudPosL[7] = { "HUD POSITION","HUD POSITION","HUD POSITION","HUD-POSITION","POSITION HUD","POSIZIONE HUD","POSICION HUD" };
-    static const char* const bezelL[7]  = { "GBA FRAME","GBA FRAME","GBA FRAME","GBA-RAHMEN","CADRE GBA","CORNICE GBA","MARCO GBA" };
+    static const char* const hudPosL[8] = { "HUD POSITION","HUD POSITION","HUD POSITION","HUD-POSITION","POSITION HUD","POSIZIONE HUD","POSICION HUD", "POSIÇÃO DO HUD" };
+    static const char* const bezelL[8]  = { "GBA FRAME","GBA FRAME","GBA FRAME","GBA-RAHMEN","CADRE GBA","CORNICE GBA","MARCO GBA", "MOLDURA GBA" };
 
-    const char* lockedTxt = (lang == 6) ? "BLOQUEADO" : "LOCKED";
+    const char* lockedTxt = (lang == 7) ? "BLOQUEADO" : (lang == 6) ? "BLOQUEADO" : "LOCKED";
     bool pixelPerfect = (Port_Config_Get3DSDisplayStyle() == 0);
     /* WIDE fills the border with world, leaving no room for a bezel or for
      * the HUD to move into. */
@@ -3539,8 +3554,8 @@ static void RenderDisplayModal(int lang) {
 
     /* HUD Position: TOP BORDER vs DEFAULT (only active in Pixel Perfect) */
     bool hudOut = Port_Config_GetHudOutside();
-    const char* hudOutTxt = (lang == 6) ? "BORDE SUP." : ((lang == 3) ? "OBEN" : ((lang == 4) ? "BORD SUP." : ((lang == 5) ? "BORDO SUP." : "TOP BORDER")));
-    const char* hudDefTxt = (lang == 6) ? "NORMAL" : ((lang == 3) ? "NORMAL" : ((lang == 4) ? "NORMAL" : ((lang == 5) ? "NORMALE" : "DEFAULT")));
+    const char* hudOutTxt = (lang == 7) ? "BORDA SUP." : (lang == 6) ? "BORDE SUP." : ((lang == 3) ? "OBEN" : ((lang == 4) ? "BORD SUP." : ((lang == 5) ? "BORDO SUP." : "TOP BORDER")));
+    const char* hudDefTxt = (lang == 7) ? "NORMAL" : (lang == 6) ? "NORMAL" : ((lang == 3) ? "NORMAL" : ((lang == 4) ? "NORMAL" : ((lang == 5) ? "NORMALE" : "DEFAULT")));
     DispCell(9, hudPosL[lang],
              (pixelPerfect && !wide) ? (hudOut ? hudOutTxt : hudDefTxt) : lockedTxt,
              (pixelPerfect && !wide) ? (hudOut ? onCol : valCol) : idleCol);
@@ -3554,17 +3569,17 @@ static void RenderDisplayModal(int lang) {
 
     /* Frame pacing: ADAPTIVE (variable 30..60, fluid) vs LOCKED 30 (steady).
      * There is no 60 option -- the renderer never exceeds the vblank. */
-    static const char* const paceL[7] = { "FRAME PACING","FRAME PACING","FRAME PACING",
-                                          "BILDRATE","CADENCE","CADENZA","RITMO FPS" };
+    static const char* const paceL[8] = { "FRAME PACING","FRAME PACING","FRAME PACING",
+                                          "BILDRATE","CADENCE","CADENZA","RITMO FPS", "RITMO FPS" };
     int pace = Port_Config_GetFramePacing();
-    const char* paceTxt = (pace == 1) ? ((lang == 6) ? "30 FIJO" : "LOCK 30")
-                                      : ((lang == 6) ? "ADAPTABLE" : "ADAPTIVE");
+    const char* paceTxt = (pace == 1) ? ((lang == 7) ? "30 FIXO" : (lang == 6) ? "30 FIJO" : "LOCK 30")
+                                      : ((lang == 7) ? "ADAPTÁVEL" : (lang == 6) ? "ADAPTABLE" : "ADAPTIVE");
     DispCell(11, paceL[lang], paceTxt, pace ? valCol : onCol);
 
     /* Close button (Y: 206 to 228) */
-    static const char* const closeLabels[7] = {
+    static const char* const closeLabels[8] = {
         "CLOSE", "CLOSE", "CLOSE",
-        "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR"
+        "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR", "FECHAR"
     };
     DrawButton(116.0f, 206.0f, 88.0f, 22.0f, closeLabels[lang],
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
@@ -3575,9 +3590,9 @@ static void RenderRASettingsModal(int lang) {
     Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
-    const char* raTitles[7] = {
+    const char* raTitles[8] = {
         "RETROACHIEVEMENTS SETTINGS", "RETROACHIEVEMENTS SETTINGS", "RETROACHIEVEMENTS SETTINGS",
-        "RETROACHIEVEMENTS EINSTELLUNGEN", "PARAMETRES RETROACHIEVEMENTS", "IMPOSTAZIONI RETROACHIEVEMENTS", "AJUSTES DE RETROACHIEVEMENTS"
+        "RETROACHIEVEMENTS EINSTELLUNGEN", "PARAMETRES RETROACHIEVEMENTS", "IMPOSTAZIONI RETROACHIEVEMENTS", "AJUSTES DE RETROACHIEVEMENTS", "CONFIG. DO RETROACHIEVEMENTS"
     };
     DrawText(20.0f, 32.0f, 1.0f, raTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
@@ -3599,32 +3614,32 @@ static void RenderRASettingsModal(int lang) {
 
     /* Row 1: User Login (Y: 56 to 80) */
     DrawButtonBox(16.0f, 56.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    const char* userLabels[7] = {
+    const char* userLabels[8] = {
         "USER:", "USER:", "USER:",
-        "BENUTZER:", "UTILISATEUR:", "UTENTE:", "USUARIO:"
+        "BENUTZER:", "UTILISATEUR:", "UTENTE:", "USUARIO:", "USUÁRIO:"
     };
     DrawText(24.0f, 65.0f, 1.0f, userLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     const char* user = Port_RA_GetUsername();
     if (user && user[0] != '\0') {
         DrawText(170.0f, 65.0f, 1.0f, user, Draw2D_Color32(255, 215, 0, 255));
     } else {
-        const char* loginLabels[7] = {
+        const char* loginLabels[8] = {
             "LOGIN", "LOGIN", "LOGIN",
-            "ANMELDEN", "CONNEXION", "ACCEDI", "INICIAR SESION"
+            "ANMELDEN", "CONNEXION", "ACCEDI", "INICIAR SESION", "FAZER LOGIN"
         };
         DrawText(170.0f, 65.0f, 1.0f, loginLabels[lang], Draw2D_Color32(255, 140, 80, 255));
     }
 
     /* Row 2: Enable / Disable (Y: 84 to 108) */
     DrawButtonBox(16.0f, 84.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    const char* sysLabels[7] = {
+    const char* sysLabels[8] = {
         "ACHIEVEMENTS SYS:", "ACHIEVEMENTS SYS:", "ACHIEVEMENTS SYS:",
-        "ERFOLGE-SYSTEM:", "SYSTEME SUCCES:", "SISTEMA OBIETTIVI:", "SISTEMA LOGROS:"
+        "ERFOLGE-SYSTEM:", "SYSTEME SUCCES:", "SISTEMA OBIETTIVI:", "SISTEMA LOGROS:", "SISTEMA CONQUISTAS:"
     };
     DrawText(24.0f, 93.0f, 1.0f, sysLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     bool raEn = Port_RA_IsEnabled();
-    const char* onStr = (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "AKTIVIERT" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ENABLED")));
-    const char* offStr = (lang == 6) ? "DESACTIVADO" : ((lang == 3) ? "DEAKTIVIERT" : ((lang == 4) ? "DESACTIVE" : ((lang == 5) ? "DISATTIVO" : "DISABLED")));
+    const char* onStr = (lang == 7) ? "ATIVADO" : (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "AKTIVIERT" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ENABLED")));
+    const char* offStr = (lang == 7) ? "DESATIVADO" : (lang == 6) ? "DESACTIVADO" : ((lang == 3) ? "DEAKTIVIERT" : ((lang == 4) ? "DESACTIVE" : ((lang == 5) ? "DISATTIVO" : "DISABLED")));
     DrawText(170.0f, 93.0f, 1.0f, raEn ? onStr : offStr,
              raEn ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 100, 100, 255));
 
@@ -3633,14 +3648,14 @@ static void RenderRASettingsModal(int lang) {
      * now (Port_RA_HardcoreAllowed always false) so the row is repurposed.
      * The play sub-button fires a sample toast (+ jingle). */
     DrawButtonBox(16.0f, 112.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    const char* scrLabels[7] = {
+    const char* scrLabels[8] = {
         "NOTIFY SCREEN:", "NOTIFY SCREEN:", "NOTIFY SCREEN:",
-        "MELDUNG:", "ECRAN NOTIF:", "SCHERMO:", "PANTALLA AVISO:"
+        "MELDUNG:", "ECRAN NOTIF:", "SCHERMO:", "PANTALLA AVISO:", "TELA DO AVISO:"
     };
     DrawText(24.0f, 121.0f, 1.0f, scrLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     bool notifTop = Port_RA_GetNotifyOnTopScreen();
-    const char* topLabels[7] = { "TOP", "TOP", "TOP", "OBEN", "HAUT", "ALTO", "SUPERIOR" };
-    const char* botLabels[7] = { "BOTTOM", "BOTTOM", "BOTTOM", "UNTEN", "BAS", "BASSO", "INFERIOR" };
+    const char* topLabels[8] = { "TOP", "TOP", "TOP", "OBEN", "HAUT", "ALTO", "SUPERIOR", "SUPERIOR" };
+    const char* botLabels[8] = { "BOTTOM", "BOTTOM", "BOTTOM", "UNTEN", "BAS", "BASSO", "INFERIOR", "INFERIOR" };
     DrawText(170.0f, 121.0f, 1.0f, notifTop ? topLabels[lang] : botLabels[lang],
              Draw2D_Color32(120, 200, 255, 255));
     {
@@ -3650,20 +3665,20 @@ static void RenderRASettingsModal(int lang) {
 
     /* Row 4: Achievement Notification Sound (Y: 140 to 164) */
     DrawButtonBox(16.0f, 140.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    const char* sndLabels[7] = {
+    const char* sndLabels[8] = {
         "ACHIEVEMENT SOUND:", "ACHIEVEMENT SOUND:", "ACHIEVEMENT SOUND:",
-        "ERFOLG-TON:", "SON NOTIFICATION:", "SUONO NOTIFICA:", "SONIDO LOGRO:"
+        "ERFOLG-TON:", "SON NOTIFICATION:", "SUONO NOTIFICA:", "SONIDO LOGRO:", "SOM CONQUISTA:"
     };
     DrawText(24.0f, 149.0f, 1.0f, sndLabels[lang], Draw2D_Color32(255, 255, 255, 255));
     bool snd = Port_RA_GetNotificationSound();
-    DrawText(170.0f, 149.0f, 1.0f, snd ? ((lang == 6) ? "ACTIVADO" : ((lang == 3) ? "EIN" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ON"))))
-                                       : ((lang == 6) ? "DESACTIVADO" : ((lang == 3) ? "AUS" : ((lang == 4) ? "DESACTIVE" : ((lang == 5) ? "DISATTIVO" : "OFF")))),
+    DrawText(170.0f, 149.0f, 1.0f, snd ? ((lang == 7) ? "ATIVADO" : (lang == 6) ? "ACTIVADO" : ((lang == 3) ? "EIN" : ((lang == 4) ? "ACTIVE" : ((lang == 5) ? "ATTIVO" : "ON"))))
+                                       : ((lang == 7) ? "DESATIVADO" : (lang == 6) ? "DESACTIVADO" : ((lang == 3) ? "AUS" : ((lang == 4) ? "DESACTIVE" : ((lang == 5) ? "DISATTIVO" : "OFF")))),
              snd ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 100, 100, 255));
 
     /* Close button */
-    const char* closeRALabels[7] = {
+    const char* closeRALabels[8] = {
         "CLOSE", "CLOSE", "CLOSE",
-        "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR"
+        "SCHLIESSEN", "FERMER", "CHIUDI", "CERRAR", "FECHAR"
     };
     DrawButton(116.0f, 206.0f, 88.0f, 22.0f, closeRALabels[lang],
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
@@ -3673,11 +3688,12 @@ static void RenderRASettingsModal(int lang) {
  * gold headers, the rest as the list the release author wrote. */
 static void RenderNotesModal(int lang) {
     const bool es = (lang == 6);
+    const bool pt = (lang == 7);
     const float maxScroll = NotesMaxScroll();
 
     Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
-    DrawText(20.0f, 32.0f, 1.0f, es ? "NOVEDADES" : "WHAT'S NEW", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 32.0f, 1.0f, pt ? "NOVIDADES" : es ? "NOVEDADES" : "WHAT'S NEW", Draw2D_Color32(255, 215, 0, 255));
     DrawText(170.0f, 32.0f, 1.0f, Port_Updater_GetRemoteTag(), Draw2D_Color32(140, 160, 190, 255));
 
     if (sNotesScrollY > maxScroll) sNotesScrollY = maxScroll;
@@ -3696,7 +3712,7 @@ static void RenderNotesModal(int lang) {
         }
     }
     if (sNotesLineCount == 0) {
-        DrawText(18.0f, NOTES_VIEW_Y0, 1.0f, es ? "AUN SIN DATOS. BUSCA ACTUALIZACION." : "NOTHING YET. CHECK NOW FIRST.", Draw2D_Color32(140, 160, 190, 255));
+        DrawText(18.0f, NOTES_VIEW_Y0, 1.0f, pt ? "AINDA SEM DADOS. BUSQUE ATUALIZAÇÃO." : es ? "AUN SIN DATOS. BUSCA ACTUALIZACION." : "NOTHING YET. CHECK NOW FIRST.", Draw2D_Color32(140, 160, 190, 255));
     }
 
     if (maxScroll > 0.0f) {
@@ -3707,7 +3723,7 @@ static void RenderNotesModal(int lang) {
         Draw2D_Rect(306.0f, thumbY, 0.94f, 2.0f, thumbH, Draw2D_Color32(80, 160, 240, 255));
     }
 
-    DrawButton(116.0f, 206.0f, 88.0f, 22.0f, es ? "CERRAR" : "CLOSE",
+    DrawButton(116.0f, 206.0f, 88.0f, 22.0f, pt ? "FECHAR" : es ? "CERRAR" : "CLOSE",
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
@@ -3715,6 +3731,7 @@ static void RenderNotesModal(int lang) {
  * context-sensitive action button (check / install / restart). */
 static void RenderUpdateModal(int lang) {
     const bool es = (lang == 6);
+    const bool pt = (lang == 7);
     const UpdaterState us = Port_Updater_GetState();
     const uint32_t rowBody = Draw2D_Color32(16, 24, 40, 255);
     const uint32_t rowBorder = Draw2D_Color32(50, 80, 130, 255);
@@ -3725,32 +3742,32 @@ static void RenderUpdateModal(int lang) {
 
     Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 206.0f, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
-    DrawText(20.0f, 32.0f, 1.0f, es ? "ACTUALIZACIONES" : "UPDATES", Draw2D_Color32(255, 215, 0, 255));
+    DrawText(20.0f, 32.0f, 1.0f, pt ? "ATUALIZAÇÕES" : es ? "ACTUALIZACIONES" : "UPDATES", Draw2D_Color32(255, 215, 0, 255));
     DrawText(170.0f, 32.0f, 1.0f, MZM_PORT_VERSION_LABEL, Draw2D_Color32(140, 160, 190, 255));
 
     DrawButtonBox(16.0f, 56.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    DrawText(24.0f, 65.0f, 1.0f, es ? "AUTOACTUALIZAR:" : "AUTO UPDATE:", white);
+    DrawText(24.0f, 65.0f, 1.0f, pt ? "AUTOATUALIZAR:" : es ? "AUTOACTUALIZAR:" : "AUTO UPDATE:", white);
     bool autoUp = Port_Updater_GetAuto();
-    DrawText(170.0f, 65.0f, 1.0f, autoUp ? (es ? "ACTIVADO" : "ENABLED") : (es ? "DESACTIVADO" : "DISABLED"),
+    DrawText(170.0f, 65.0f, 1.0f, autoUp ? (pt ? "ATIVADO" : es ? "ACTIVADO" : "ENABLED") : (pt ? "DESATIVADO" : es ? "DESACTIVADO" : "DISABLED"),
              autoUp ? green : red);
 
     DrawButtonBox(16.0f, 84.0f, 288.0f, 24.0f, rowBody, rowBorder);
-    DrawText(24.0f, 93.0f, 1.0f, es ? "CANAL:" : "CHANNEL:", white);
+    DrawText(24.0f, 93.0f, 1.0f, pt ? "CANAL:" : es ? "CANAL:" : "CHANNEL:", white);
     DrawText(170.0f, 93.0f, 1.0f,
-             Port_Updater_GetBeta() ? (es ? "RELEASES + BETAS" : "RELEASES + BETAS") : (es ? "SOLO RELEASES" : "RELEASES ONLY"),
+             Port_Updater_GetBeta() ? (pt ? "RELEASES + BETAS" : es ? "RELEASES + BETAS" : "RELEASES + BETAS") : (pt ? "SÓ RELEASES" : es ? "SOLO RELEASES" : "RELEASES ONLY"),
              Draw2D_Color32(120, 200, 255, 255));
 
     /* Status (not tappable) */
     DrawButtonBox(16.0f, 112.0f, 288.0f, 24.0f, rowBody, rowBorder);
     uint32_t statusCol = Draw2D_Color32(140, 160, 190, 255);
     switch (us) {
-        case UPDATER_CHECKING:    snprintf(line, sizeof(line), "%s", es ? "BUSCANDO..." : "CHECKING..."); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
-        case UPDATER_UP_TO_DATE:  snprintf(line, sizeof(line), "%s", es ? "YA ESTAS AL DIA" : "UP TO DATE"); statusCol = green; break;
-        case UPDATER_AVAILABLE:   snprintf(line, sizeof(line), "%s %s", es ? "NUEVA:" : "NEW:", Port_Updater_GetRemoteTag()); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
-        case UPDATER_DOWNLOADING: snprintf(line, sizeof(line), "%s %d%%", es ? "INSTALANDO" : "INSTALLING", Port_Updater_GetProgress()); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
-        case UPDATER_INSTALLED:   snprintf(line, sizeof(line), "%s %s", es ? "INSTALADA" : "INSTALLED", Port_Updater_GetRemoteTag()); statusCol = green; break;
+        case UPDATER_CHECKING:    snprintf(line, sizeof(line), "%s", pt ? "BUSCANDO..." : es ? "BUSCANDO..." : "CHECKING..."); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
+        case UPDATER_UP_TO_DATE:  snprintf(line, sizeof(line), "%s", pt ? "VOCÊ JÁ ESTÁ EM DIA" : es ? "YA ESTAS AL DIA" : "UP TO DATE"); statusCol = green; break;
+        case UPDATER_AVAILABLE:   snprintf(line, sizeof(line), "%s %s", pt ? "NOVA:" : es ? "NUEVA:" : "NEW:", Port_Updater_GetRemoteTag()); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
+        case UPDATER_DOWNLOADING: snprintf(line, sizeof(line), "%s %d%%", pt ? "INSTALANDO" : es ? "INSTALANDO" : "INSTALLING", Port_Updater_GetProgress()); statusCol = Draw2D_Color32(255, 220, 80, 255); break;
+        case UPDATER_INSTALLED:   snprintf(line, sizeof(line), "%s %s", pt ? "INSTALADA" : es ? "INSTALADA" : "INSTALLED", Port_Updater_GetRemoteTag()); statusCol = green; break;
         case UPDATER_ERROR:       snprintf(line, sizeof(line), "%s", Port_Updater_GetMessage()); statusCol = red; break;
-        default:                  snprintf(line, sizeof(line), "%s", es ? "SIN COMPROBAR" : "NOT CHECKED"); break;
+        default:                  snprintf(line, sizeof(line), "%s", pt ? "NÃO VERIFICADO" : es ? "SIN COMPROBAR" : "NOT CHECKED"); break;
     }
     DrawText(24.0f, 121.0f, 1.0f, line, statusCol);
     if (us == UPDATER_DOWNLOADING) {
@@ -3761,26 +3778,27 @@ static void RenderUpdateModal(int lang) {
     const char* actionLabel;
     uint32_t actionBody = BTN_BLUE_BODY, actionBorder = BTN_BLUE_BORDER;
     switch (us) {
-        case UPDATER_AVAILABLE:   actionLabel = es ? "INSTALAR AHORA" : "INSTALL NOW"; break;
-        case UPDATER_INSTALLED:   actionLabel = es ? "REINICIAR AHORA" : "RESTART NOW"; break;
+        case UPDATER_AVAILABLE:   actionLabel = pt ? "INSTALAR AGORA" : es ? "INSTALAR AHORA" : "INSTALL NOW"; break;
+        case UPDATER_INSTALLED:   actionLabel = pt ? "REINICIAR AGORA" : es ? "REINICIAR AHORA" : "RESTART NOW"; break;
         case UPDATER_CHECKING:
         case UPDATER_DOWNLOADING: actionLabel = "..."; actionBody = Draw2D_Color32(30, 34, 44, 255); actionBorder = Draw2D_Color32(70, 76, 90, 255); break;
-        default:                  actionLabel = es ? "BUSCAR ACTUALIZACION" : "CHECK NOW"; break;
+        default:                  actionLabel = pt ? "BUSCAR ATUALIZAÇÃO" : es ? "BUSCAR ACTUALIZACION" : "CHECK NOW"; break;
     }
     DrawButton(16.0f, 142.0f, 288.0f, 28.0f, actionLabel, white, actionBody, actionBorder);
 
     /* Always there: with an update waiting it lists what the update brings, and
      * otherwise the latest published changes (empty until a check has run). */
-    DrawButton(16.0f, 176.0f, 288.0f, 24.0f, es ? "NOVEDADES" : "WHAT'S NEW",
+    DrawButton(16.0f, 176.0f, 288.0f, 24.0f, pt ? "NOVIDADES" : es ? "NOVEDADES" : "WHAT'S NEW",
                Draw2D_Color32(255, 225, 120, 255), Draw2D_Color32(46, 36, 12, 255), Draw2D_Color32(170, 130, 60, 255));
 
-    DrawButton(116.0f, 206.0f, 88.0f, 22.0f, es ? "CERRAR" : "CLOSE", white, BTN_BLUE_BODY, BTN_BLUE_BORDER);
+    DrawButton(116.0f, 206.0f, 88.0f, 22.0f, pt ? "FECHAR" : es ? "CERRAR" : "CLOSE", white, BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 /* Modal prompt for the self-updater, drawn over whichever tab is active. */
 static void RenderUpdatePrompt(int lang) {
     const UpdaterPrompt pr = Port_Updater_GetPrompt();
     const bool es = (lang == 6);
+    const bool pt = (lang == 7);
     const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
     const uint32_t gold = Draw2D_Color32(255, 215, 0, 255);
     const char* title = "";
@@ -3799,21 +3817,21 @@ static void RenderUpdatePrompt(int lang) {
 
     switch (pr) {
         case UPDATER_PROMPT_ASK_INSTALL:
-            title = es ? "ACTUALIZACION DISPONIBLE" : "UPDATE AVAILABLE";
-            question = es ? "INSTALAR AHORA?" : "INSTALL NOW?";
+            title = pt ? "ATUALIZAÇÃO DISPONÍVEL" : es ? "ACTUALIZACION DISPONIBLE" : "UPDATE AVAILABLE";
+            question = pt ? "INSTALAR AGORA?" : es ? "INSTALAR AHORA?" : "INSTALL NOW?";
             snprintf(line, sizeof(line), "%s -> %s", MZM_PORT_VERSION_LABEL, Port_Updater_GetRemoteTag());
             break;
         case UPDATER_PROMPT_PROGRESS:
-            title = es ? "ACTUALIZANDO" : "UPDATING";
+            title = pt ? "ATUALIZANDO" : es ? "ACTUALIZANDO" : "UPDATING";
             snprintf(line, sizeof(line), "%d%%", Port_Updater_GetProgress());
             break;
         case UPDATER_PROMPT_ASK_RESTART:
-            title = es ? "ACTUALIZACION INSTALADA" : "UPDATE INSTALLED";
-            question = es ? "REINICIAR AHORA?" : "RESTART NOW?";
+            title = pt ? "ATUALIZAÇÃO INSTALADA" : es ? "ACTUALIZACION INSTALADA" : "UPDATE INSTALLED";
+            question = pt ? "REINICIAR AGORA?" : es ? "REINICIAR AHORA?" : "RESTART NOW?";
             snprintf(line, sizeof(line), "%s", Port_Updater_GetRemoteTag());
             break;
         default:
-            title = es ? "ERROR DE ACTUALIZACION" : "UPDATE FAILED";
+            title = pt ? "ERRO DE ATUALIZAÇÃO" : es ? "ERROR DE ACTUALIZACION" : "UPDATE FAILED";
             snprintf(line, sizeof(line), "%s", Port_Updater_GetMessage());
             break;
     }
@@ -3821,7 +3839,7 @@ static void RenderUpdatePrompt(int lang) {
     DrawTextCentered(160.0f, 94.0f, 1.0f, line, Draw2D_Color32(150, 200, 255, 255));
     if (question[0]) DrawTextCentered(160.0f, 114.0f, 1.0f, question, white);
     if (pr == UPDATER_PROMPT_ERROR && Port_Updater_KeptCia()) {
-        DrawTextCentered(160.0f, 112.0f, 1.0f, es ? "CIA EN SD: mzm-update.cia" : "CIA KEPT: sdmc:/mzm-update.cia",
+        DrawTextCentered(160.0f, 112.0f, 1.0f, pt ? "CIA NO SD: mzm-update.cia" : es ? "CIA EN SD: mzm-update.cia" : "CIA KEPT: sdmc:/mzm-update.cia",
                          Draw2D_Color32(255, 220, 80, 255));
     }
 
@@ -3830,15 +3848,15 @@ static void RenderUpdatePrompt(int lang) {
         Draw2D_Rect(40.0f, 132.0f, 1.0f, 240.0f * (float)Port_Updater_GetProgress() / 100.0f, 8.0f,
                           Draw2D_Color32(80, 255, 120, 255));
     } else if (pr == UPDATER_PROMPT_ERROR) {
-        DrawButton(116.0f, (float)UPD_BTN_Y0, 88.0f, 28.0f, es ? "ACEPTAR" : "OK", white, BTN_BLUE_BODY, BTN_BLUE_BORDER);
+        DrawButton(116.0f, (float)UPD_BTN_Y0, 88.0f, 28.0f, pt ? "ACEITAR" : es ? "ACEPTAR" : "OK", white, BTN_BLUE_BODY, BTN_BLUE_BORDER);
     } else {
         DrawButton((float)UPD_YES_X0, (float)UPD_BTN_Y0, (float)(UPD_YES_X1 - UPD_YES_X0), 28.0f,
-                   es ? "SI" : "YES", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
+                   pt ? "SIM" : es ? "SI" : "YES", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
         DrawButton((float)UPD_NO_X0, (float)UPD_BTN_Y0, (float)(UPD_NO_X1 - UPD_NO_X0), 28.0f,
                    "NO", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
         if (hasNotes) {
             DrawButton((float)UPD_YES_X0, (float)UPD_NOTES_Y0, (float)(UPD_NO_X1 - UPD_YES_X0),
-                       (float)(UPD_NOTES_Y1 - UPD_NOTES_Y0), es ? "NOVEDADES" : "WHAT'S NEW",
+                       (float)(UPD_NOTES_Y1 - UPD_NOTES_Y0), pt ? "NOVIDADES" : es ? "NOVEDADES" : "WHAT'S NEW",
                        Draw2D_Color32(255, 225, 120, 255), Draw2D_Color32(46, 36, 12, 255), Draw2D_Color32(170, 130, 60, 255));
         }
     }
@@ -3852,6 +3870,7 @@ static void RenderUpdatePrompt(int lang) {
 static void RenderWideAiQuestion(int lang) {
     if (!Port_Config_WideAiQuestionDue() || Port_Updater_GetPrompt() != UPDATER_PROMPT_NONE) return;
     const bool es = (lang == 6);
+    const bool pt = (lang == 7);
     const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
     const uint32_t text = Draw2D_Color32(190, 210, 235, 255);
     /* The UI font has no comma. */
@@ -3869,23 +3888,30 @@ static void RenderWideAiQuestion(int lang) {
         "CON IA GENERATIVA QUE LLENAN LA PANTALLA",
         "AMPLIA.",
     };
-    const char* const* lines = es ? linesEs : linesEn;
+    static const char* const linesPt[] = {
+        "ALGUMAS CENAS NÃO TÊM IMAGEM ALÉM DAS",
+        "BORDAS DA TELA DO GBA. PARA ELAS FORAM",
+        "CRIADAS BORDAS NOVAS COM IA GENERATIVA",
+        "QUE PREENCHEM A TELA AMPLA.",
+        "",
+    };
+    const char* const* lines = pt ? linesPt : es ? linesEs : linesEn;
 
     Draw2D_Rect(0.0f, 0.0f, 0.97f, 320.0f, 240.0f, Draw2D_Color32(0, 0, 0, 170));
     Draw2D_Rect(14.0f, (float)WAI_BOX_Y0, 0.98f, 292.0f, (float)WAI_BOX_H, Draw2D_Color32(40, 70, 120, 255));
     Draw2D_Rect(16.0f, (float)WAI_BOX_Y0 + 2.0f, 0.99f, 288.0f, (float)WAI_BOX_H - 4.0f,
                       Draw2D_Color32(10, 14, 24, 255));
-    DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 10.0f, 1.0f, es ? "PANTALLA AMPLIA" : "WIDE SCREEN",
+    DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 10.0f, 1.0f, pt ? "TELA AMPLA" : es ? "PANTALLA AMPLIA" : "WIDE SCREEN",
                      Draw2D_Color32(255, 215, 0, 255));
     for (int i = 0; i < 5; ++i)
         DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 32.0f + 14.0f * (float)i, 1.0f, lines[i], text);
-    DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 108.0f, 1.0f, es ? "QUIERES VER ESOS BORDES?" : "SHOW THESE EDGES?",
+    DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 108.0f, 1.0f, pt ? "QUER VER ESSAS BORDAS?" : es ? "QUIERES VER ESOS BORDES?" : "SHOW THESE EDGES?",
                      white);
     DrawTextCentered(160.0f, (float)WAI_BOX_Y0 + 124.0f, 1.0f,
-                     es ? "(SE CAMBIA EN PANTALLA > ASPECTO)" : "(CHANGE IT IN DISPLAY > ASPECT)",
+                     pt ? "(MUDE EM TELA > PROPORÇÃO)" : es ? "(SE CAMBIA EN PANTALLA > ASPECTO)" : "(CHANGE IT IN DISPLAY > ASPECT)",
                      Draw2D_Color32(130, 140, 160, 255));
     DrawButton((float)UPD_YES_X0, (float)WAI_BTN_Y0, (float)(UPD_YES_X1 - UPD_YES_X0), 28.0f,
-               es ? "SI" : "YES", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
+               pt ? "SIM" : es ? "SI" : "YES", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
     DrawButton((float)UPD_NO_X0, (float)WAI_BTN_Y0, (float)(UPD_NO_X1 - UPD_NO_X0), 28.0f,
                "NO", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
 }
@@ -3910,6 +3936,7 @@ static void RenderDspFirmQuestion(int lang) {
     const int state = Port_DspFirm_State();
     if (state == DSPFIRM_PROMPT_NONE) return;
     const bool es = (lang == 6);
+    const bool pt = (lang == 7);
     const uint32_t white = Draw2D_Color32(255, 255, 255, 255);
     const uint32_t text = Draw2D_Color32(190, 210, 235, 255);
     const float z = 0.994f;
@@ -3919,30 +3946,31 @@ static void RenderDspFirmQuestion(int lang) {
     Draw2D_Rect(16.0f, (float)WAI_BOX_Y0 + 2.0f, z + 0.002f, 288.0f, (float)WAI_BOX_H - 4.0f,
                       Draw2D_Color32(10, 14, 24, 255));
     const float y0 = (float)WAI_BOX_Y0;
-    DrawTextCentered(160.0f, y0 + 10.0f, 1.0f, es ? "FALTA EL FIRMWARE DE SONIDO" : "SOUND FIRMWARE NEEDED",
+    DrawTextCentered(160.0f, y0 + 10.0f, 1.0f, pt ? "FALTA O FIRMWARE DE SOM" : es ? "FALTA EL FIRMWARE DE SONIDO" : "SOUND FIRMWARE NEEDED",
                      Draw2D_Color32(255, 215, 0, 255));
     if (state == DSPFIRM_PROMPT_ASK) {
         const bool missing = Port_DspFirm_Missing();
         DrawTextCentered(160.0f, y0 + 36.0f, 1.0f,
-                         es ? (missing ? "EL FIRMWARE DSP NO ESTA EN LA TARJETA SD." : "EL FIRMWARE DSP DE LA TARJETA SD ESTA DANADO.")
+                         pt ? (missing ? "O FIRMWARE DSP NÃO ESTÁ NO CARTÃO SD." : "O FIRMWARE DSP DO CARTÃO SD ESTÁ DANIFICADO.")
+                         : es ? (missing ? "EL FIRMWARE DSP NO ESTA EN LA TARJETA SD." : "EL FIRMWARE DSP DE LA TARJETA SD ESTA DANADO.")
                             : (missing ? "THE DSP FIRMWARE IS NOT ON THE SD CARD." : "THE DSP FIRMWARE ON THE SD CARD IS DAMAGED."),
                          text);
-        DrawTextCentered(160.0f, y0 + 62.0f, 1.0f, es ? "SIN ELLO EL JUEGO FUNCIONA SIN SONIDO." : "WITHOUT IT THE GAME RUNS BUT SILENT.",
+        DrawTextCentered(160.0f, y0 + 62.0f, 1.0f, pt ? "SEM ELE O JOGO RODA SEM SOM." : es ? "SIN ELLO EL JUEGO FUNCIONA SIN SONIDO." : "WITHOUT IT THE GAME RUNS BUT SILENT.",
                          Draw2D_Color32(255, 170, 90, 255));
-        DrawTextCentered(160.0f, y0 + 82.0f, 1.0f, es ? "PARA JUGAR CON SONIDO EXTRAELO AHORA." : "TO PLAY WITH SOUND EXTRACT IT NOW.", text);
-        DrawTextCentered(160.0f, y0 + 108.0f, 1.0f, es ? "(SE COPIA DE LA PROPIA CONSOLA)" : "(IT IS COPIED FROM THIS CONSOLE)",
+        DrawTextCentered(160.0f, y0 + 82.0f, 1.0f, pt ? "PARA JOGAR COM SOM, EXTRAIA AGORA." : es ? "PARA JUGAR CON SONIDO EXTRAELO AHORA." : "TO PLAY WITH SOUND EXTRACT IT NOW.", text);
+        DrawTextCentered(160.0f, y0 + 108.0f, 1.0f, pt ? "(COPIADO DO PRÓPRIO CONSOLE)" : es ? "(SE COPIA DE LA PROPIA CONSOLA)" : "(IT IS COPIED FROM THIS CONSOLE)",
                          Draw2D_Color32(130, 140, 160, 255));
         DrawKeyButton((float)UPD_YES_X0, (float)WAI_BTN_Y0, (float)(UPD_YES_X1 - UPD_YES_X0), 28.0f, 'A',
-                   es ? "EXTRAER" : "EXTRACT", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
+                   pt ? "EXTRAIR" : es ? "EXTRAER" : "EXTRACT", white, Draw2D_Color32(16, 60, 32, 255), Draw2D_Color32(55, 150, 95, 255));
         DrawKeyButton((float)UPD_NO_X0, (float)WAI_BTN_Y0, (float)(UPD_NO_X1 - UPD_NO_X0), 28.0f, 'B',
-                   es ? "SIN SONIDO" : "NO SOUND", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
+                   pt ? "SEM SOM" : es ? "SIN SONIDO" : "NO SOUND", white, Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
     } else if (state == DSPFIRM_PROMPT_WORKING) {
-        DrawTextCentered(160.0f, y0 + 76.0f, 1.0f, es ? "EXTRAYENDO..." : "EXTRACTING...", white);
+        DrawTextCentered(160.0f, y0 + 76.0f, 1.0f, pt ? "EXTRAINDO..." : es ? "EXTRAYENDO..." : "EXTRACTING...", white);
     } else {
         const bool ok = (state == DSPFIRM_PROMPT_DONE);
         DrawTextCentered(160.0f, y0 + 50.0f, 1.0f,
-                         ok ? (es ? "LISTO. EL SONIDO FUNCIONARA." : "DONE. THE SOUND WILL WORK.")
-                            : (es ? "NO SE PUDO EXTRAER." : "COULD NOT EXTRACT IT."),
+                         ok ? (pt ? "PRONTO. O SOM VAI FUNCIONAR." : es ? "LISTO. EL SONIDO FUNCIONARA." : "DONE. THE SOUND WILL WORK.")
+                            : (pt ? "NÃO FOI POSSÍVEL EXTRAIR." : es ? "NO SE PUDO EXTRAER." : "COULD NOT EXTRACT IT."),
                          ok ? Draw2D_Color32(120, 255, 160, 255) : Draw2D_Color32(255, 110, 110, 255));
         if (!ok) DrawTextCentered(160.0f, y0 + 76.0f, 1.0f, Port_DspFirm_Failure(), Draw2D_Color32(130, 140, 160, 255));
         DrawKeyButton(116.0f, (float)WAI_BTN_Y0, 88.0f, 28.0f, 'A', "OK", white, Draw2D_Color32(24, 40, 70, 255), Draw2D_Color32(90, 130, 180, 255));
@@ -3957,20 +3985,20 @@ static void RenderRemapSelectModal(int lang) {
     Draw2D_Rect(12.0f, 28.0f, 0.96f, 296.0f, 204.0f, Draw2D_Color32(8, 12, 20, 252));
     Draw2D_Rect(12.0f, 28.0f, 0.95f, 296.0f, 204.0f, Draw2D_Color32(40, 80, 140, 255));
 
-    static const char* const btnNames[7][10] = {
+    static const char* const btnNames[8][10] = {
         { "BUTTON A", "BUTTON B", "BUTTON X", "BUTTON Y", "BUTTON L", "BUTTON R", "BUTTON ZL", "BUTTON ZR", "START", "SELECT" },
         { "BUTTON A", "BUTTON B", "BUTTON X", "BUTTON Y", "BUTTON L", "BUTTON R", "BUTTON ZL", "BUTTON ZR", "START", "SELECT" },
         { "BUTTON A", "BUTTON B", "BUTTON X", "BUTTON Y", "BUTTON L", "BUTTON R", "BUTTON ZL", "BUTTON ZR", "START", "SELECT" },
         { "TASTE A", "TASTE B", "TASTE X", "TASTE Y", "TASTE L", "TASTE R", "TASTE ZL", "TASTE ZR", "START", "SELECT" },
         { "BOUTON A", "BOUTON B", "BOUTON X", "BOUTON Y", "BOUTON L", "BOUTON R", "BOUTON ZL", "BOUTON ZR", "START", "SELECT" },
         { "PULSANTE A", "PULSANTE B", "PULSANTE X", "PULSANTE Y", "PULSANTE L", "PULSANTE R", "PULSANTE ZL", "PULSANTE ZR", "START", "SELECT" },
-        { "BOTON A", "BOTON B", "BOTON X", "BOTON Y", "BOTON L", "BOTON R", "BOTON ZL", "BOTON ZR", "START", "SELECT" }
+        { "BOTON A", "BOTON B", "BOTON X", "BOTON Y", "BOTON L", "BOTON R", "BOTON ZL", "BOTON ZR", "START", "SELECT" }, { "BOTÃO A", "BOTÃO B", "BOTÃO X", "BOTÃO Y", "BOTÃO L", "BOTÃO R", "BOTÃO ZL", "BOTÃO ZR", "START", "SELECT" }
     };
 
     char header[64];
-    const char* selectActionTitles[7] = {
+    const char* selectActionTitles[8] = {
         "SELECT ACTION (%s)", "SELECT ACTION (%s)", "SELECT ACTION (%s)",
-        "AKTION WAEHLEN (%s)", "CHOISIR ACTION (%s)", "SELEZIONA AZIONE (%s)", "SELECCIONAR ACCION (%s)"
+        "AKTION WAEHLEN (%s)", "CHOISIR ACTION (%s)", "SELEZIONA AZIONE (%s)", "SELECCIONAR ACCION (%s)", "ESCOLHER AÇÃO (%s)"
     };
     snprintf(header, sizeof(header), selectActionTitles[lang], btnNames[lang][sRemapSelectButtonIdx]);
     DrawTextCentered(160.0f, 32.0f, 1.0f, header, Draw2D_Color32(255, 215, 0, 255));
@@ -4019,9 +4047,9 @@ static void RenderRemapSelectModal(int lang) {
     float cy = 48.0f + 4.0f * 28.0f;
     Draw2D_Rect(cx, cy, 0.97f, 140.0f, 24.0f, Draw2D_Color32(100, 30, 30, 255));
     Draw2D_Rect(cx + 1.0f, cy + 1.0f, 0.98f, 138.0f, 22.0f, Draw2D_Color32(60, 20, 20, 255));
-    const char* cancelLabels[7] = {
+    const char* cancelLabels[8] = {
         "CANCEL", "CANCEL", "CANCEL",
-        "ABBRECHEN", "ANNULER", "ANNULLA", "CANCELAR"
+        "ABBRECHEN", "ANNULER", "ANNULLA", "CANCELAR", "CANCELAR"
     };
     DrawTextCentered(cx + 70.0f, cy + 9.0f, 1.0f, cancelLabels[lang], Draw2D_Color32(255, 140, 140, 255));
 }
@@ -4032,9 +4060,9 @@ static void RenderRemapModal(int lang) {
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 206.0f, Draw2D_Color32(40, 70, 120, 255));
 
     /* Title at top */
-    const char* remapTitles[7] = {
+    const char* remapTitles[8] = {
         "BUTTON REMAPPING (TAP TO CHANGE)", "BUTTON REMAPPING (TAP TO CHANGE)", "BUTTON REMAPPING (TAP TO CHANGE)",
-        "TASTENBELEGUNG (ZUM AENDERN TIPPEN)", "RECONFIGURATION TOUCHES (TOUCHER)", "CONFIGURAZIONE TASTI (TOCCA)", "REASIGNAR BOTONES (TOCA PARA CAMBIAR)"
+        "TASTENBELEGUNG (ZUM AENDERN TIPPEN)", "RECONFIGURATION TOUCHES (TOUCHER)", "CONFIGURAZIONE TASTI (TOCCA)", "REASIGNAR BOTONES (TOCA PARA CAMBIAR)", "REMAPEAR BOTÕES (TOQUE PARA MUDAR)"
     };
     DrawText(20.0f, 31.0f, 1.0f, remapTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
@@ -4044,14 +4072,14 @@ static void RenderRemapModal(int lang) {
     const float maxScroll = 206.0f; /* 14 items * 26px = 364px; 364 - 158 = 206px */
 
     /* 10 remappable buttons + 1 C-Stick row = 11 items, each 26px tall */
-    static const char* const btnRowNames[7][10] = {
+    static const char* const btnRowNames[8][10] = {
         { "BUTTON A:", "BUTTON B:", "BUTTON X:", "BUTTON Y:", "BUTTON L:", "BUTTON R:", "BUTTON ZL:", "BUTTON ZR:", "START:", "SELECT:" },
         { "BUTTON A:", "BUTTON B:", "BUTTON X:", "BUTTON Y:", "BUTTON L:", "BUTTON R:", "BUTTON ZL:", "BUTTON ZR:", "START:", "SELECT:" },
         { "BUTTON A:", "BUTTON B:", "BUTTON X:", "BUTTON Y:", "BUTTON L:", "BUTTON R:", "BUTTON ZL:", "BUTTON ZR:", "START:", "SELECT:" },
         { "TASTE A:", "TASTE B:", "TASTE X:", "TASTE Y:", "TASTE L:", "TASTE R:", "TASTE ZL:", "TASTE ZR:", "START:", "SELECT:" },
         { "BOUTON A:", "BOUTON B:", "BOUTON X:", "BOUTON Y:", "BOUTON L:", "BOUTON R:", "BOUTON ZL:", "BOUTON ZR:", "START:", "SELECT:" },
         { "PULSANTE A:", "PULSANTE B:", "PULSANTE X:", "PULSANTE Y:", "PULSANTE L:", "PULSANTE R:", "PULSANTE ZL:", "PULSANTE ZR:", "START:", "SELECT:" },
-        { "BOTON A:", "BOTON B:", "BOTON X:", "BOTON Y:", "BOTON L:", "BOTON R:", "BOTON ZL:", "BOTON ZR:", "START:", "SELECT:" }
+        { "BOTON A:", "BOTON B:", "BOTON X:", "BOTON Y:", "BOTON L:", "BOTON R:", "BOTON ZL:", "BOTON ZR:", "START:", "SELECT:" }, { "BOTÃO A:", "BOTÃO B:", "BOTÃO X:", "BOTÃO Y:", "BOTÃO L:", "BOTÃO R:", "BOTÃO ZL:", "BOTÃO ZR:", "START:", "SELECT:" }
     };
 
     float contentY = viewY0 - sRemapScrollY;
@@ -4095,14 +4123,14 @@ static void RenderRemapModal(int lang) {
             "C-STICK:",
             Draw2D_Color32(255, 255, 255, 255), viewY0, viewY1);
         int cmode = Port_Config_GetCstickMode();
-        static const char* const cstickModeNames[7][4] = {
+        static const char* const cstickModeNames[8][4] = {
             { "OFF", "AIM ONLY", "MOVEMENT ONLY", "ALL" },
             { "OFF", "AIM ONLY", "MOVEMENT ONLY", "ALL" },
             { "OFF", "AIM ONLY", "MOVEMENT ONLY", "ALL" },
             { "AUS", "NUR ZIELEN", "NUR BEWEGUNG", "ALLES" },
             { "DESACTIVE", "VISER SEUL.", "DEPLAC. SEUL.", "TOUT" },
             { "DISATTIVO", "SOLO MIRA", "SOLO MOVIMENTO", "TUTTO" },
-            { "DESACTIVADO", "SOLO APUNTAR", "SOLO MOVIMIENTO", "TODO" }
+            { "DESACTIVADO", "SOLO APUNTAR", "SOLO MOVIMIENTO", "TODO" }, { "DESATIVADO", "SÓ MIRAR", "SÓ MOVIMENTO", "TUDO" }
         };
         DrawTextClipped(150.0f, cstickY + 9.0f, 1.0f,
             cstickModeNames[lang][cmode],
@@ -4117,9 +4145,9 @@ static void RenderRemapModal(int lang) {
         extern bool Port_AutoSpaceJump_Enabled(void);
         extern bool Port_ChargePull_Enabled(void);
         const bool values[3] = { Port_AutoBomb_Enabled(), Port_AutoSpaceJump_Enabled(), Port_ChargePull_Enabled() };
-        const char* const names[3][2] = { { "AUTO BOMB JUMP:", "AUTOSALTO BOMBAS:" },
-                                          { "AUTO SPACE JUMP:", "AUTO SALTO ESPACIAL:" },
-                                          { "CHARGE PULLS DROPS:", "CARGA ATRAE DROPS:" } };
+        const char* const names[3][3] = { { "AUTO BOMB JUMP:", "AUTOSALTO BOMBAS:", "AUTOSSALTO BOMBAS:" },
+                                          { "AUTO SPACE JUMP:", "AUTO SALTO ESPACIAL:", "AUTO SALTO ESPACIAL:" },
+                                          { "CHARGE PULLS DROPS:", "CARGA ATRAE DROPS:", "CARGA ATRAI DROPS:" } };
         for (int i = 0; i < 3; ++i) {
             const float rowY = contentY + (float)(11 + i) * 26.0f;
             if (rowY + 24.0f <= viewY0 || rowY >= viewY1) continue;
@@ -4129,11 +4157,11 @@ static void RenderRemapModal(int lang) {
                 Draw2D_Rect(16.0f, rY0, 0.88f, 284.0f, rY1 - rY0, Draw2D_Color32(24, 32, 50, 255));
                 Draw2D_Rect(16.0f, rY0, 0.89f, 284.0f, 1.0f, Draw2D_Color32(45, 60, 90, 255));
             }
-            DrawTextClipped(24.0f, rowY + 9.0f, 1.0f, names[i][lang == 6 ? 1 : 0],
+            DrawTextClipped(24.0f, rowY + 9.0f, 1.0f, names[i][lang == 7 ? 2 : (lang == 6 ? 1 : 0)],
                             Draw2D_Color32(255, 255, 255, 255), viewY0, viewY1);
             const bool on = values[i];
-            const char* txt = hcActive ? ((lang == 6) ? "NO EN HARDCORE" : "NOT IN HARDCORE")
-                                       : (on ? ((lang == 6) ? "ACTIVADO" : "ON") : ((lang == 6) ? "DESACT." : "OFF"));
+            const char* txt = hcActive ? ((lang == 7) ? "NÃO NO HARDCORE" : (lang == 6) ? "NO EN HARDCORE" : "NOT IN HARDCORE")
+                                       : (on ? ((lang == 7) ? "ATIVADO" : (lang == 6) ? "ACTIVADO" : "ON") : ((lang == 7) ? "DESAT." : (lang == 6) ? "DESACT." : "OFF"));
             DrawTextClipped(150.0f, rowY + 9.0f, 1.0f, txt,
                             hcActive ? Draw2D_Color32(110, 120, 140, 255)
                                      : (on ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(255, 100, 100, 255)),
@@ -4152,11 +4180,11 @@ static void RenderRemapModal(int lang) {
 
     /* Bottom buttons (Fixed at bottom): RESTABLECER (Left) + CERRAR (Right) */
     /* Reset Defaults Button (X: 16 to 156, W: 140) */
-    DrawButton(16.0f, 206.0f, 140.0f, 22.0f, (lang == 6) ? "RESTABLECER" : "RESET DEFAULTS",
+    DrawButton(16.0f, 206.0f, 140.0f, 22.0f, (lang == 7) ? "RESTAURAR" : (lang == 6) ? "RESTABLECER" : "RESET DEFAULTS",
                Draw2D_Color32(255, 170, 170, 255), Draw2D_Color32(90, 35, 35, 255), Draw2D_Color32(190, 80, 80, 255));
 
     /* Close button (X: 164 to 304, W: 140) */
-    DrawButton(164.0f, 206.0f, 140.0f, 22.0f, (lang == 6) ? "CERRAR" : "CLOSE",
+    DrawButton(164.0f, 206.0f, 140.0f, 22.0f, (lang == 7) ? "FECHAR" : (lang == 6) ? "CERRAR" : "CLOSE",
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 
     /* Render action picker popup if active */
@@ -4215,7 +4243,7 @@ static void RenderMapView(void) {
     /* Chozo Objective / Coords Badge */
     uint8_t targetArea = 0, targetX = 0, targetY = 0;
     bool hasTarget = GetActiveChozoTarget(&targetArea, &targetX, &targetY);
-    const char* objLabel = (lang == 6) ? "! OBJETIVO" : ((lang == 3) ? "! ZIEL" : "! TARGET");
+    const char* objLabel = (lang == 7) ? "! OBJETIVO" : (lang == 6) ? "! OBJETIVO" : ((lang == 3) ? "! ZIEL" : "! TARGET");
     if (hasTarget) {
         bool inViewArea = (targetArea == sViewArea);
         uint32_t targetBg = inViewArea
@@ -4454,14 +4482,14 @@ static void RenderStatusView(void) {
     Draw2D_Rect(4.0f, 26.0f, 0.4f, 312.0f, 210.0f, Draw2D_Color32(12, 16, 26, 255));
     Draw2D_Rect(4.0f, 26.0f, 0.35f, 312.0f, 210.0f, Draw2D_Color32(35, 50, 75, 255));
 
-    const char* titles[7] = {
+    const char* titles[8] = {
         "SAMUS ARAN - STATUS & EQUIPMENT",
         "SAMUS ARAN - STATUS & EQUIPMENT",
         "SAMUS ARAN - STATUS & EQUIPMENT",
         "SAMUS ARAN - STATUS & AUSRUESTUNG",
         "SAMUS ARAN - STATUT & EQUIPEMENT",
         "SAMUS ARAN - STATO ED EQUIPAGGIAMENTO",
-        "SAMUS ARAN - ESTADO Y EQUIPAMIENTO"
+        "SAMUS ARAN - ESTADO Y EQUIPAMIENTO", "SAMUS ARAN - STATUS E EQUIPAMENTO"
     };
     DrawText(12.0f, 30.0f, 1.0f, titles[lang], Draw2D_Color32(100, 220, 255, 255));
 
@@ -4536,33 +4564,33 @@ static void RenderStatusView(void) {
 
     /* 2. Beams & Weapons Column (X: 8, W: 148, Y: 76 to 164) */
     Draw2D_Rect(8.0f, 76.0f, 0.45f, 148.0f, 88.0f, Draw2D_Color32(18, 22, 34, 255));
-    const char* beamColTitles[7] = {
+    const char* beamColTitles[8] = {
         "BEAMS & BOMBS", "BEAMS & BOMBS", "BEAMS & BOMBS",
-        "BEAMS & BOMBEN", "RAYONS & BOMBES", "RAGGI E BOMBE", "RAYOS Y BOMBAS"
+        "BEAMS & BOMBEN", "RAYONS & BOMBES", "RAGGI E BOMBE", "RAYOS Y BOMBAS", "RAIOS E BOMBAS"
     };
     DrawText(14.0f, 80.0f, 1.0f, beamColTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
-    const char* unknownNames[7] = {
-        "UNKNOWN ITEM", "UNKNOWN ITEM", "UNKNOWN ITEM", "UNBEKANNT", "OBJET INCONNU", "OGGETTO SCONOSCIUTO", "OBJETO DESCONOCIDO"
+    const char* unknownNames[8] = {
+        "UNKNOWN ITEM", "UNKNOWN ITEM", "UNKNOWN ITEM", "UNBEKANNT", "OBJET INCONNU", "OGGETTO SCONOSCIUTO", "OBJETO DESCONOCIDO", "ITEM DESCONHECIDO"
     };
-    const char* pistolNames[7] = {
-        "PARALYZER", "PARALYZER", "PARALYZER", "NOTFALLPISTOLE", "PISTOLET URGENCE", "PISTOLA EMERGENZA", "PISTOLA EMERGENCIA"
+    const char* pistolNames[8] = {
+        "PARALYZER", "PARALYZER", "PARALYZER", "NOTFALLPISTOLE", "PISTOLET URGENCE", "PISTOLA EMERGENZA", "PISTOLA EMERGENCIA", "PISTOLA EMERGÊNCIA"
     };
 
     bool isSuitless = (gEquipment.suitType == 2 /* SUIT_SUITLESS */);
     bool isFullyPowered = (gEquipment.suitType == 1 /* SUIT_FULLY_POWERED */);
 
     struct {
-        const char* name[7];
+        const char* name[8];
         uint8_t flag;
         bool isUnknownItem;
     } beams[] = {
-        { { "LONG BEAM", "LONG BEAM", "LONG BEAM", "DISTANCE BEAM", "RAYON LONG", "RAGGIO LUNGO", "RAYO LARGO" }, 1 << 0, false },
-        { { "ICE BEAM", "ICE BEAM", "ICE BEAM", "ICE BEAM", "RAYON GLACE", "RAGGIO GELO", "RAYO HIELO" }, 1 << 1, false },
-        { { "WAVE BEAM", "WAVE BEAM", "WAVE BEAM", "WAVE BEAM", "RAYON ONDES", "RAGGIO ONDA", "RAYO ONDAS" }, 1 << 2, false },
-        { { "PLASMA BEAM", "PLASMA BEAM", "PLASMA BEAM", "PLASMA BEAM", "RAYON PLASMA", "RAGGIO PLASMA", "RAYO PLASMA" }, 1 << 3, true },
-        { { "CHARGE BEAM", "CHARGE BEAM", "CHARGE BEAM", "CHARGE BEAM", "RAYON CHARGE", "RAGGIO CARICA", "RAYO RECARGA" }, 1 << 4, false },
-        { { "BOMBS", "BOMBS", "BOMBS", "BOMBEN", "BOMBES", "BOMBE", "BOMBAS" }, 1 << 7, false }
+        { { "LONG BEAM", "LONG BEAM", "LONG BEAM", "DISTANCE BEAM", "RAYON LONG", "RAGGIO LUNGO", "RAYO LARGO", "RAIO LONGO" }, 1 << 0, false },
+        { { "ICE BEAM", "ICE BEAM", "ICE BEAM", "ICE BEAM", "RAYON GLACE", "RAGGIO GELO", "RAYO HIELO", "RAIO DE GELO" }, 1 << 1, false },
+        { { "WAVE BEAM", "WAVE BEAM", "WAVE BEAM", "WAVE BEAM", "RAYON ONDES", "RAGGIO ONDA", "RAYO ONDAS", "RAIO DE ONDAS" }, 1 << 2, false },
+        { { "PLASMA BEAM", "PLASMA BEAM", "PLASMA BEAM", "PLASMA BEAM", "RAYON PLASMA", "RAGGIO PLASMA", "RAYO PLASMA", "RAIO DE PLASMA" }, 1 << 3, true },
+        { { "CHARGE BEAM", "CHARGE BEAM", "CHARGE BEAM", "CHARGE BEAM", "RAYON CHARGE", "RAGGIO CARICA", "RAYO RECARGA", "RAIO CARREGADO" }, 1 << 4, false },
+        { { "BOMBS", "BOMBS", "BOMBS", "BOMBEN", "BOMBES", "BOMBE", "BOMBAS", "BOMBAS" }, 1 << 7, false }
     };
     for (int i = 0; i < 6; ++i) {
         float py = 92.0f + (float)i * 11.0f;
@@ -4608,25 +4636,25 @@ static void RenderStatusView(void) {
 
     /* 3. Suits & Movement Column (X: 164, W: 148, Y: 76 to 164) */
     Draw2D_Rect(164.0f, 76.0f, 0.45f, 148.0f, 88.0f, Draw2D_Color32(18, 22, 34, 255));
-    const char* suitColTitles[7] = {
+    const char* suitColTitles[8] = {
         "SUITS & MISC", "SUITS & MISC", "SUITS & MISC",
-        "ANZUEGE & ITEMS", "COMBINAISONS", "TUTE E OGGETTI", "TRAJES Y EQUIPO"
+        "ANZUEGE & ITEMS", "COMBINAISONS", "TUTE E OGGETTI", "TRAJES Y EQUIPO", "TRAJES E EQUIPAMENTO"
     };
     DrawText(170.0f, 80.0f, 1.0f, suitColTitles[lang], Draw2D_Color32(255, 215, 0, 255));
 
     struct {
-        const char* name[7];
+        const char* name[8];
         uint8_t flag;
         bool isUnknownItem;
     } suits[] = {
-        { { "HIGH JUMP", "HIGH JUMP", "HIGH JUMP", "HOCHSPRUNG", "SUPER SAUT", "SALTO IN ALTO", "SUPERSALTO" }, 1 << 0, false },
-        { { "SPEED BOOSTER", "SPEED BOOSTER", "SPEED BOOSTER", "SPEED BOOSTER", "ACCELERATEUR", "SUPERVELOCITA", "ACELERACION" }, 1 << 1, false },
-        { { "SPACE JUMP", "SPACE JUMP", "SPACE JUMP", "SPACE JUMP", "SAUT SPATIAL", "SALTO SPAZIALE", "SALTO ESPACIAL" }, 1 << 2, true },
-        { { "SCREW ATTACK", "SCREW ATTACK", "SCREW ATTACK", "SCREW ATTACK", "ATTAQUE VRILLE", "ATTACCO A VITE", "SALTO EN BARRENA" }, 1 << 3, false },
-        { { "VARIA SUIT", "VARIA SUIT", "VARIA SUIT", "VARIA SUIT", "COSTUME VARIA", "TUTA VARIA", "TRAJE CLIMATICO" }, 1 << 4, false },
-        { { "GRAVITY SUIT", "GRAVITY SUIT", "GRAVITY SUIT", "GRAVITY SUIT", "COSTUME GRAVITE", "TUTA GRAVITA", "TRAJE GRAVITATORIO" }, 1 << 5, true },
-        { { "MORPH BALL", "MORPH BALL", "MORPH BALL", "MORPH BALL", "BOULE MORPHING", "MORFOSFERA", "MORFOSFERA" }, 1 << 6, false },
-        { { "POWER GRIP", "POWER GRIP", "POWER GRIP", "POWER GRIP", "POIGNE DE FER", "PRESA FORZA", "AGARRE" }, 1 << 7, false }
+        { { "HIGH JUMP", "HIGH JUMP", "HIGH JUMP", "HOCHSPRUNG", "SUPER SAUT", "SALTO IN ALTO", "SUPERSALTO", "SUPERSALTO" }, 1 << 0, false },
+        { { "SPEED BOOSTER", "SPEED BOOSTER", "SPEED BOOSTER", "SPEED BOOSTER", "ACCELERATEUR", "SUPERVELOCITA", "ACELERACION", "ACELERADOR" }, 1 << 1, false },
+        { { "SPACE JUMP", "SPACE JUMP", "SPACE JUMP", "SPACE JUMP", "SAUT SPATIAL", "SALTO SPAZIALE", "SALTO ESPACIAL", "SALTO ESPACIAL" }, 1 << 2, true },
+        { { "SCREW ATTACK", "SCREW ATTACK", "SCREW ATTACK", "SCREW ATTACK", "ATTAQUE VRILLE", "ATTACCO A VITE", "SALTO EN BARRENA", "ATAQUE GIRATÓRIO" }, 1 << 3, false },
+        { { "VARIA SUIT", "VARIA SUIT", "VARIA SUIT", "VARIA SUIT", "COSTUME VARIA", "TUTA VARIA", "TRAJE CLIMATICO", "TRAJE VARIA" }, 1 << 4, false },
+        { { "GRAVITY SUIT", "GRAVITY SUIT", "GRAVITY SUIT", "GRAVITY SUIT", "COSTUME GRAVITE", "TUTA GRAVITA", "TRAJE GRAVITATORIO", "TRAJE GRAVITACIONAL" }, 1 << 5, true },
+        { { "MORPH BALL", "MORPH BALL", "MORPH BALL", "MORPH BALL", "BOULE MORPHING", "MORFOSFERA", "MORFOSFERA", "BOLA MORFO" }, 1 << 6, false },
+        { { "POWER GRIP", "POWER GRIP", "POWER GRIP", "POWER GRIP", "POIGNE DE FER", "PRESA FORZA", "AGARRE", "PEGADA FIRME" }, 1 << 7, false }
     };
     for (int i = 0; i < 8; ++i) {
         float py = 91.0f + (float)i * 9.0f;
@@ -4681,9 +4709,9 @@ static void RenderStatusView(void) {
     /* 4. Area Map Downloads Card & Collectibles Button (Y: 168 to 234) */
     Draw2D_Rect(8.0f, 168.0f, 0.45f, 304.0f, 66.0f, Draw2D_Color32(16, 20, 30, 255));
 
-    const char* mapHeaderTitles[7] = {
+    const char* mapHeaderTitles[8] = {
         "DOWNLOADED MAPS:", "DOWNLOADED MAPS:", "DOWNLOADED MAPS:",
-        "HERUNTERGELADENE KARTEN:", "CARTES TELECHARGEES:", "MAPPE SCARICATE:", "MAPAS DESCARGADOS:"
+        "HERUNTERGELADENE KARTEN:", "CARTES TELECHARGEES:", "MAPPE SCARICATE:", "MAPAS DESCARGADOS:", "MAPAS BAIXADOS:"
     };
     DrawText(14.0f, 172.0f, 1.0f, mapHeaderTitles[lang], Draw2D_Color32(100, 220, 255, 255));
 
@@ -4691,9 +4719,9 @@ static void RenderStatusView(void) {
     struct AreaItemStats globalStats;
     GetGlobalItemStats(&globalStats);
     char globBtn[48];
-    static const char* const itemsBtnLabels[7] = {
+    static const char* const itemsBtnLabels[8] = {
         "アイテム", "アイテム", "ITEMS",
-        "OBJEKTE", "OBJETS", "OGGETTI", "OBJETOS"
+        "OBJEKTE", "OBJETS", "OGGETTI", "OBJETOS", "ITENS"
     };
     if (hcStatus) {
         snprintf(globBtn, sizeof(globBtn), "%s: %u", itemsBtnLabels[lang],
@@ -4771,13 +4799,13 @@ static void RenderOptionsView(void) {
     /* Button 1: Display settings (Y: 48 to 76, H: 28) */
     bool p1 = DrawButtonBox(16.0f, 48.0f, 288.0f, 28.0f,
                             Draw2D_Color32(16, 40, 74, 255), Draw2D_Color32(60, 110, 180, 255));
-    static const char* const displayBtnTitles[7] = {
+    static const char* const displayBtnTitles[8] = {
         "DISPLAY", "DISPLAY", "DISPLAY",
-        "BILDSCHIRM", "AFFICHAGE", "SCHERMO", "PANTALLA"
+        "BILDSCHIRM", "AFFICHAGE", "SCHERMO", "PANTALLA", "TELA"
     };
-    static const char* const displayBtnSubs[7] = {
+    static const char* const displayBtnSubs[8] = {
         "LANGUAGE, ASPECT, STYLE, FPS", "LANGUAGE, ASPECT, STYLE, FPS", "LANGUAGE, ASPECT, STYLE, FPS",
-        "SPRACHE, BILD, STIL, FPS", "LANGUE, FORMAT, STYLE, FPS", "LINGUA, FORMATO, STILE, FPS", "IDIOMA, ASPECTO, ESTILO, FPS"
+        "SPRACHE, BILD, STIL, FPS", "LANGUE, FORMAT, STYLE, FPS", "LINGUA, FORMATO, STILE, FPS", "IDIOMA, ASPECTO, ESTILO, FPS", "IDIOMA, PROPORÇÃO, ESTILO, FPS"
     };
     DrawTextCentered(160.0f, 53.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnTitles[lang], Draw2D_Color32(120, 210, 255, 255));
     DrawTextCentered(160.0f, 64.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnSubs[lang], Draw2D_Color32(150, 170, 200, 255));
@@ -4785,27 +4813,27 @@ static void RenderOptionsView(void) {
     /* Controls remapping (Y: 82 to 114, H: 32) */
     bool p4 = DrawButtonBox(16.0f, 82.0f, 288.0f, 32.0f,
                             Draw2D_Color32(46, 32, 12, 255), Draw2D_Color32(170, 130, 60, 255));
-    static const char* const ctrlTitles[7] = {
+    static const char* const ctrlTitles[8] = {
         "CONTROLS", "CONTROLS", "CONTROLS",
-        "STEUERUNG", "COMMANDES", "CONTROLLI", "CONTROLES"
+        "STEUERUNG", "COMMANDES", "CONTROLLI", "CONTROLES", "CONTROLES"
     };
-    static const char* const ctrlSubs[7] = {
+    static const char* const ctrlSubs[8] = {
         "REMAPPABLE BUTTONS & C-STICK", "REMAPPABLE BUTTONS & C-STICK", "REMAPPABLE BUTTONS & C-STICK",
-        "TASTEN & C-STICK BELEGEN", "TOUCHES ET C-STICK", "RIMAPPA TASTI E C-STICK", "MAPEAR BOTONES Y C-STICK"
+        "TASTEN & C-STICK BELEGEN", "TOUCHES ET C-STICK", "RIMAPPA TASTI E C-STICK", "MAPEAR BOTONES Y C-STICK", "MAPEAR BOTÕES E C-STICK"
     };
     DrawTextCentered(160.0f, 89.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlTitles[lang], Draw2D_Color32(255, 215, 90, 255));
     DrawTextCentered(160.0f, 100.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlSubs[lang], Draw2D_Color32(190, 170, 120, 255));
 
     /* Restart button (Y: 122 to 150, H: 28) */
-    static const char* const restartBtnTitles[7] = {
+    static const char* const restartBtnTitles[8] = {
         "RESTART GAME", "RESTART GAME", "RESTART GAME",
-        "SPIEL NEUSTARTEN", "RECOMMENCER PARTIE", "RIAVVIA PARTITA", "REINICIAR PARTIDA"
+        "SPIEL NEUSTARTEN", "RECOMMENCER PARTIE", "RIAVVIA PARTITA", "REINICIAR PARTIDA", "REINICIAR JOGO"
     };
     DrawButton(16.0f, 122.0f, 140.0f, 28.0f, restartBtnTitles[lang],
                Draw2D_Color32(255, 150, 150, 255), Draw2D_Color32(64, 22, 22, 255), Draw2D_Color32(180, 60, 60, 255));
 
     /* Updates button, right half of the restart row */
-    DrawButton(164.0f, 122.0f, 140.0f, 28.0f, (lang == 6) ? "ACTUALIZAR" : "UPDATES",
+    DrawButton(164.0f, 122.0f, 140.0f, 28.0f, (lang == 7) ? "ATUALIZAR" : (lang == 6) ? "ACTUALIZAR" : "UPDATES",
                Draw2D_Color32(150, 230, 255, 255), Draw2D_Color32(16, 44, 64, 255), Draw2D_Color32(60, 130, 180, 255));
 
     /* Footer */
@@ -4981,7 +5009,7 @@ static void DrawDebugModalFrame(int lang, const char* titleEs, const char* title
     Draw2D_Rect(10.0f, 26.0f, 0.85f, 300.0f, 210.0f, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(10.0f, 26.0f, 0.84f, 300.0f, 210.0f, Draw2D_Color32(40, 70, 120, 255));
     DrawText(20.0f, 32.0f, 1.0f, (lang == 6) ? titleEs : titleEn, Draw2D_Color32(255, 215, 0, 255));
-    DrawButton(116.0f, 214.0f, 88.0f, 20.0f, (lang == 6) ? "CERRAR" : "CLOSE",
+    DrawButton(116.0f, 214.0f, 88.0f, 20.0f, (lang == 7) ? "FECHAR" : (lang == 6) ? "CERRAR" : "CLOSE",
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
@@ -4994,29 +5022,29 @@ static void RenderDebugToolsModal(int lang) {
 
     const bool rec = PlatformGpu3DS_IsRecording();
     const bool perf = PlatformGpu3DS_IsPerfRecording();
-    const char* onTxt = (lang == 6) ? "ACTIVO" : "ON";
-    const char* offTxt = (lang == 6) ? "PARADO" : "OFF";
+    const char* onTxt = (lang == 7) ? "ATIVO" : (lang == 6) ? "ACTIVO" : "ON";
+    const char* offTxt = (lang == 7) ? "PARADO" : (lang == 6) ? "PARADO" : "OFF";
     const uint32_t colAct = Draw2D_Color32(140, 170, 210, 255);
     const uint32_t colOn = Draw2D_Color32(80, 255, 120, 255);
     const uint32_t colMenu = Draw2D_Color32(255, 215, 0, 255);
 
-    DrawDebugCell(0, (lang == 6) ? "VOLCADO PANTALLA" : "SCREEN DUMP",
-                  (lang == 6) ? "VOLCAR" : "DUMP", colAct);
-    DrawDebugCell(1, (lang == 6) ? "MARCA EN EL LOG" : "LOG MARKER",
-                  (lang == 6) ? "MARCAR" : "MARK", colAct);
+    DrawDebugCell(0, (lang == 7) ? "CAPTURA DE TELA" : (lang == 6) ? "VOLCADO PANTALLA" : "SCREEN DUMP",
+                  (lang == 7) ? "CAPTURAR" : (lang == 6) ? "VOLCAR" : "DUMP", colAct);
+    DrawDebugCell(1, (lang == 7) ? "MARCA NO LOG" : (lang == 6) ? "MARCA EN EL LOG" : "LOG MARKER",
+                  (lang == 7) ? "MARCAR" : (lang == 6) ? "MARCAR" : "MARK", colAct);
     /* Middle taps the state line to cycle the capture preset (always shown
      * in yellow); the side button starts/stops -- its colour is the running
      * indicator, so the cell text never changes. */
-    DrawDebugCell(2, (lang == 6) ? "GRAB. ESCENA" : "SCENE RECORDER",
+    DrawDebugCell(2, (lang == 7) ? "GRAV. CENA" : (lang == 6) ? "GRAB. ESCENA" : "SCENE RECORDER",
                   PlatformGpu3DS_RecordPresetLabel(), colMenu);
     DrawDebugCellSideButton(2, rec);
-    DrawDebugCell(3, (lang == 6) ? "GRAB. RENDIMIENTO" : "PERF RECORDER",
+    DrawDebugCell(3, (lang == 7) ? "GRAV. DESEMPENHO" : (lang == 6) ? "GRAB. RENDIMIENTO" : "PERF RECORDER",
                   perf ? onTxt : offTxt, perf ? colOn : colAct);
-    DrawDebugCell(4, (lang == 6) ? "ATLAS GPU" : "GPU ATLAS",
-                  (lang == 6) ? "VOLCAR" : "DUMP", colAct);
-    DrawDebugCell(5, (lang == 6) ? "MATAR A SAMUS" : "KILL SAMUS",
-                  (lang == 6) ? "MATAR" : "KILL", Draw2D_Color32(255, 130, 130, 255));
-    DrawDebugCell(6, (lang == 6) ? "TELETRANSPORTE" : "WARP", ">", colMenu);
+    DrawDebugCell(4, (lang == 7) ? "ATLAS GPU" : (lang == 6) ? "ATLAS GPU" : "GPU ATLAS",
+                  (lang == 7) ? "CAPTURAR" : (lang == 6) ? "VOLCAR" : "DUMP", colAct);
+    DrawDebugCell(5, (lang == 7) ? "MATAR A SAMUS" : (lang == 6) ? "MATAR A SAMUS" : "KILL SAMUS",
+                  (lang == 7) ? "MATAR" : (lang == 6) ? "MATAR" : "KILL", Draw2D_Color32(255, 130, 130, 255));
+    DrawDebugCell(6, (lang == 7) ? "TELETRANSPORTE" : (lang == 6) ? "TELETRANSPORTE" : "WARP", ">", colMenu);
 
     /* Nothing is written to the SD card while LOG is stopped even in a debug
      * build (see port_debug_log.h). Tapping the middle of LOG A SD cycles
@@ -5026,10 +5054,10 @@ static void RenderDebugToolsModal(int lang) {
      * RAM" for a hang. */
     const bool logOn = Port_DebugLog_IsEnabled();
     const bool logBuf = Port_DebugLog_IsBuffered();
-    DrawDebugCell(7, (lang == 6) ? "LOG A SD" : "SD LOGGING",
+    DrawDebugCell(7, (lang == 7) ? "LOG NO SD" : (lang == 6) ? "LOG A SD" : "SD LOGGING",
                   DebugLogSelName(), colMenu);
     DrawDebugCellSideButton(7, logOn);
-    DrawDebugCell(8, (lang == 6) ? "LOG EN BUFFER" : "LOG BUFFERING",
+    DrawDebugCell(8, (lang == 7) ? "LOG NO BUFFER" : (lang == 6) ? "LOG EN BUFFER" : "LOG BUFFERING",
                   logBuf ? onTxt : offTxt, logBuf ? colOn : colAct);
 
 #ifdef PORT_GPU_TILE_RENDERER
@@ -5065,7 +5093,7 @@ static void RenderDebugToolsModal(int lang) {
          * wrongly-placed cutscene layer stands out at a glance. */
         {
             const bool dt = Port_GpuRenderer_DepthTintEnabled();
-            DrawDebugCell(11, (lang == 6) ? "PROFUNDIDAD" : "DEPTH TINT",
+            DrawDebugCell(11, (lang == 7) ? "PROFUNDIDADE" : (lang == 6) ? "PROFUNDIDAD" : "DEPTH TINT",
                           dt ? onTxt : offTxt,
                           dt ? colOn : colAct);
         }
@@ -5090,7 +5118,7 @@ static void RenderDebugToolsModal(int lang) {
         DrawDebugCellSideButton(DBGTOOL_FTP_CELL, running || waiting);
     }
 
-    DrawDebugCell(DBGTOOL_SOUNDTEST_CELL, (lang == 6) ? "SOUND TEST" : "SOUND TEST", ">", colMenu);
+    DrawDebugCell(DBGTOOL_SOUNDTEST_CELL, (lang == 7) ? "TESTE DE SOM" : (lang == 6) ? "SOUND TEST" : "SOUND TEST", ">", colMenu);
 
     if (sDebugToolsMsg[0] && sFrameCounter < sDebugToolsMsgUntil) {
         DrawTextCentered(160.0f, 204.0f, 1.0f, sDebugToolsMsg, Draw2D_Color32(120, 255, 160, 255));
@@ -5296,26 +5324,26 @@ static void RenderDebugWarpModal(int lang) {
     /* Row 0/1: the spinner. The whole row is a hit target split in three:
      * left third = previous, right third = next, middle = nothing, so a
      * mis-tap in the middle does nothing rather than jumping a step. */
-    DrawDebugRow(0, (lang == 6) ? "AREA" : "AREA", NULL, 0);
+    DrawDebugRow(0, (lang == 7) ? "ÁREA" : (lang == 6) ? "AREA" : "AREA", NULL, 0);
     DrawText(120.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, "<", Draw2D_Color32(255, 215, 0, 255));
     DrawText(140.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, AreaName((uint8_t)selArea), Draw2D_Color32(220, 235, 255, 255));
     DrawText(288.0f, DBGTOOL_ROW_Y(0) + 6.0f, 1.0f, ">", Draw2D_Color32(255, 215, 0, 255));
 
     snprintf(valBuf, sizeof(valBuf), "%d / %d", selDoor, doorCount > 0 ? doorCount - 1 : 0);
-    DrawDebugRow(1, (lang == 6) ? "PUERTA" : "DOOR", NULL, 0);
+    DrawDebugRow(1, (lang == 7) ? "PORTA" : (lang == 6) ? "PUERTA" : "DOOR", NULL, 0);
     DrawText(120.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, "<", Draw2D_Color32(255, 215, 0, 255));
     DrawText(140.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, valBuf, Draw2D_Color32(220, 235, 255, 255));
     DrawText(288.0f, DBGTOOL_ROW_Y(1) + 6.0f, 1.0f, ">", Draw2D_Color32(255, 215, 0, 255));
 
-    if (selRoom >= 0) snprintf(valBuf, sizeof(valBuf), "%s %d", (lang == 6) ? "SALA" : "ROOM", selRoom);
+    if (selRoom >= 0) snprintf(valBuf, sizeof(valBuf), "%s %d", (lang == 7) ? "SALA" : (lang == 6) ? "SALA" : "ROOM", selRoom);
     else snprintf(valBuf, sizeof(valBuf), "--");
-    DrawDebugRow(2, (lang == 6) ? "IR A ESA PUERTA" : "GO TO THAT DOOR",
+    DrawDebugRow(2, (lang == 7) ? "IR ATÉ ESSA PORTA" : (lang == 6) ? "IR A ESA PUERTA" : "GO TO THAT DOOR",
                  valBuf, selRoom >= 0 ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(110, 120, 140, 255));
 
-    DrawDebugRow(3, (lang == 6) ? "GUARDAR PUNTO AQUI" : "SAVE POINT HERE",
-                 (lang == 6) ? "GUARDAR" : "SAVE", Draw2D_Color32(255, 215, 0, 255));
-    DrawDebugRow(4, (lang == 6) ? "IR AL PUNTO GUARDADO" : "GO TO SAVED POINT",
-                 hasWarp ? ((lang == 6) ? "IR" : "GO") : "--",
+    DrawDebugRow(3, (lang == 7) ? "SALVAR PONTO AQUI" : (lang == 6) ? "GUARDAR PUNTO AQUI" : "SAVE POINT HERE",
+                 (lang == 7) ? "SALVAR" : (lang == 6) ? "GUARDAR" : "SAVE", Draw2D_Color32(255, 215, 0, 255));
+    DrawDebugRow(4, (lang == 7) ? "IR AO PONTO SALVO" : (lang == 6) ? "IR AL PUNTO GUARDADO" : "GO TO SAVED POINT",
+                 hasWarp ? ((lang == 7) ? "IR" : (lang == 6) ? "IR" : "GO") : "--",
                  hasWarp ? Draw2D_Color32(80, 255, 120, 255) : Draw2D_Color32(110, 120, 140, 255));
 
     char warpInfo[48];
@@ -5326,8 +5354,8 @@ static void RenderDebugWarpModal(int lang) {
      * it and the spinner has something to aim at. */
     char hereBuf[64];
     snprintf(hereBuf, sizeof(hereBuf), "%s: %s %s %u",
-             (lang == 6) ? "AHORA" : "NOW", AreaName(gCurrentArea),
-             (lang == 6) ? "SALA" : "ROOM", gCurrentRoom);
+             (lang == 7) ? "AGORA" : (lang == 6) ? "AHORA" : "NOW", AreaName(gCurrentArea),
+             (lang == 7) ? "SALA" : (lang == 6) ? "SALA" : "ROOM", gCurrentRoom);
     DrawText((float)DBGTOOL_ROW_X0, 187.0f, 1.0f, hereBuf, Draw2D_Color32(150, 190, 240, 255));
 
     if (sDebugToolsMsg[0] && sFrameCounter < sDebugToolsMsgUntil) {
@@ -5418,17 +5446,17 @@ static void RenderSoundTestModal(int lang) {
     const uint32_t glyphIdle = Draw2D_Color32(120, 255, 140, 255);
     const uint32_t glyphLive = Draw2D_Color32(255, 120, 120, 255);
 
-    DrawDebugRow(2, (lang == 6) ? "SONIDO DEL MOTOR" : "ENGINE SOUND", NULL, 0);
+    DrawDebugRow(2, (lang == 7) ? "SOM DO MOTOR" : (lang == 6) ? "SONIDO DEL MOTOR" : "ENGINE SOUND", NULL, 0);
     DrawActionGlyph(292.0f, DBGTOOL_ROW_Y(2) + (float)DBGTOOL_ROW_H * 0.5f,
                     sSndTestEnginePlaying, sSndTestEnginePlaying ? glyphLive : glyphIdle);
 
     bool raLive = Port_MzmAudio_IsRaUnlockSoundPlaying();
-    DrawDebugRow(3, (lang == 6) ? "SONIDO DE LOGRO (RA)" : "RA UNLOCK SOUND", NULL, 0);
+    DrawDebugRow(3, (lang == 7) ? "SOM DE CONQUISTA (RA)" : (lang == 6) ? "SONIDO DE LOGRO (RA)" : "RA UNLOCK SOUND", NULL, 0);
     DrawActionGlyph(292.0f, DBGTOOL_ROW_Y(3) + (float)DBGTOOL_ROW_H * 0.5f,
                     raLive, raLive ? glyphLive : glyphIdle);
 
     DrawText((float)DBGTOOL_ROW_X0, 176.0f, 1.0f,
-             (lang == 6) ? "0x01-0x5F musica/jingles  |  0x60+ efectos"
+             (lang == 7) ? "0x01-0x5F música/vinhetas  |  0x60+ efeitos" : (lang == 6) ? "0x01-0x5F musica/jingles  |  0x60+ efectos"
                          : "0x01-0x5F music/jingles  |  0x60+ SFX",
              Draw2D_Color32(150, 190, 240, 255));
 
@@ -5565,17 +5593,17 @@ static void RenderDebugEquipModal(int lang) {
     }
 
     DrawEquipAction((float)DBGEQUIP_COL_L_X, (float)DBGEQUIP_ACT_Y0, 140.0f,
-                    (lang == 6) ? "TODO ON" : "ALL ON", Draw2D_Color32(120, 255, 160, 255));
+                    (lang == 7) ? "TUDO ON" : (lang == 6) ? "TODO ON" : "ALL ON", Draw2D_Color32(120, 255, 160, 255));
     DrawEquipAction((float)DBGEQUIP_COL_R_X, (float)DBGEQUIP_ACT_Y0, 140.0f,
-                    (lang == 6) ? "TODO OFF" : "ALL OFF", Draw2D_Color32(255, 150, 150, 255));
+                    (lang == 7) ? "TUDO OFF" : (lang == 6) ? "TODO OFF" : "ALL OFF", Draw2D_Color32(255, 150, 150, 255));
 
     float ay = (float)DBGEQUIP_ACT2_Y0;
     DrawEquipAction((float)DBGEQUIP_COL_L_X, ay, 90.0f,
-                    (lang == 6) ? "MUNIC MAX" : "AMMO MAX", Draw2D_Color32(255, 215, 0, 255));
+                    (lang == 7) ? "MUNIÇ MÁX" : (lang == 6) ? "MUNIC MAX" : "AMMO MAX", Draw2D_Color32(255, 215, 0, 255));
     DrawEquipAction((float)(DBGEQUIP_COL_L_X + 94), ay, 90.0f,
-                    (lang == 6) ? "MUNIC MIN" : "AMMO MIN", Draw2D_Color32(255, 150, 150, 255));
+                    (lang == 7) ? "MUNIÇ MÍN" : (lang == 6) ? "MUNIC MIN" : "AMMO MIN", Draw2D_Color32(255, 150, 150, 255));
     DrawEquipAction((float)(DBGEQUIP_COL_L_X + 188), ay, 100.0f,
-                    (lang == 6) ? "RELLENAR" : "REFILL", Draw2D_Color32(120, 255, 160, 255));
+                    (lang == 7) ? "RECARREGAR" : (lang == 6) ? "RELLENAR" : "REFILL", Draw2D_Color32(120, 255, 160, 255));
 
     /* Deliberately no energy/missile readout here: the game's own HUD on the
      * top screen already shows all of it, and the line collided with the
@@ -5863,12 +5891,13 @@ static void DrawStateStats(float x, float y, const PortSaveStateInfo* info, floa
 }
 
 static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned number, bool es) {
+    const bool pt = (GetLang() == 7);
     const float c0 = STATE_LIST_Y0, c1 = STATE_LIST_Y1;
     DrawRectClipped(8.0f, y, 0.5f, 296.0f, STATE_ROW_H, Draw2D_Color32(14, 22, 34, 255), c0, c1);
     DrawRectClipped(8.0f, y, 0.51f, 296.0f, 1.0f, Draw2D_Color32(60, 80, 110, 255), c0, c1);
 
     char head[48];
-    snprintf(head, sizeof(head), es ? "#%u  %s  SALA %u" : "#%u  %s  ROOM %u",
+    snprintf(head, sizeof(head), pt ? "#%u  %s  SALA %u" : es ? "#%u  %s  SALA %u" : "#%u  %s  ROOM %u",
              number, Port_SaveState_AreaName(info->area), (unsigned)info->room);
     DrawTextClipped(14.0f, y + 4.0f, 1.0f, head, Draw2D_Color32(170, 210, 245, 255), c0, c1);
 
@@ -5881,11 +5910,11 @@ static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned numb
     if (info->hasStats)
         DrawStateStats(14.0f, y + 15.0f, info, c0, c1);
     else
-        DrawTextClipped(14.0f, y + 15.0f, 1.0f, es ? "sin datos (guardado antiguo)" : "no stats (older save)",
+        DrawTextClipped(14.0f, y + 15.0f, 1.0f, pt ? "sem dados (save antigo)" : es ? "sin datos (guardado antiguo)" : "no stats (older save)",
                         Draw2D_Color32(110, 125, 150, 255), c0, c1);
 
     if (!info->compatible) {
-        const char* tag = es ? "OTRA BUILD" : "OTHER BUILD";
+        const char* tag = pt ? "OUTRA BUILD" : es ? "OTRA BUILD" : "OTHER BUILD";
         DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(tag) * 6.0f, y + 15.0f, 1.0f, tag,
                         Draw2D_Color32(235, 110, 90, 255), c0, c1);
     } else if (info->hasPlayTime) {
@@ -5898,12 +5927,13 @@ static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned numb
 }
 
 static void RenderStateModal(bool es, bool avail) {
+    const bool pt = (GetLang() == 7);
     const PortSaveStateInfo* info = &sStateModalInfo;
     Draw2D_Rect(SMODAL_X, SMODAL_Y, 0.85f, SMODAL_W, SMODAL_H, Draw2D_Color32(10, 14, 24, 250));
     Draw2D_Rect(SMODAL_X, SMODAL_Y, 0.84f, SMODAL_W, SMODAL_H, Draw2D_Color32(40, 70, 120, 255));
 
     char title[32];
-    snprintf(title, sizeof(title), es ? "ESTADO #%u" : "SAVE STATE #%u", sStateModalNumber);
+    snprintf(title, sizeof(title), pt ? "ESTADO #%u" : es ? "ESTADO #%u" : "SAVE STATE #%u", sStateModalNumber);
     DrawText(20.0f, 32.0f, 1.0f, title, Draw2D_Color32(255, 215, 0, 255));
 
     /* Screenshot, 160x96 inside a frame. */
@@ -5911,7 +5941,7 @@ static void RenderStateModal(bool es, bool avail) {
     if (PortStateThumb_HasImage()) {
         PortStateThumb_Draw(20.0f, 48.0f, 160.0f, 96.0f, 0.9f);
     } else {
-        const char* t = info->hasThumb ? "..." : (es ? "SIN IMAGEN" : "NO IMAGE");
+        const char* t = info->hasThumb ? "..." : (pt ? "SEM IMAGEM" : es ? "SIN IMAGEN" : "NO IMAGE");
         DrawTextCentered(100.0f, 92.0f, 1.0f, t, Draw2D_Color32(110, 125, 150, 255));
     }
 
@@ -5920,7 +5950,7 @@ static void RenderStateModal(bool es, bool avail) {
     char line[40];
     snprintf(line, sizeof(line), "%s", Port_SaveState_AreaName(info->area));
     DrawText(tx, 46.0f, 1.0f, line, Draw2D_Color32(170, 210, 245, 255));
-    snprintf(line, sizeof(line), es ? "SALA %u" : "ROOM %u", (unsigned)info->room);
+    snprintf(line, sizeof(line), pt ? "SALA %u" : es ? "SALA %u" : "ROOM %u", (unsigned)info->room);
     DrawText(tx, 56.0f, 1.0f, line, Draw2D_Color32(170, 210, 245, 255));
     if (info->savedAt) {
         char when[40];
@@ -5933,7 +5963,7 @@ static void RenderStateModal(bool es, bool avail) {
         }
     }
     if (info->hasPlayTime) {
-        snprintf(line, sizeof(line), es ? "JUEGO %u:%02u:%02u" : "TIME %u:%02u:%02u", (unsigned)info->playHours,
+        snprintf(line, sizeof(line), pt ? "JOGO %u:%02u:%02u" : es ? "JUEGO %u:%02u:%02u" : "TIME %u:%02u:%02u", (unsigned)info->playHours,
                  (unsigned)info->playMinutes, (unsigned)info->playSeconds);
         DrawText(tx, 92.0f, 1.0f, line, Draw2D_Color32(150, 170, 200, 255));
     }
@@ -5953,7 +5983,7 @@ static void RenderStateModal(bool es, bool avail) {
             DrawText(tx, 136.0f, 1.0f, line, Draw2D_Color32(255, 170, 70, 255));
         }
     } else {
-        DrawText(tx, 106.0f, 1.0f, es ? "SIN DATOS" : "NO STATS", Draw2D_Color32(110, 125, 150, 255));
+        DrawText(tx, 106.0f, 1.0f, pt ? "SEM DADOS" : es ? "SIN DATOS" : "NO STATS", Draw2D_Color32(110, 125, 150, 255));
     }
 
     /* Actions. */
@@ -5961,7 +5991,8 @@ static void RenderStateModal(bool es, bool avail) {
     const bool canOverwrite = avail;
     static const char* const labelsEs[3] = { "CARGAR", "SOBRESCRIBIR", "BORRAR" };
     static const char* const labelsEn[3] = { "LOAD", "OVERWRITE", "DELETE" };
-    const char* const* labels = es ? labelsEs : labelsEn;
+    static const char* const labelsPt[3] = { "CARREGAR", "SOBRESCREVER", "APAGAR" };
+    const char* const* labels = pt ? labelsPt : es ? labelsEs : labelsEn;
     const bool enabled[3] = { canLoad, canOverwrite, true };
     const int actions[3] = { STATE_ARM_LOAD, STATE_ARM_OVERWRITE, STATE_ARM_DELETE };
     for (int i = 0; i < 3; ++i) {
@@ -5982,18 +6013,19 @@ static void RenderStateModal(bool es, bool avail) {
     }
 
     const char* hint = NULL;
-    if (!info->compatible) hint = es ? "GUARDADO CON OTRA BUILD: NO SE PUEDE CARGAR" : "SAVED BY ANOTHER BUILD: CANNOT LOAD";
-    else if (!avail) hint = es ? "SOBRESCRIBIR: SOLO EN PARTIDA" : "OVERWRITE: IN GAMEPLAY ONLY";
-    else hint = es ? "PULSA DOS VECES PARA CONFIRMAR" : "TAP TWICE TO CONFIRM";
+    if (!info->compatible) hint = pt ? "SALVO COM OUTRA BUILD: NÃO PODE CARREGAR" : es ? "GUARDADO CON OTRA BUILD: NO SE PUEDE CARGAR" : "SAVED BY ANOTHER BUILD: CANNOT LOAD";
+    else if (!avail) hint = pt ? "SOBRESCREVER: SÓ NO JOGO" : es ? "SOBRESCRIBIR: SOLO EN PARTIDA" : "OVERWRITE: IN GAMEPLAY ONLY";
+    else hint = pt ? "TOQUE DUAS VEZES PARA CONFIRMAR" : es ? "PULSA DOS VECES PARA CONFIRMAR" : "TAP TWICE TO CONFIRM";
     DrawTextCentered(160.0f, 188.0f, 1.0f, hint,
                      info->compatible ? Draw2D_Color32(120, 140, 170, 255) : Draw2D_Color32(235, 110, 90, 255));
 
-    DrawButton(SMODAL_CLOSE_X, SMODAL_CLOSE_Y, SMODAL_CLOSE_W, SMODAL_CLOSE_H, es ? "VOLVER" : "BACK",
+    DrawButton(SMODAL_CLOSE_X, SMODAL_CLOSE_Y, SMODAL_CLOSE_W, SMODAL_CLOSE_H, pt ? "VOLTAR" : es ? "VOLVER" : "BACK",
                Draw2D_Color32(255, 255, 255, 255), BTN_BLUE_BODY, BTN_BLUE_BORDER);
 }
 
 static void RenderStateView(void) {
     const bool es = (GetLang() == 6);
+    const bool pt = (GetLang() == 7);
     const bool avail = Port_SaveState_Available();
 
     if (sStateModalId) {
@@ -6004,7 +6036,7 @@ static void RenderStateView(void) {
     /* New state. */
     const uint32_t newBody = avail ? Draw2D_Color32(24, 60, 34, 255) : Draw2D_Color32(30, 34, 40, 255);
     const uint32_t newInk = avail ? Draw2D_Color32(200, 240, 205, 255) : Draw2D_Color32(90, 100, 115, 255);
-    DrawButton(STATE_NEW_X, STATE_NEW_Y, STATE_NEW_W, STATE_NEW_H, es ? "NUEVO GUARDADO" : "NEW SAVE STATE",
+    DrawButton(STATE_NEW_X, STATE_NEW_Y, STATE_NEW_W, STATE_NEW_H, pt ? "NOVO ESTADO" : es ? "NUEVO GUARDADO" : "NEW SAVE STATE",
                newInk, newBody, avail ? Draw2D_Color32(70, 150, 90, 255) : Draw2D_Color32(60, 66, 78, 255));
     DrawFloppyIcon(STATE_NEW_X + 16.0f, STATE_NEW_Y + STATE_NEW_H * 0.5f, newInk, newBody);
 
@@ -6016,7 +6048,7 @@ static void RenderStateView(void) {
 
     if (count == 0) {
         DrawTextCentered(160.0f, 120.0f, 1.0f,
-                         Port_SaveState_Scanned() ? (es ? "NO HAY ESTADOS GUARDADOS" : "NO SAVE STATES YET") : "",
+                         Port_SaveState_Scanned() ? (pt ? "NENHUM ESTADO SALVO" : es ? "NO HAY ESTADOS GUARDADOS" : "NO SAVE STATES YET") : "",
                          Draw2D_Color32(110, 125, 150, 255));
     }
     for (int i = 0; i < count; ++i) {
@@ -6038,10 +6070,10 @@ static void RenderStateView(void) {
     if (msg && msg[0] && Port_SaveState_MessageTtl() > 0) {
         DrawTextCentered(160.0f, 216.0f, 1.0f, msg, Draw2D_Color32(255, 235, 150, 255));
     } else if (!avail) {
-        DrawTextCentered(160.0f, 216.0f, 1.0f, es ? "GUARDAR: SOLO DURANTE LA PARTIDA" : "SAVING: ONLY DURING GAMEPLAY",
+        DrawTextCentered(160.0f, 216.0f, 1.0f, pt ? "SALVAR: SÓ DURANTE O JOGO" : es ? "GUARDAR: SOLO DURANTE LA PARTIDA" : "SAVING: ONLY DURING GAMEPLAY",
                          Draw2D_Color32(150, 165, 190, 255));
     } else {
-        DrawTextCentered(160.0f, 216.0f, 1.0f, es ? "TOCA UN ESTADO PARA VER SUS DATOS" : "TAP A STATE FOR ITS DETAILS",
+        DrawTextCentered(160.0f, 216.0f, 1.0f, pt ? "TOQUE UM ESTADO PARA VER OS DADOS" : es ? "TOCA UN ESTADO PARA VER SUS DATOS" : "TAP A STATE FOR ITS DETAILS",
                          Draw2D_Color32(120, 140, 170, 255));
     }
 }
@@ -6241,19 +6273,20 @@ static void RenderBusyOverlay(void) {
     const PortSaveStateJob job = Port_SaveState_CurrentJob();
     if (job == PORT_SS_JOB_NONE || job == PORT_SS_JOB_THUMB) return;
     const bool es = (GetLang() == 6);
+    const bool pt = (GetLang() == 7);
     const char* what = "";
     switch (job) {
-    case PORT_SS_JOB_SCAN:      what = es ? "LEYENDO LA TARJETA SD" : "READING THE SD CARD"; break;
+    case PORT_SS_JOB_SCAN:      what = pt ? "LENDO O CARTÃO SD" : es ? "LEYENDO LA TARJETA SD" : "READING THE SD CARD"; break;
     case PORT_SS_JOB_SAVE:
-    case PORT_SS_JOB_OVERWRITE: what = es ? "GUARDANDO EN LA TARJETA SD" : "SAVING TO THE SD CARD"; break;
-    case PORT_SS_JOB_LOAD:      what = es ? "CARGANDO DESDE LA TARJETA SD" : "LOADING FROM THE SD CARD"; break;
-    case PORT_SS_JOB_DELETE:    what = es ? "BORRANDO DE LA TARJETA SD" : "DELETING FROM THE SD CARD"; break;
+    case PORT_SS_JOB_OVERWRITE: what = pt ? "SALVANDO NO CARTÃO SD" : es ? "GUARDANDO EN LA TARJETA SD" : "SAVING TO THE SD CARD"; break;
+    case PORT_SS_JOB_LOAD:      what = pt ? "CARREGANDO DO CARTÃO SD" : es ? "CARGANDO DESDE LA TARJETA SD" : "LOADING FROM THE SD CARD"; break;
+    case PORT_SS_JOB_DELETE:    what = pt ? "APAGANDO DO CARTÃO SD" : es ? "BORRANDO DE LA TARJETA SD" : "DELETING FROM THE SD CARD"; break;
     default: break;
     }
     Draw2D_Rect(0.0f, 0.0f, 0.985f, 320.0f, 240.0f, Draw2D_Color32(0, 0, 0, 150));
     Draw2D_Rect(30.0f, 84.0f, 0.99f, 260.0f, 72.0f, Draw2D_Color32(120, 150, 210, 255));
     Draw2D_Rect(31.0f, 85.0f, 0.995f, 258.0f, 70.0f, Draw2D_Color32(10, 14, 24, 255));
-    DrawTextCentered(160.0f, 104.0f, 1.0f, es ? "ESPERA..." : "PLEASE WAIT...", Draw2D_Color32(255, 215, 0, 255));
+    DrawTextCentered(160.0f, 104.0f, 1.0f, pt ? "AGUARDE..." : es ? "ESPERA..." : "PLEASE WAIT...", Draw2D_Color32(255, 215, 0, 255));
     DrawTextCentered(160.0f, 124.0f, 1.0f, what, Draw2D_Color32(190, 210, 240, 255));
 }
 

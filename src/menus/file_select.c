@@ -5141,6 +5141,7 @@ static void FileSelectInit(void)
         if (!REGION_IS_EU())
             BitFill(3, 0, VRAM_BASE + 0x400, 0x800, 16);
         CallLZ77UncompVram(sFileSelectOptionsTextGfxPointers[gLanguage - LANGUAGE_ENGLISH], VRAM_BASE + 0xC00);
+        Port_LangGfx_Apply(PORT_LANG_GFX_FILE_SELECT_OPTIONS, (void*)(VRAM_BASE + 0xC00));
     }
 #endif // REGION_LANGUAGE_RUNTIME || !REGION_JP
 #else

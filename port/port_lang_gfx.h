@@ -21,6 +21,7 @@ typedef enum PortLangGfxId {
     PORT_LANG_GFX_UNKNOWN_ITEMS,
     PORT_LANG_GFX_FILE_SELECT_LARGE,
     PORT_LANG_GFX_FILE_SELECT_DIFFICULTY,
+    PORT_LANG_GFX_FILE_SELECT_OPTIONS,
 
     PORT_LANG_GFX_COUNT
 } PortLangGfxId;
@@ -54,7 +55,6 @@ enum {
 
 typedef struct PortLangGfxPatch {
     u32 size;        /* decompressed size of the English graphic */
-    u32 regionMask;  /* 1 << PortRomRegion of the ROMs it was made for */
     const PortLangGfxSlot* slots;
     const u8* glyphs;
     const u8 (*maps)[16][16];

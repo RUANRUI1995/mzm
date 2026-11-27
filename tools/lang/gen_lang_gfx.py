@@ -231,8 +231,10 @@ class Font:
         columns. '.' takes the background colour of that row; other
         characters go through spec['palette'], or are hex palette indices."""
         rows = [r.rstrip() for r in art]
-        width = max(len(r) for r in rows)
         top = spec.get("own_top", 0)
+        if "auto_outline" in spec:
+            rows, top = outlined(rows, top, spec["auto_outline"])
+        width = max(len(r) for r in rows)
         cols = []
         for x in range(width):
             col = list(self.bg)
@@ -251,6 +253,40 @@ class Font:
             ch = self.spec["accents"][ch][0]
         kind = self.letters[ch]
         return kind[3] if kind[0] == "copy" else len(kind[1])
+
+
+def outlined(rows, top, outline):
+    """Ink-only art -> the same art inside a one-pixel outline (8-neighbour),
+    one column wider on each side and one row taller above and below.
+    Returns (rows, top)."""
+    h = len(rows) + 2
+    w = max(len(r) for r in rows) + 2
+    grid = [["."] * w for _ in range(h)]
+    for y, r in enumerate(rows):
+        for x, ch in enumerate(r):
+            if ch != ".":
+                grid[y + 1][x + 1] = ch
+    out = [row[:] for row in grid]
+    for y in range(h):
+        for x in range(w):
+            if grid[y][x] != ".":
+                continue
+            if any(0 <= y + dy < h and 0 <= x + dx < w and grid[y + dy][x + dx] != "."
+                   for dy in (-1, 0, 1) for dx in (-1, 0, 1)):
+                out[y][x] = "%x" % outline
+    return ["".join(r) for r in out], top - 1
+
+
+def accent_pixels(accent, outline):
+    """An accent given as (x, top, ink-only art) -> [(x, y, index)], with an
+    outline when the font has one; a list of (x, y, index) passes through."""
+    if isinstance(accent, list):
+        return accent
+    ax, top, art = accent
+    if outline is not None:
+        art, top = outlined(art, top, outline)
+        ax -= 1
+    return [(ax + x, top + y, int(ch, 16)) for y, r in enumerate(art) for x, ch in enumerate(r) if ch != "."]
 
 
 # --------------------------------------------------------------------------
@@ -382,6 +418,7 @@ def build_graphic(name, spec, sheets, fonts_spec):
             base, accent = ch, None
             if ch in font.spec.get("accents", {}):
                 base, accent = font.spec["accents"][ch]
+                accent = accent_pixels(accent, font.spec.get("auto_outline"))
             kind = font.letters[base]
             if base in font.occurrences.get(color_class, {}):
                 # the same letter in the word's own English word: no recolouring
@@ -543,31 +580,42 @@ def main():
             if addr is None:
                 sys.exit(f"gen_lang_gfx: {spec['symbol']} has no {region.upper()} address")
             sheets[region] = lz77(roms[region], addr - 0x08000000)
-        first = sheets[regions[0]]
-        for region in regions[1:]:
-            if sheets[region] != first:
-                problems.append(f"{name}: the {region.upper()} English graphic differs; patch left out there")
-                regions.remove(region)
-        ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(first), None)
-        problems.extend(probs)
-        if args.preview:
-            os.makedirs(args.preview, exist_ok=True)
-            render_png(Sheet(first), os.path.join(args.preview, f"{name}_en.png"), spec.get("preview_wide", 16))
-            render_png(result, os.path.join(args.preview, f"{name}_{args.lang}.png"), spec.get("preview_wide", 16))
-        lines, has_glyphs, has_maps = c_ops(name, ops, glyphs, maps, slots)
-        out.extend(lines)
-        out.append("")
-        table.append((spec["id"], name, len(first), regions, has_glyphs, has_maps))
+        # one patch per distinct English graphic; regions whose graphic is
+        # the same share it
+        variants = []  # (variant name, sheet bytes, [regions])
+        for region in regions:
+            for v in variants:
+                if v[1] == sheets[region]:
+                    v[2].append(region)
+                    break
+            else:
+                vname = name if not variants else f"{name}_{region}"
+                variants.append((vname, sheets[region], [region]))
+        for vname, data, vregions in variants:
+            ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(data), None)
+            problems.extend(f"{p} [{'/'.join(r.upper() for r in vregions)}]" for p in probs)
+            if args.preview:
+                os.makedirs(args.preview, exist_ok=True)
+                render_png(Sheet(data), os.path.join(args.preview, f"{vname}_en.png"), spec.get("preview_wide", 16))
+                render_png(result, os.path.join(args.preview, f"{vname}_{args.lang}.png"),
+                           spec.get("preview_wide", 16))
+            lines, has_glyphs, has_maps = c_ops(vname, ops, glyphs, maps, slots)
+            out.extend(lines)
+            out.append("")
+            for region in vregions:
+                table.append((region, spec["id"], vname, len(data), has_glyphs, has_maps))
 
     prefix = "gPortLangGfx" + args.lang.title().replace("_", "")
-    out.append(f"const PortLangGfxPatch {prefix}[PORT_LANG_GFX_COUNT] = {{")
-    for gid, name, size, regions, has_glyphs, has_maps in table:
-        mask = " | ".join(f"(1u << {REGION_CASE[r]})" for r in regions)
-        glyphs = f"sGlyphs_{name}" if has_glyphs else "NULL"
-        maps = f"sMaps_{name}" if has_maps else "NULL"
-        out.append(f"    [{gid}] = {{ {size}, {mask}, sSlots_{name}, {glyphs}, {maps}, sOps_{name} }},")
-    out.append("};")
-    out.append("")
+    for region in REGIONS:
+        out.append(f"const PortLangGfxPatch {prefix}_{region.upper()}[PORT_LANG_GFX_COUNT] = {{")
+        for treg, gid, vname, size, has_glyphs, has_maps in table:
+            if treg != region:
+                continue
+            glyphs = f"sGlyphs_{vname}" if has_glyphs else "NULL"
+            maps = f"sMaps_{vname}" if has_maps else "NULL"
+            out.append(f"    [{gid}] = {{ {size}, sSlots_{vname}, {glyphs}, {maps}, sOps_{vname} }},")
+        out.append("};")
+        out.append("")
 
     for p in problems:
         print(p, file=sys.stderr)

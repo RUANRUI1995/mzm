@@ -306,4 +306,48 @@ GRAPHICS = {
             "STRIP@hard": ("diff", "DIFÍCIL", {"x0": 80, "x1": 120}),
         },
     },
+    # File select OPTIONS menu entries (file_select.c,
+    # sFileSelectOptionsTextGfxPointers, VRAM 0xC00; all regions). White
+    # letters (4) with a shared outline (1) on 0.
+    "file_options": {
+        "id": "PORT_LANG_GFX_FILE_SELECT_OPTIONS",
+        "symbol": "sFileSelectOptionsTextEnglishGfx",
+        "slots": {
+            "SOUND": ([0, 32], 5),
+            "SOUNDTEST": ([5, 37], 11),
+            "TAR": ([16, 48], 16),
+            "GALLERY": ([64, 96], 16),
+            "MFLINK": ([80, 112], 16),
+            "MFGALLERY": ([128, 160], 16),
+            "ORIGINAL": ([144, 176], 16),
+        },
+        "fonts": {
+            "opt": {
+                "sources": [("SOUND", "SOUND"), ("SOUNDTEST", "SOUND TEST"), ("TAR", "TIME ATTACK RECORDS"),
+                            ("GALLERY", "GALLERY"), ("MFLINK", "METROID FUSION LINK"),
+                            ("MFGALLERY", "METROID FUSION GALLERY"), ("ORIGINAL", "ORIGINAL METROID")],
+                "bg_from": ("SOUND", 39),
+                "ink": [4],
+                "ink_rows": [5, 6, 7, 8, 9, 10, 11],
+                "pad": 1,
+                "gap": -1,
+                "space": 4,
+                "auto_outline": 1,
+                "own_top": 5,
+                "own": {"X": ["4...4", "4...4", ".4.4.", "..4..", ".4.4.", "4...4", "4...4"],
+                        "P": ["4444", "4..4", "4..4", "4444", "4...", "4...", "4..."]},
+                # (x, top row, ink art): the outline is added around it
+                "accents": {"Ã": ("A", (1, 2, ["44.4", "4.44"]))},
+            },
+        },
+        "words": {
+            "SOUND": ("opt", "SOM", {"x0": 0}),
+            "SOUNDTEST": ("opt", "TESTE DE SOM", {"x0": 0}),
+            "TAR": ("opt", "RECORDES DE TEMPO", {"x0": 0}),
+            "GALLERY": ("opt", "GALERIA", {"x0": 0}),
+            "MFLINK": ("opt", "CONEXÃO METROID FUSION", {"x0": 0}),
+            "MFGALLERY": ("opt", "GALERIA METROID FUSION", {"x0": 0}),
+            "ORIGINAL": ("opt", "METROID ORIGINAL", {"x0": 0}),
+        },
+    },
 }

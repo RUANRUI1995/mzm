@@ -17,3 +17,7 @@ int Port_LangEnding_TextOam(u32 set, const PortEndingLetter** letters, u32* coun
 /* The MISSION ACCOMPLISHED frame (chozodia_escape.c) of the active port
  * language, or NULL to keep the game's. */
 const u16* Port_LangMissionAccomplished_Frame(void);
+
+/* The ending's NEW RECORD frame (ending_and_gallery.c) of the active port
+ * language, or NULL to keep the game's. */
+const u16* Port_LangNewRecord_Frame(void);

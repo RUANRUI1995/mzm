@@ -520,4 +520,57 @@ GRAPHICS = {
         },
         "words": {"TILDE": ("tilde", "~", {"x0": 1, "x1": 8})},
     },
+    # NEW RECORD sign of the ending (sEndingImageNumbersMisc*Gfx at OBJ tile
+    # 0, tiles 0x16-0x1C in three rows). NOVO / RECORDE does not fit its 56
+    # pixels, so it is laid out over 80 (tiles 0x16-0x1F; 0x1D-0x1F are free)
+    # and port_lang_ending.c shows it with a wider frame. Built from the
+    # Italian sign (NUOVO / RECORD!): its box edges and letters, each with
+    # the column after it.
+    "new_record": {
+        "id": "PORT_LANG_GFX_NEW_RECORD",
+        "symbol": "sEndingImageNumbersMiscEnglishGfx",
+        "headers": ["data/ending_and_gallery_data.h"],
+        "extra": {"IT": [("sEndingImageNumbersMiscItalianGfx", 0)]},
+        "slots": {
+            "SIGN": ([0x16, 0x36, 0x56], 10),
+            "IT_SIGN": ([0x16, 0x36, 0x56], 7, "IT"),
+        },
+        "fonts": {
+            # clears the top rows (outside the small box stays transparent)
+            "blank": {"sources": [], "bg_from": ("IT_SIGN", 55), "rows": list(range(0, 10))},
+            # the big box's top edge (row 9), with its two corners
+            "edge": {
+                "sources": [("IT_SIGN", "[]", [(0, 1), (54, 1)])],
+                "bg_from": ("IT_SIGN", 4),
+                "rows": [9],
+            },
+            # the big box: rows 9-19
+            "bot": {
+                "sources": [("IT_SIGN", "RECORD!", None, 2, 54), ("IT_SIGN", "[]", [(0, 2), (54, 1)])],
+                "cut_bg_from": ("IT_SIGN", 1),
+                "ink_rows": list(range(11, 17)),
+                "pad_right": 1,
+                "bg_from": ("IT_SIGN", 55),
+                "rows": list(range(10, 24)),
+                "gap": 0,
+            },
+            # the small box on top: rows 0-9 (row 9 opens the big box's edge)
+            "top": {
+                "sources": [("IT_SIGN", "NUOVO", None, 8, 47), ("IT_SIGN", "[]", [(6, 2), (48, 1)])],
+                "cut_bg_from": ("IT_SIGN", 7),
+                "ink_rows": list(range(2, 8)),
+                "pad_right": 1,
+                "bg_from": ("IT_SIGN", 7),
+                "rows": list(range(0, 10)),
+                "gap": 0,
+            },
+        },
+        "words": {
+            "SIGN@clear": ("blank", "", {"x0": 0, "x1": 80}),
+            "SIGN@edge": ("edge", "[", {"x0": 10, "x1": 69}),
+            "SIGN@edge2": ("edge", "]", {"x0": 68, "x1": 69}),
+            "SIGN@bottom": ("bot", "[RECORDE]", {"x0": 0, "x1": 80, "align": "center"}),
+            "SIGN@top": ("top", "[NOVO]", {"x0": 22, "x1": 57}),
+        },
+    },
 }

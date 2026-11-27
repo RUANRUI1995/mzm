@@ -26,6 +26,7 @@ typedef enum PortLangGfxId {
     PORT_LANG_GFX_GAME_OVER,
     PORT_LANG_GFX_ENDING_TEXT,
     PORT_LANG_GFX_MISSION_LETTERS,
+    PORT_LANG_GFX_NEW_RECORD,
 
     PORT_LANG_GFX_COUNT
 } PortLangGfxId;
@@ -49,7 +50,8 @@ typedef struct PortLangGfxPart {
     u16 offset;
 } PortLangGfxPart;
 
-/* Ops, eight u16 each (the stream ends with PLG_END):
+/* Ops, nine u16 each (the stream ends with PLG_END); the "row mask" is two
+ * u16, low then high, one bit per pixel row (0-31):
  *   PLG_COPY  dst slot, dst x, src slot, src x, count, row mask, map: copy
  *             columns of the English graphic
  *   PLG_FILL  dst slot, dst x, src slot, src x, count, row mask, map: repeat
@@ -57,7 +59,7 @@ typedef struct PortLangGfxPart {
  *   PLG_GLYPH dst slot, dst x, glyph offset, count, 0, row mask, -: columns of
  *             our own, rows * 8 pixels each, two per byte (low nibble first)
  *   PLG_PIXEL dst slot, x, y, palette index, 0, -, -: one pixel (accents)
- * The row mask says which pixel rows (0-15) the op may change; map is 0xFFFF
+ * The row mask says which pixel rows the op may change; map is 0xFFFF
  * or the colour map (per pixel row, old index -> new) the copied pixels go
  * through, for letters taken from a word drawn in other colours. */
 enum {

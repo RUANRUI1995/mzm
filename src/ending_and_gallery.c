@@ -1645,6 +1645,7 @@ static void EndingImageInit(void)
 
                 default:
                     LZ77UncompVram(sEndingImageNumbersMiscEnglishGfx, VRAM_OBJ);
+                    Port_LangGfx_Apply(PORT_LANG_GFX_NEW_RECORD, (void*)VRAM_OBJ);
                     LZ77UncompVram(sEndingImageTextEnglishGfx, VRAM_BASE + 0x11000);
                     Port_LangGfx_Apply(PORT_LANG_GFX_ENDING_TEXT, (void*)(VRAM_BASE + 0x11000));
                     break;
@@ -1833,6 +1834,9 @@ static void EndingImageDisplayText(void)
         src = REGION_IS_EU()
             ? sEndingImageOamPointers_NewRecord[ENDING_DATA.language]
             : sEndingImageOam_NewRecordEnglish;
+        /* A port language lays the sign out itself (port_lang_ending.c). */
+        if (Port_LangNewRecord_Frame() != NULL)
+            src = Port_LangNewRecord_Frame();
 #else
 #ifdef REGION_EU
         src = sEndingImageOamPointers_NewRecord[ENDING_DATA.language];

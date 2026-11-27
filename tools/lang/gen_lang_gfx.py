@@ -146,12 +146,12 @@ class Slot:
                 col.append(sheet.get(first + tile_off, cx, y))
         return tuple(col)
 
-    def put_column(self, sheet, x, col, mask=0xFFFF):
+    def put_column(self, sheet, x, col, mask=0xFFFFFFFF):
         tile_off, cx = divmod(x, 8)
         i = 0
         for first in self.firsts:
             for y in range(8):
-                if i >= 16 or mask & (1 << i):
+                if i >= 32 or mask & (1 << i):
                     sheet.set(first + tile_off, cx, y, col[i])
                 i += 1
 
@@ -202,6 +202,10 @@ class Font:
 
     def _cut(self, sheet, slot, slot_name, text, lo=0, hi=None):
         bg = self.bg
+        if "cut_bg_from" in self.spec:
+            # letters inside a box: cut against the box's inside, not the fill
+            cut_slot, cut_x = self.spec["cut_bg_from"]
+            bg = slot.column(sheet, cut_x) if cut_slot == slot_name else bg
         end_x = hi if hi is not None else slot.px - self.spec.get("border", 0)
         runs = []
         x = lo
@@ -211,7 +215,8 @@ class Font:
                 while x < end_x and not self.blank(slot.column(sheet, x), bg):
                     x += 1
                 pad = self.spec.get("pad", 0)
-                runs.append((start - pad, x - start + 2 * pad))
+                # pad_right: the column after each letter (the gap) goes with it
+                runs.append((start - pad, x - start + 2 * pad + self.spec.get("pad_right", 0)))
             else:
                 x += 1
         chars = [c for c in text if c != " "]
@@ -392,7 +397,7 @@ def build_graphic(name, spec, sheets, extras):
         slot = slots[slot_name]
         font = fonts[font_name]
         # pixel rows of the slot the font may change (the rest stay as they are)
-        mask = sum(1 << r for r in font.spec["rows"]) if "rows" in font.spec else 0xFFFF
+        mask = sum(1 << r for r in font.spec["rows"]) if "rows" in font.spec else 0xFFFFFFFF
         # The text area: from the first non-background column of the English
         # word (or opts['x0']) to the last column before the slot's right
         # border (columns at the end that differ from the background).
@@ -543,13 +548,15 @@ def c_ops(name, ops, glyphs, maps, slots, extra_names):
             kind, d, dx, s, sx, n, m, mp = op
             word = "PLG_FILL" if kind == OP_FILL else "PLG_COPY"
             mp = 0xFFFF if mp is None else mp
-            lines.append(f"    {word}, {slot_ids[d]}, {dx}, {slot_ids[s]}, {sx}, {n}, 0x{m:04X}, 0x{mp:04X},")
+            lines.append(f"    {word}, {slot_ids[d]}, {dx}, {slot_ids[s]}, {sx}, {n}, 0x{m & 0xFFFF:04X}, "
+                         f"0x{m >> 16:04X}, 0x{mp:04X},")
         elif op[0] == OP_GLYPH:
             _, d, dx, g, n, m = op
-            lines.append(f"    PLG_GLYPH, {slot_ids[d]}, {dx}, {offsets[g]}, {n}, 0, 0x{m:04X}, 0xFFFF,")
+            lines.append(f"    PLG_GLYPH, {slot_ids[d]}, {dx}, {offsets[g]}, {n}, 0, 0x{m & 0xFFFF:04X}, "
+                         f"0x{m >> 16:04X}, 0xFFFF,")
         else:
             _, d, x, y, v = op
-            lines.append(f"    PLG_PIXEL, {slot_ids[d]}, {x}, {y}, {v}, 0, 0xFFFF, 0xFFFF,")
+            lines.append(f"    PLG_PIXEL, {slot_ids[d]}, {x}, {y}, {v}, 0, 0xFFFF, 0xFFFF, 0xFFFF,")
     lines.append("    PLG_END")
     lines.append("};")
     return lines, bool(glyph_words), bool(maps)

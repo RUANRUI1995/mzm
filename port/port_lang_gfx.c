@@ -70,11 +70,11 @@ static void Lz77Decompress(const u8* src, u8* dst, u32 room)
 }
 
 /* Pixel row r * 8 + y of a slot is changed only if the op's row mask has
- * its bit (rows past the 16th always are). */
+ * its bit (rows past the 32nd always are). */
 static void SetColumnPixel(u8* buf, const PortLangGfxSlot* s, u32 x, u32 r, u32 y, u8 v)
 {
     u32 row = r * 8 + y;
-    if (row < 16 && !(sRowMask & (1u << row)))
+    if (row < 32 && !(sRowMask & (1u << row)))
         return;
     SetPixel(buf, s->first[r] + x / 8, x % 8, y, v);
 }
@@ -83,17 +83,17 @@ static void RunOps(const PortLangGfxPatch* patch, u8* dst, const u8* const* shee
 {
     const u16* op;
 
-    for (op = patch->ops; op[0] != PLG_END; op += 8) {
+    for (op = patch->ops; op[0] != PLG_END; op += 9) {
         const PortLangGfxSlot* d = &patch->slots[op[1]];
         u32 dx = op[2];
         u32 count = op[4 + (op[0] == PLG_GLYPH ? 0 : 1)];
         u32 i, r, y;
 
-        sRowMask = op[6];
+        sRowMask = op[6] | ((u32)op[7] << 16);
 
         if (op[0] == PLG_PIXEL) {
             /* op[2]: x, op[3]: y in the slot, op[4]: palette index */
-            sRowMask = 0xFFFF;
+            sRowMask = 0xFFFFFFFF;
             SetColumnPixel(dst, d, op[2], op[3] / 8, op[3] % 8, (u8)op[4]);
         } else if (op[0] == PLG_GLYPH) {
             /* op[3]: byte offset in glyphs, op[4]: columns */
@@ -110,7 +110,7 @@ static void RunOps(const PortLangGfxPatch* patch, u8* dst, const u8* const* shee
             }
         } else {
             const PortLangGfxSlot* s = &patch->slots[op[3]];
-            const u8 (*map)[16] = (op[7] != 0xFFFF && patch->maps != NULL) ? patch->maps[op[7]] : NULL;
+            const u8 (*map)[16] = (op[8] != 0xFFFF && patch->maps != NULL) ? patch->maps[op[8]] : NULL;
             u32 sx = op[4];
             for (i = 0; i < count; i++) {
                 u32 from = (op[0] == PLG_COPY) ? sx + i : sx;

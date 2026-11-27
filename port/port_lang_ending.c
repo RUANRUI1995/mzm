@@ -153,3 +153,21 @@ const u16* Port_LangMissionAccomplished_Frame(void)
 {
     return Port_Lang_Active() ? sMissionAccomplishedPtBr : NULL;
 }
+
+/* NOVO / RECORDE: the PT-BR patch lays the sign out over 80 pixels (tiles
+ * 0x16-0x1F of the numbers graphic) instead of the English 56, so this frame
+ * covers them: 16 pixel rows of 32+32+16, then 8 rows of the same widths. */
+static const u16 sNewRecordPtBr[OAM_DATA_SIZE(6)] = {
+    6,
+    OAM_ENTRY(-38, -16, OAM_DIMS_32x16, OAM_NO_FLIP, 0x16, 5, 0),
+    OAM_ENTRY(-6, -16, OAM_DIMS_32x16, OAM_NO_FLIP, 0x1A, 5, 0),
+    OAM_ENTRY(26, -16, OAM_DIMS_16x16, OAM_NO_FLIP, 0x1E, 5, 0),
+    OAM_ENTRY(-38, 0, OAM_DIMS_32x8, OAM_NO_FLIP, 0x56, 5, 0),
+    OAM_ENTRY(-6, 0, OAM_DIMS_32x8, OAM_NO_FLIP, 0x5A, 5, 0),
+    OAM_ENTRY(26, 0, OAM_DIMS_16x8, OAM_NO_FLIP, 0x5E, 5, 0),
+};
+
+const u16* Port_LangNewRecord_Frame(void)
+{
+    return Port_Lang_Active() ? sNewRecordPtBr : NULL;
+}

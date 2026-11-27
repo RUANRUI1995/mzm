@@ -573,4 +573,87 @@ GRAPHICS = {
             "SIGN@top": ("top", "[NOVO]", {"x0": 22, "x1": 57}),
         },
     },
+    # Erase-all-data screens (erase_sram.c; L+R+SELECT at boot): the question
+    # (VRAM 0 and OBJ VRAM) and the confirmation (VRAM 0x11000). An 8-pixel
+    # cell font, 4 for i and l. None of the five languages has an m, a j or a
+    # capital T, so the wording avoids them but for the m of "Sim", drawn
+    # here; Q, S and g come from the Spanish question, A and p from German.
+    "erase_question": {
+        "id": "PORT_LANG_GFX_ERASE_QUESTION",
+        "symbol": "sEraseSramMenuQuestionEnglishGfx",
+        "headers": ["data/menus/erase_sram_data.h"],
+        "extra": {
+            "ES": [("sEraseSramMenuQuestionSpanishGfx", 0)],
+            "DE": [("sEraseSramMenuQuestionGermanGfx", 0)],
+        },
+        "slots": {
+            "L1": ([0, 32], 32),
+            "L2": ([64, 96], 32),
+            "ES1": ([0, 32], 32, "ES"),
+            "ES2": ([64, 96], 32, "ES"),
+            "DE1": ([0, 32], 32, "DE"),
+        },
+        "fonts": {"er": {
+                "sources": [("L1", "Do you want to", None, 0, 196), ("L1", "No", None, 196, 256),
+                            ("L2", "erase all saved data?", None, 0, 196), ("L2", "Yes", None, 196, 256),
+                            ("ES1", "¿Quieres borrar todos", None, 0, 196),
+                            ("ES2", "los datos guardados?", None, 0, 196), ("ES2", "Sí", None, 196, 256),
+                            ("DE1", "Alle gespeicherten", None, 0, 196)],
+                "bg_from": ("L1", 190),
+                "ink": [2],
+                "pad": 1,
+                "gap": 0,
+                "space": 8,
+                "auto_outline": 3,
+                "own_top": 7,
+                # no word of any of the five languages has an m
+                "own": {"m": ["2222222", "2..2..2", "2..2..2", "2..2..2", "2..2..2", "2..2..2"]},
+                "accents": {"ã": ("a", (1, 4, ["22.2", "2.22"]))},
+            }},
+        "words": {
+            "L1": ("er", "Apagar todos os", {"x0": 16, "x1": 196}),
+            "L2": ("er", "dados salvos?", {"x0": 16, "x1": 196}),
+            "L1@a": ("er", "Não", {"x0": 200, "x1": 256}),
+            "L2@a": ("er", "Sim", {"x0": 200, "x1": 256}),
+        },
+    },
+    "erase_confirm": {
+        "id": "PORT_LANG_GFX_ERASE_CONFIRM",
+        "symbol": "sEraseSramMenuConfirmEnglishGfx",
+        "headers": ["data/menus/erase_sram_data.h"],
+        "extra": {
+            "ES": [("sEraseSramMenuQuestionSpanishGfx", 0)],
+            "DE": [("sEraseSramMenuQuestionGermanGfx", 0)],
+        },
+        "slots": {
+            "L1": ([0, 32], 32),
+            "L2": ([64, 96], 32),
+            "ES1": ([0, 32], 32, "ES"),
+            "ES2": ([64, 96], 32, "ES"),
+            "DE1": ([0, 32], 32, "DE"),
+        },
+        "fonts": {"er": {
+                "sources": [("L1", "Are you sure you want", None, 0, 196), ("L1", "No", None, 196, 256),
+                            ("L2", "to erase all saved data?", None, 0, 196), ("L2", "Yes", None, 196, 256),
+                            ("ES1", "¿Quieres borrar todos", None, 0, 196),
+                            ("ES2", "los datos guardados?", None, 0, 196), ("ES2", "Sí", None, 196, 256),
+                            ("DE1", "Alle gespeicherten", None, 0, 196)],
+                "bg_from": ("L1", 190),
+                "ink": [2],
+                "pad": 1,
+                "gap": 0,
+                "space": 8,
+                "auto_outline": 3,
+                "own_top": 7,
+                # no word of any of the five languages has an m
+                "own": {"m": ["2222222", "2..2..2", "2..2..2", "2..2..2", "2..2..2", "2..2..2"]},
+                "accents": {"ã": ("a", (1, 4, ["22.2", "2.22"]))},
+            }},
+        "words": {
+            "L1": ("er", "Quer apagar de verdade", {"x0": 0, "x1": 196}),
+            "L2": ("er", "todos os dados salvos?", {"x0": 0, "x1": 196}),
+            "L1@a": ("er", "Não", {"x0": 200, "x1": 256}),
+            "L2@a": ("er", "Sim", {"x0": 200, "x1": 256}),
+        },
+    },
 }

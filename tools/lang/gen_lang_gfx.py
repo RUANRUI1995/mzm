@@ -239,7 +239,7 @@ class Font:
         characters go through spec['palette'], or are hex palette indices."""
         rows = [r.rstrip() for r in art]
         top = spec.get("own_top", 0)
-        if "auto_outline" in spec:
+        if "auto_outline" in spec and spec.get("outline_own", True):
             rows, top = outlined(rows, top, spec["auto_outline"])
         width = max(len(r) for r in rows)
         cols = []
@@ -432,9 +432,12 @@ def build_graphic(name, spec, sheets, extras):
                 base, accent = font.spec["accents"][ch]
                 accent = accent_pixels(accent, font.spec.get("auto_outline"))
             kind = font.letters[base]
-            if base in font.occurrences.get(color_class, {}):
-                # the same letter in the word's own English word: no recolouring
-                kind = ("copy", color_class) + font.occurrences[color_class][base]
+            # words drawn in the same colours (spec 'color_groups')
+            group = next((g for g in font.spec.get("color_groups", []) if color_class in g), [color_class])
+            same = [c for c in [color_class] + list(group) if base in font.occurrences.get(c, {})]
+            if same:
+                # the same letter in a word of the same colours: no recolouring
+                kind = ("copy", same[0]) + font.occurrences[same[0]][base]
             elif kind[0] == "copy" and kind[1] in font.spec.get("no_recolor_from", ()):
                 for src, letters in font.occurrences.items():
                     if src not in font.spec["no_recolor_from"] and base in letters:
@@ -443,7 +446,7 @@ def build_graphic(name, spec, sheets, extras):
             if kind[0] == "copy":
                 _, src_slot, sx, w = kind
                 map_id = None
-                if font.spec.get("recolor") and src_slot != color_class:
+                if font.spec.get("recolor") and src_slot not in group and src_slot != color_class:
                     key = (src_slot, color_class)
                     if key not in map_ids:
                         table = derive_map(font, sheet, slots, src_slot, color_class, problems, name)

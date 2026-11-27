@@ -389,4 +389,58 @@ GRAPHICS = {
             "MENU@language": ("menu", "W", {"x0": 96, "x1": 160, "align": "center"}),
         },
     },
+    # GAME OVER prompt: TRY AGAIN? / YES (RETURN TO GAME) / NO (TO TITLE
+    # SCREEN) (game_over.c, sGameOverTextPromptGfxPointers, VRAM 0xA800; all
+    # regions). Three 16-pixel lines; the first in its own colours. The
+    # answers keep the English left edge, where the cursor points.
+    "game_over": {
+        "id": "PORT_LANG_GFX_GAME_OVER",
+        "symbol": "sGameOverTextPromptEnglishGfx",
+        "slots": {
+            "L1": ([0, 32], 32),
+            "L2": ([64, 96], 32),
+            "L3": ([128, 160], 32),
+        },
+        "fonts": {
+            "go": {
+                # in GAME the A and M touch, so line 2 is given by hand
+                "sources": [("L1", "TRY AGAIN?", None, 0, 256),
+                            ("L2", "YES (RETURN TO GAME)", [(48, 9), (56, 8), (64, 8), (80, 5), (88, 8), (96, 8),
+                                                            (104, 9), (112, 8), (120, 8), (128, 8), (144, 9),
+                                                            (152, 8), (168, 8), (176, 9), (183, 9), (192, 8),
+                                                            (202, 5)]),
+                            ("L3", "NO (TO TITLE SCREEN)", None, 0, 256)],
+                "bg_from": ("L1", 10),
+                "ink": [2, 3, 4, 7, 8, 9],
+                "pad": 1,
+                "gap": -1,
+                "space": 8,
+                "recolor": True,
+                "color_groups": [["L2", "L3"]],
+                "own_top": 3,
+                # D and V in the first line's colours (ink 2/3/4, outline 5/6)
+                "own": {
+                    "D": ["5555555.", "52222255", "52555525", "535..535", "535..535", "535..535", "545..545",
+                          "545..545", "646.6646", "64444466", "6666666."],
+                    "V": ["555...555", "525...525", "525...525", "535...535", "535...535", "5535.5355",
+                          ".545.545.", ".5545455.", "..64646..", "..66466..", "...666..."],
+                    # E and O of the first line (written e and o in it): the
+                    # other lines' E and O do not recolour cleanly
+                    "e": ["5555555", "5222225", "5255555", "535....", "5355555", "5333335", "5455555",
+                          "545....", "6466666", "6444446", "6666666"],
+                    "o": [".555555.", "55222255", "52555525", "535..535", "535..535", "535..535", "545..545",
+                          "545..545", "64666646", "66444466", ".666666."],
+                },
+                # the tilde gets an outline; D and V are drawn with theirs
+                "auto_outline": 0xA,
+                "outline_own": False,
+                "accents": {"Ã": ("A", (2, 1, ["77.7", "7.77"]))},
+            },
+        },
+        "words": {
+            "L1": ("go", "TeNTAR De NoVo?", {"x0": 0, "x1": 256, "align": "center"}),
+            "L2": ("go", "SIM (CONTINUAR)", {"x0": 48}),
+            "L3": ("go", "NÃO (SAIR)", {"x0": 48}),
+        },
+    },
 }

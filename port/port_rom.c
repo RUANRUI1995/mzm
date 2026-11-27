@@ -18,9 +18,9 @@ u32 Port_RomSize(void) {
 }
 PortRomRegion gRomRegion = PORT_ROM_REGION_UNKNOWN;
 
-/* Game code at ROM header offset 0xAC. Matches Makefile:10,27,44
- * (GAME_CODE = BMXE/BMXP/BMXJ for us/eu/jp). China (BMXC) is commented out
- * upstream (Makefile:52) and not supported here either. */
+/* Game code at ROM header offset 0xAC. Matches Makefile GAME_CODE
+ * (BMXE/BMXP/BMXJ/BMXC for us/eu/jp/cn). China is the iQue release: same
+ * engine, its own localisation, and its own offset tables. */
 #define ROM_HEADER_GAME_CODE_OFFSET 0xAC
 #define ROM_HEADER_GAME_CODE_SIZE 4
 #define ROM_MIN_SIZE (ROM_HEADER_GAME_CODE_OFFSET + ROM_HEADER_GAME_CODE_SIZE)
@@ -38,6 +38,9 @@ static PortRomRegion DetectRegion(const u8* data, u32 size) {
     }
     if (memcmp(code, "BMXJ", ROM_HEADER_GAME_CODE_SIZE) == 0) {
         return PORT_ROM_REGION_JP;
+    }
+    if (memcmp(code, "BMXC", ROM_HEADER_GAME_CODE_SIZE) == 0) {
+        return PORT_ROM_REGION_CN;
     }
     return PORT_ROM_REGION_UNKNOWN;
 }
@@ -73,6 +76,13 @@ int Port_ClampLanguageToRegion(void) {
             if (lang < LANGUAGE_ENGLISH || lang >= LANGUAGE_COUNT)
                 want = LANGUAGE_ENGLISH;
             break;
+        case PORT_ROM_REGION_CN:
+            /* The iQue release's valid language set is not established yet:
+             * it carries Chinese, but whether that is a new enum value or a
+             * replaced one is still being worked out. Clamping against the
+             * wrong set would rewrite a good save value, so leave it be
+             * until the set is known. */
+            return 0;
         default:
             return 0;
     }
@@ -91,6 +101,8 @@ const char* Port_RomRegionLabel(PortRomRegion region) {
             return "EU";
         case PORT_ROM_REGION_JP:
             return "JP";
+        case PORT_ROM_REGION_CN:
+            return "CN";
         default:
             return "?";
     }

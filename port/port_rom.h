@@ -20,6 +20,12 @@ typedef enum PortRomRegion {
     PORT_ROM_REGION_US,
     PORT_ROM_REGION_EU,
     PORT_ROM_REGION_JP,
+    /* iQue (China) release, game code BMXC. A separate localisation rather
+     * than a patch: its data blocks sit at different offsets and carry a
+     * Chinese font, so it has its own offset tables. Its text is a u16
+     * character-id stream like the JP build's, hence REGION_IS_JP() being
+     * true for it in include/region.h until the text system is separated. */
+    PORT_ROM_REGION_CN,
 } PortRomRegion;
 
 /* ROM data buffer (also declared in port_gba_mem.h to avoid a circular
@@ -34,7 +40,7 @@ extern PortRomRegion gRomRegion;
 
 /*
  * Load and validate a ROM file. Reads the 4-byte game code at header offset
- * 0xAC (BMXE=US, BMXP=EU, BMXJ=JP; matches Makefile:10,27,44 GAME_CODE) to
+ * 0xAC (BMXE=US, BMXP=EU, BMXJ=JP, BMXC=CN; matches Makefile GAME_CODE) to
  * detect the region, sets gRomRegion accordingly, and populates
  * gRomData/gRomSize.
  *
@@ -42,11 +48,11 @@ extern PortRomRegion gRomRegion;
  * allocation failure). Does not verify the SHA-1 — callers that need a
  * stricter check (e.g. to distinguish a clean ROM from a romhack sharing the
  * same game code) should hash gRomData themselves against
- * mzm_{us,eu,jp}.sha1.
+ * mzm_{us,eu,jp,cn}.sha1.
  */
 int Port_LoadRom(const char* path);
 
-/* Human-readable label for gRomRegion ("US", "EU", "JP", "?"). */
+/* Human-readable label for gRomRegion ("US", "EU", "JP", "CN", "?"). */
 const char* Port_RomRegionLabel(PortRomRegion region);
 
 /*

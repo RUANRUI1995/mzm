@@ -8,7 +8,7 @@ DATA_PATH = "data"
 DATA_INC_PATH = "include/extracted"
 DATABASE_PATH = "database.json"
 DATABASE_DEBUG_PATH = "database_debug.json"
-REGIONS = ["us", "eu", "jp", "us_beta", "eu_beta"]
+REGIONS = ["us", "eu", "jp", "cn", "us_beta", "eu_beta"]
 
 
 def extract_data(region: str, debug: bool, quiet: bool = False) -> None:

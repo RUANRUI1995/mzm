@@ -37,14 +37,16 @@ static int HasGbaExtension(const char* name) {
 }
 
 /* Region priority when several supported ROMs are present in APP_DIR.
- * Lower rank wins. EU first: it is the reference build the port's
- * generated offset tables are byte-matched against (US/JP offset tables
- * land in Step B of multiregion-wip/PLAN.md). Could become an on-screen
+ * Lower rank wins. China first: an iQue ROM is only ever put there by someone
+ * who wants the Chinese release, so it must not lose to a retail ROM in the
+ * same folder. EU next: it is the reference build the port's generated offset
+ * tables are byte-matched against; US and JP follow. Could become an on-screen
  * picker later; a fixed order keeps FindRom deterministic for now. */
 static int RomRegionRank(const char* gameCode) {
-    if (memcmp(gameCode, "BMXP", 4) == 0) return 0; /* Europe */
-    if (memcmp(gameCode, "BMXE", 4) == 0) return 1; /* USA    */
-    if (memcmp(gameCode, "BMXJ", 4) == 0) return 2; /* Japan  */
+    if (memcmp(gameCode, "BMXC", 4) == 0) return 0; /* China  */
+    if (memcmp(gameCode, "BMXP", 4) == 0) return 1; /* Europe */
+    if (memcmp(gameCode, "BMXE", 4) == 0) return 2; /* USA    */
+    if (memcmp(gameCode, "BMXJ", 4) == 0) return 3; /* Japan  */
     return -1;
 }
 
@@ -131,17 +133,21 @@ int main(int argc, char** argv) {
         if (romResult < 0) {
             snprintf(message, sizeof(message),
                      "None of the .gba files in:\n%s\n"
-                     "is a supported Europe (BMXP), USA (BMXE) or Japan (BMXJ) ROM.\n\n"
+                     "is a supported Europe (BMXP), USA (BMXE), Japan (BMXJ)\n"
+                     "or China (BMXC) ROM.\n\n"
                      "Expected SHA-1:\nEurope: 0fd107445a42e6f3a3e5ce8c865f412583179903\n"
                      "USA: 5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8\n"
-                     "Japan: 096f07685a3dc9286e71aa0b761f233b5efa2fcd",
+                     "Japan: 096f07685a3dc9286e71aa0b761f233b5efa2fcd\n"
+                     "China: 4703576c63f4c279520a1cc527937a37097a2fe6",
                      APP_DIR);
         } else {
             snprintf(message, sizeof(message),
-                     "Copy your clean Europe, USA or Japan ROM to:\n%s\n\nAny .gba filename is accepted.\n\n"
+                     "Copy your clean Europe, USA, Japan or China ROM to:\n%s\n\n"
+                     "Any .gba filename is accepted.\n\n"
                      "Expected SHA-1:\nEurope: 0fd107445a42e6f3a3e5ce8c865f412583179903\n"
                      "USA: 5de8536afe1f0078ee6fe1089f890e8c7aa0a6e8\n"
-                     "Japan: 096f07685a3dc9286e71aa0b761f233b5efa2fcd",
+                     "Japan: 096f07685a3dc9286e71aa0b761f233b5efa2fcd\n"
+                     "China: 4703576c63f4c279520a1cc527937a37097a2fe6",
                      APP_DIR);
         }
         Platform3DS_ShowFatal(romResult < 0 ? "Unsupported ROM" : "ROM not found", message);

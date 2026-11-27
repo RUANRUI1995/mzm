@@ -18,7 +18,12 @@
 #include "port_rom.h"
 
 #define REGION_IS_EU() (gRomRegion == PORT_ROM_REGION_EU)
-#define REGION_IS_JP() (gRomRegion == PORT_ROM_REGION_JP)
+#define REGION_IS_CN() (gRomRegion == PORT_ROM_REGION_CN)
+/* The iQue build is treated as JP by region-conditional code: its text is a
+ * u16 character-id stream like the JP build's, whereas the US paths assume a
+ * single-byte stream that cannot describe a Chinese font. Split this into a
+ * real REGION_CN branch once the text system has been separated. */
+#define REGION_IS_JP() (gRomRegion == PORT_ROM_REGION_JP || gRomRegion == PORT_ROM_REGION_CN)
 #define REGION_IS_US() (gRomRegion == PORT_ROM_REGION_US)
 
 #else // GBA build: fixed at compile time
@@ -31,11 +36,19 @@
 
 #ifdef REGION_JP
 #define REGION_IS_JP() 1
+#elif defined(REGION_CN)
+#define REGION_IS_JP() 1 /* same reason as the runtime branch above */
 #else
 #define REGION_IS_JP() 0
 #endif
 
-#if !defined(REGION_EU) && !defined(REGION_JP)
+#ifdef REGION_CN
+#define REGION_IS_CN() 1
+#else
+#define REGION_IS_CN() 0
+#endif
+
+#if !defined(REGION_EU) && !defined(REGION_JP) && !defined(REGION_CN)
 #define REGION_IS_US() 1
 #else
 #define REGION_IS_US() 0

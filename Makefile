@@ -46,13 +46,13 @@ ifeq ($(REGION),jp)
 	ASFLAGS += --defsym REGION_JP=1
 endif
 
-# ifeq ($(REGION),cn)
-# 	TARGET = mzm_cn
-# 	GAME_TITLE = ZEROMISSIONC
-# 	GAME_CODE = BMXC
-# 	CPPFLAGS += -DREGION_CN
-#	ASFLAGS += --defsym REGION_CN=1
-# endif
+ifeq ($(REGION),cn)
+	TARGET = mzm_cn
+	GAME_TITLE = ZEROMISSIONC
+	GAME_CODE = BMXC
+	CPPFLAGS += -DREGION_CN
+	ASFLAGS += --defsym REGION_CN=1
+endif
 
 ifeq ($(DEBUG),1)
 	CPPFLAGS += -DDEBUG
@@ -289,7 +289,7 @@ jp:
 jp_debug:
 	$(MAKE) REGION=jp DEBUG=1
 
-# cn:
-# 	$(MAKE) REGION=cn
-# cn_debug:
-# 	$(MAKE) REGION=cn DEBUG=1
+cn:
+	$(MAKE) REGION=cn
+cn_debug:
+	$(MAKE) REGION=cn DEBUG=1

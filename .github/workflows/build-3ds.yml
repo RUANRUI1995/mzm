@@ -1,0 +1,67 @@
+name: Build 3DS
+
+# Compile check for every push and pull request. build-release.yml only runs on
+# a tag, so before this existed a change to the port could break the build and
+# nobody found out until release day.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: build-3ds-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Cheap job first: the CN symbol tables are generated data, and a generator
+  # regression is far more likely than a compile error in them. This takes
+  # seconds and needs no toolchain or ROM.
+  check-cn-offsets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: CN symbol offsets are complete and consistent
+        run: python3 tools/check_cn_offsets.py
+
+  build-3ds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      # Same image as build-release.yml: a build that differs from the shipped
+      # one only because the compiler moved is a false signal.
+      image: devkitpro/devkitarm:20260610
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # The 3DS Makefile derives VERSION from git describe, which needs the
+          # tags and the release/* branches to resolve.
+          fetch-depth: 0
+
+      - name: Install 3DS portlibs
+        run: dkp-pacman -S --noconfirm 3ds-curl 3ds-mbedtls 3ds-zlib
+
+      - name: Build 3DS port
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          export DEVKITPRO=/opt/devkitpro
+          export DEVKITARM=/opt/devkitpro/devkitARM
+          # The vendored packagers are committed without the executable bit.
+          chmod +x tools/bin/bannertool tools/bin/makerom
+          export PATH=$GITHUB_WORKSPACE/tools/bin:/opt/devkitpro/tools/bin:$PATH
+          make -C platform/3ds clean
+          # REGION=any (the default) compiles every region's code and picks one
+          # at runtime from gRomRegion, so a single binary covers US/EU/JP/CN.
+          make -C platform/3ds -j"$(nproc)" RENDERER=gpu CHANNEL=beta
+
+      - name: Confirm the CIA was produced
+        run: |
+          ls -l platform/3ds/mzm-3ds.cia
+          test -s platform/3ds/mzm-3ds.cia

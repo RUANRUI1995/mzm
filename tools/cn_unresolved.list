@@ -1,0 +1,11 @@
+# Symbols the CN port has no trustworthy address for.
+# Written by tools/gen_cn_region_case.py; read by
+# tools/check_cn_offsets.py. They are left out of the CN case on
+# purpose, so they stay null instead of reading the wrong bytes.
+p_sEndingImagesTopGfxPointers  ending_and_gallery_data_rom.c
+p_sEndingImagesBottomGfxPointers  ending_and_gallery_data_rom.c
+p_sEndingImagesTopTileTablePointers  ending_and_gallery_data_rom.c
+p_sEndingImagesHalfTileTablePointers  ending_and_gallery_data_rom.c
+p_sEndingImagesPalPointers  ending_and_gallery_data_rom.c
+p_sEndingWhitePalPointers  ending_and_gallery_data_rom.c
+p_sIntrTable  generic_data_rom.c

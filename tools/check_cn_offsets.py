@@ -42,7 +42,7 @@ ROM_END = 0x09000000  # the iQue ROM is 8MB, like the retail release
 # quietly dropped from a CN case is exactly the regression this script exists
 # to catch, so the list cannot be a blanket excuse.
 UNRESOLVED = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                          "tools", "cn_unresolved.txt")
+                          "tools", "cn_unresolved.list")
 
 
 def read_case(src, region):
@@ -135,7 +135,7 @@ def main():
     print("  files with a US binding: %d (%d without, skipped)" % (files, empty_us))
     print("  symbols bound in both:   %d" % symbols)
     if actually_missing:
-        print("  deliberately left null:  %d (listed in tools/cn_unresolved.txt)"
+        print("  deliberately left null:  %d (listed in tools/cn_unresolved.list)"
               % len(actually_missing))
     if shifts:
         print("  distinct shifts:         %d (min 0x%X, max 0x%X)"

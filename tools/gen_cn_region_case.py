@@ -48,7 +48,8 @@ TWEAK = 8
 SHAPE_WORDS = 16
 SHAPE_MIN_PTRS = 6
 
-UNRESOLVED_LIST = os.path.join("tools", "cn_unresolved.txt")
+# .list, not .txt: tools/*.txt is ignored as build output.
+UNRESOLVED_LIST = os.path.join("tools", "cn_unresolved.list")
 
 # Segments the localisation moved instead of shifting, as (us_start, us_end,
 # shift, why). `shift` is cn - us for the table itself.

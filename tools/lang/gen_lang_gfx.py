@@ -35,7 +35,7 @@ REGIONS = {"eu": ("BMXP", "mzm_eu_baserom.gba"), "us": ("BMXE", "mzm_us_baserom.
 REGION_CASE = {"eu": "PORT_ROM_REGION_EU", "us": "PORT_ROM_REGION_US"}
 
 # Ops, as written to the C file (port_lang_gfx.c reads them).
-OP_END, OP_COPY, OP_FILL, OP_GLYPH = 0, 1, 2, 3
+OP_END, OP_COPY, OP_FILL, OP_GLYPH, OP_PIXEL = 0, 1, 2, 3, 4
 
 
 # --------------------------------------------------------------------------
@@ -160,6 +160,7 @@ class Font:
         self.space = spec.get("space", 3)
         self.gap = spec.get("gap", 1)
         self.letters = {}  # char -> ("copy", slot_name, x, w) or ("own", columns)
+        self.occurrences = {}  # slot -> {char: (x, w)}, every source letter
         self.spec = spec
         bg_slot, bg_x = spec["bg_from"]
         self.bg = slots[bg_slot].column(sheet, bg_x)
@@ -168,9 +169,13 @@ class Font:
             if len(source) > 2 and source[2] is not None:
                 # letters that touch: their widths, from the slot's left edge
                 # (or from the column given after them)
+                # (or from the column given after them), or (x, width) pairs
                 x = source[3] if len(source) > 3 else 0
                 for c, w in zip([c for c in text if c != " "], source[2]):
+                    if isinstance(w, tuple):
+                        x, w = w
                     self.letters.setdefault(c, ("copy", slot_name, x, w))
+                    self.occurrences.setdefault(slot_name, {}).setdefault(c, (x, w))
                     x += w
             else:
                 # (slot, text[, None, x0, x1]): cut between blank columns,
@@ -182,6 +187,10 @@ class Font:
 
     def blank(self, col, bg):
         rows = self.ink_rows or range(len(col))
+        if "ink" in self.spec:
+            # outlined fonts: a column is blank when it has no ink (the
+            # outline between two letters is shared by both)
+            return not any(col[r] in self.spec["ink"] for r in rows)
         return all(col[r] == bg[r] for r in rows)
 
     def _cut(self, sheet, slot, slot_name, text, lo=0, hi=None):
@@ -194,7 +203,8 @@ class Font:
                 start = x
                 while x < end_x and not self.blank(slot.column(sheet, x), bg):
                     x += 1
-                runs.append((start, x - start))
+                pad = self.spec.get("pad", 0)
+                runs.append((start - pad, x - start + 2 * pad))
             else:
                 x += 1
         chars = [c for c in text if c != " "]
@@ -210,6 +220,7 @@ class Font:
             start = runs[i][0]
             end = runs[i + n - 1][0] + runs[i + n - 1][1]
             self.letters.setdefault(c, ("copy", slot_name, start, end - start))
+            self.occurrences.setdefault(slot_name, {}).setdefault(c, (start, end - start))
             i += n
         if i != len(runs) and not self.spec.get("allow_extra_runs"):
             raise SystemExit(f"font {self.name}: '{text}' in {slot_name} has {len(runs)} runs, "
@@ -232,7 +243,12 @@ class Font:
             cols.append(tuple(col))
         return cols
 
+    def has(self, ch):
+        return ch in self.letters or ch in self.spec.get("accents", {})
+
     def width(self, ch):
+        if ch in self.spec.get("accents", {}):
+            ch = self.spec["accents"][ch][0]
         kind = self.letters[ch]
         return kind[3] if kind[0] == "copy" else len(kind[1])
 
@@ -251,7 +267,7 @@ def layout(word, font, avail):
             x += font.space
             prev_letter = False
             continue
-        if ch not in font.letters:
+        if not font.has(ch):
             raise SystemExit(f"font {font.name} has no letter '{ch}' (word '{word}')")
         if prev_letter:
             x += font.gap
@@ -261,14 +277,67 @@ def layout(word, font, avail):
     return out, x
 
 
+def derive_map(font, sheet, slots, src, dst, problems, name):
+    """Per-row colour map from slot `src`'s colours to slot `dst`'s, learnt
+    from the letters both English words have (through other words when they
+    share none). Returns a list of 16 rows of 16 entries, or None."""
+    def direct(a, b, report=False):
+        shared = [c for c in font.occurrences.get(a, {}) if c in font.occurrences.get(b, {})]
+        if not shared:
+            return None
+        table = [[None] * 16 for _ in range(16)]
+        for c in shared:
+            ax, aw = font.occurrences[a][c]
+            bx, bw = font.occurrences[b][c]
+            for i in range(min(aw, bw)):
+                ca = slots[a].column(sheet, ax + i)
+                cb = slots[b].column(sheet, bx + i)
+                for r in range(min(16, len(ca))):
+                    old = table[r][ca[r]]
+                    if old is not None and old != cb[r] and report:
+                        problems.append(f"{name}: colour map {a}->{b} row {r}: {ca[r]:x} is both "
+                                        f"{old:x} and {cb[r]:x} (letter {c})")
+                    table[r][ca[r]] = cb[r]
+        return [[v if v is not None else i for i, v in enumerate(row)] for row in table]
+
+    # breadth-first over the words that share letters
+    from collections import deque
+    prev = {src: None}
+    queue = deque([src])
+    while queue:
+        a = queue.popleft()
+        if a == dst:
+            break
+        for b in font.occurrences:
+            if b in font.spec.get("no_recolor_from", ()):
+                continue
+            if b not in prev and direct(a, b) is not None:
+                prev[b] = a
+                queue.append(b)
+    if dst not in prev:
+        problems.append(f"{name}: no letters link the colours of {src} to {dst}")
+        return None
+    path = [dst]
+    while prev[path[-1]] is not None:
+        path.append(prev[path[-1]])
+    path.reverse()
+    result = [list(range(16)) for _ in range(16)]
+    for a, b in zip(path, path[1:]):
+        step = direct(a, b, report=True)
+        result = [[step[r][result[r][i]] for i in range(16)] for r in range(16)]
+    return result
+
+
 def build_graphic(name, spec, sheets, fonts_spec):
-    """Return (ops, en_sheet, pt_sheet, problems) for one graphic."""
+    """Return (ops, glyphs, maps, slots, pt_sheet, problems) for one graphic."""
     sheet = sheets
     slots = {k: Slot(*v) for k, v in spec["slots"].items()}
     fonts = {k: Font(k, v, sheet, slots) for k, v in spec["fonts"].items()}
     out = Sheet(sheet.data)
     ops = []
     glyphs = []
+    maps = []
+    map_ids = {}
     problems = []
     for key, (font_name, word, *opts) in spec["words"].items():
         # "SLOT@tag" places a second word in the same slot (with x0/x1)
@@ -296,29 +365,76 @@ def build_graphic(name, spec, sheets, fonts_spec):
         if x0 + width > right:
             problems.append(f"{name}: '{word}' is {width} px, {slot_name} has {right - x0}")
         # background over the text area, then the letters
-        ops.append((OP_FILL, slot_name, x0, font.spec["bg_from"][0], font.spec["bg_from"][1], right - x0, mask))
+        ops.append((OP_FILL, slot_name, x0, font.spec["bg_from"][0], font.spec["bg_from"][1], right - x0, mask, None))
         for x in range(x0, right):
             slot.put_column(out, x, font.bg, mask)
         if border:
             # the English word may run into the border: put back a clean one
             bg_slot = slots[font.spec["bg_from"][0]]
-            ops.append((OP_COPY, slot_name, slot.px - border, font.spec["bg_from"][0], bg_slot.px - border, border, mask))
+            ops.append((OP_COPY, slot_name, slot.px - border, font.spec["bg_from"][0], bg_slot.px - border, border,
+                        mask, None))
             for i in range(border):
                 slot.put_column(out, slot.px - border + i, bg_slot.column(sheet, bg_slot.px - border + i), mask)
+        # The colours the word must have: those of its own English word, or
+        # of the slot named in opts['colors'].
+        color_class = opts.get("colors", slot_name)
         for dx, ch in placed:
-            kind = font.letters[ch]
+            base, accent = ch, None
+            if ch in font.spec.get("accents", {}):
+                base, accent = font.spec["accents"][ch]
+            kind = font.letters[base]
+            if base in font.occurrences.get(color_class, {}):
+                # the same letter in the word's own English word: no recolouring
+                kind = ("copy", color_class) + font.occurrences[color_class][base]
+            elif kind[0] == "copy" and kind[1] in font.spec.get("no_recolor_from", ()):
+                for src, letters in font.occurrences.items():
+                    if src not in font.spec["no_recolor_from"] and base in letters:
+                        kind = ("copy", src) + letters[base]
+                        break
             if kind[0] == "copy":
                 _, src_slot, sx, w = kind
-                ops.append((OP_COPY, slot_name, x0 + dx, src_slot, sx, w, mask))
+                map_id = None
+                if font.spec.get("recolor") and src_slot != color_class:
+                    key = (src_slot, color_class)
+                    if key not in map_ids:
+                        table = derive_map(font, sheet, slots, src_slot, color_class, problems, name)
+                        map_ids[key] = len(maps) if table else None
+                        if table:
+                            maps.append(table)
+                    map_id = map_ids[key]
+                ops.append((OP_COPY, slot_name, x0 + dx, src_slot, sx, w, mask, map_id))
                 for i in range(w):
-                    slot.put_column(out, x0 + dx + i, slots[src_slot].column(sheet, sx + i), mask)
+                    col = slots[src_slot].column(sheet, sx + i)
+                    if map_id is not None:
+                        col = tuple(maps[map_id][min(r, 15)][v] for r, v in enumerate(col))
+                    slot.put_column(out, x0 + dx + i, col, mask)
             else:
                 cols = kind[1]
                 glyphs.append(cols)
                 ops.append((OP_GLYPH, slot_name, x0 + dx, len(glyphs) - 1, len(cols), mask))
                 for i, c in enumerate(cols):
                     slot.put_column(out, x0 + dx + i, c, mask)
-    return ops, glyphs, slots, out, problems
+            # accents: single pixels over the letter, [(x, y, palette index)],
+            # indices in the colours of the font's accent_colors word, mapped
+            # to the word's own like copied letters
+            accent_map = None
+            ac = font.spec.get("accent_colors")
+            if accent and ac and ac != color_class:
+                key = (ac, color_class)
+                if key not in map_ids:
+                    table = derive_map(font, sheet, slots, ac, color_class, problems, name)
+                    map_ids[key] = len(maps) if table else None
+                    if table:
+                        maps.append(table)
+                if map_ids[key] is not None:
+                    accent_map = maps[map_ids[key]]
+            for ax, ay, v in accent or []:
+                if accent_map:
+                    v = accent_map[min(ay, 15)][v]
+                ops.append((OP_PIXEL, slot_name, x0 + dx + ax, ay, v))
+                tile_off, cx = divmod(x0 + dx + ax, 8)
+                out.set(slot.firsts[ay // 8] + tile_off, cx, ay % 8, v)
+    return ops, glyphs, maps, slots, out, problems
 
 
 # --------------------------------------------------------------------------
@@ -340,7 +456,7 @@ def render_png(sheet, path, tiles_wide=16, scale=4):
     img.resize((img.width * scale, img.height * scale), Image.NEAREST).save(path)
 
 
-def c_ops(name, ops, glyphs, slots):
+def c_ops(name, ops, glyphs, maps, slots):
     slot_ids = {k: i for i, k in enumerate(slots)}
     lines = [f"static const PortLangGfxSlot sSlots_{name}[] = {{"]
     for k, s in slots.items():
@@ -360,20 +476,30 @@ def c_ops(name, ops, glyphs, slots):
         for i in range(0, len(glyph_words), 16):
             lines.append("    " + ", ".join(f"0x{b:02X}" for b in glyph_words[i:i + 16]) + ",")
         lines.append("};")
+    if maps:
+        lines.append(f"static const u8 sMaps_{name}[][16][16] = {{")
+        for table in maps:
+            lines.append("    {")
+            for row in table:
+                lines.append("        { " + ", ".join(f"{v}" for v in row) + " },")
+            lines.append("    },")
+        lines.append("};")
     lines.append(f"static const u16 sOps_{name}[] = {{")
     for op in ops:
-        if op[0] == OP_FILL:
-            _, d, dx, s, sx, n, m = op
-            lines.append(f"    PLG_FILL, {slot_ids[d]}, {dx}, {slot_ids[s]}, {sx}, {n}, 0x{m:04X},")
-        elif op[0] == OP_COPY:
-            _, d, dx, s, sx, n, m = op
-            lines.append(f"    PLG_COPY, {slot_ids[d]}, {dx}, {slot_ids[s]}, {sx}, {n}, 0x{m:04X},")
-        else:
+        if op[0] in (OP_FILL, OP_COPY):
+            kind, d, dx, s, sx, n, m, mp = op
+            word = "PLG_FILL" if kind == OP_FILL else "PLG_COPY"
+            mp = 0xFFFF if mp is None else mp
+            lines.append(f"    {word}, {slot_ids[d]}, {dx}, {slot_ids[s]}, {sx}, {n}, 0x{m:04X}, 0x{mp:04X},")
+        elif op[0] == OP_GLYPH:
             _, d, dx, g, n, m = op
-            lines.append(f"    PLG_GLYPH, {slot_ids[d]}, {dx}, {offsets[g]}, {n}, 0, 0x{m:04X},")
+            lines.append(f"    PLG_GLYPH, {slot_ids[d]}, {dx}, {offsets[g]}, {n}, 0, 0x{m:04X}, 0xFFFF,")
+        else:
+            _, d, x, y, v = op
+            lines.append(f"    PLG_PIXEL, {slot_ids[d]}, {x}, {y}, {v}, 0, 0xFFFF, 0xFFFF,")
     lines.append("    PLG_END")
     lines.append("};")
-    return lines, bool(glyph_words)
+    return lines, bool(glyph_words), bool(maps)
 
 
 def main():
@@ -408,34 +534,38 @@ def main():
     for name, spec in lang_gfx.GRAPHICS.items():
         if args.only and name != args.only:
             continue
+        # spec['regions']: the ROMs that load this graphic (the US file
+        # select, for one, draws its words from another graphic)
+        regions = list(spec.get("regions", ["eu", "us"]))
         sheets = {}
-        for region in REGIONS:
+        for region in regions:
             addr = addrs[region].get(spec["symbol"])
             if addr is None:
                 sys.exit(f"gen_lang_gfx: {spec['symbol']} has no {region.upper()} address")
             sheets[region] = lz77(roms[region], addr - 0x08000000)
-        if sheets["eu"] != sheets["us"]:
-            problems.append(f"{name}: the EU and US English graphics differ; the patch is EU-only")
-            regions = ["eu"]
-        else:
-            regions = ["eu", "us"]
-        ops, glyphs, slots, result, probs = build_graphic(name, spec, Sheet(sheets["eu"]), None)
+        first = sheets[regions[0]]
+        for region in regions[1:]:
+            if sheets[region] != first:
+                problems.append(f"{name}: the {region.upper()} English graphic differs; patch left out there")
+                regions.remove(region)
+        ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(first), None)
         problems.extend(probs)
         if args.preview:
             os.makedirs(args.preview, exist_ok=True)
-            render_png(Sheet(sheets["eu"]), os.path.join(args.preview, f"{name}_en.png"), spec.get("preview_wide", 16))
+            render_png(Sheet(first), os.path.join(args.preview, f"{name}_en.png"), spec.get("preview_wide", 16))
             render_png(result, os.path.join(args.preview, f"{name}_{args.lang}.png"), spec.get("preview_wide", 16))
-        lines, has_glyphs = c_ops(name, ops, glyphs, slots)
+        lines, has_glyphs, has_maps = c_ops(name, ops, glyphs, maps, slots)
         out.extend(lines)
         out.append("")
-        table.append((spec["id"], name, len(sheets["eu"]), regions, has_glyphs))
+        table.append((spec["id"], name, len(first), regions, has_glyphs, has_maps))
 
     prefix = "gPortLangGfx" + args.lang.title().replace("_", "")
     out.append(f"const PortLangGfxPatch {prefix}[PORT_LANG_GFX_COUNT] = {{")
-    for gid, name, size, regions, has_glyphs in table:
+    for gid, name, size, regions, has_glyphs, has_maps in table:
         mask = " | ".join(f"(1u << {REGION_CASE[r]})" for r in regions)
         glyphs = f"sGlyphs_{name}" if has_glyphs else "NULL"
-        out.append(f"    [{gid}] = {{ {size}, {mask}, sSlots_{name}, {glyphs}, sOps_{name} }},")
+        maps = f"sMaps_{name}" if has_maps else "NULL"
+        out.append(f"    [{gid}] = {{ {size}, {mask}, sSlots_{name}, {glyphs}, {maps}, sOps_{name} }},")
     out.append("};")
     out.append("")
 

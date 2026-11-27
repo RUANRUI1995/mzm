@@ -2521,6 +2521,9 @@ void PauseScreenInit(void)
     CallLZ77UncompVram(sTankIconsGfx, VRAM_BASE + 0x13000);
     CallLZ77UncompVram(sMapScreenAreaNamesGfxPointers[gLanguage], VRAM_BASE + 0x10800);
     CallLZ77UncompVram(sMapScreenUnknownItemsNamesGfxPointers[gLanguage], VRAM_BASE + 0x11400);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    Port_LangGfx_Apply(PORT_LANG_GFX_UNKNOWN_ITEMS, (void*)(VRAM_BASE + 0x11400));
+#endif
     CallLZ77UncompVram(sMapScreenChozoStatueAreaNamesGfxPointers[gLanguage], VRAM_BASE + 0x11800);
 
     if (PAUSE_SCREEN_DATA.typeFlags & PAUSE_SCREEN_TYPE_CHOZO_STATUE_HINT)

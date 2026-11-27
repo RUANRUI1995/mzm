@@ -66,7 +66,7 @@ void Port_LangGfx_Apply(PortLangGfxId id, void* dstAddr)
     memcpy(snap, dst, patch->size);
     sByteSwap = Port_HostIsBigEndian() ? 1 : 0;
 
-    for (op = patch->ops; op[0] != PLG_END; op += 7) {
+    for (op = patch->ops; op[0] != PLG_END; op += 8) {
         const PortLangGfxSlot* d = &patch->slots[op[1]];
         u32 dx = op[2];
         u32 count = op[4 + (op[0] == PLG_GLYPH ? 0 : 1)];
@@ -74,7 +74,11 @@ void Port_LangGfx_Apply(PortLangGfxId id, void* dstAddr)
 
         sRowMask = op[6];
 
-        if (op[0] == PLG_GLYPH) {
+        if (op[0] == PLG_PIXEL) {
+            /* op[2]: x, op[3]: y in the slot, op[4]: palette index */
+            sRowMask = 0xFFFF;
+            SetColumnPixel(dst, d, op[2], op[3] / 8, op[3] % 8, (u8)op[4]);
+        } else if (op[0] == PLG_GLYPH) {
             /* op[3]: byte offset in glyphs, op[4]: columns */
             const u8* g = &patch->glyphs[op[3]];
             for (i = 0; i < count; i++) {
@@ -89,12 +93,19 @@ void Port_LangGfx_Apply(PortLangGfxId id, void* dstAddr)
             }
         } else {
             const PortLangGfxSlot* s = &patch->slots[op[3]];
+            const u8 (*map)[16] = (op[7] != 0xFFFF && patch->maps != NULL) ? patch->maps[op[7]] : NULL;
             u32 sx = op[4];
             for (i = 0; i < count; i++) {
                 u32 from = (op[0] == PLG_COPY) ? sx + i : sx;
-                for (r = 0; r < d->rows; r++)
-                    for (y = 0; y < 8; y++)
-                        SetColumnPixel(dst, d, dx + i, r, y, GetColumnPixel(snap, s, from, r, y));
+                for (r = 0; r < d->rows; r++) {
+                    for (y = 0; y < 8; y++) {
+                        u8 v = GetColumnPixel(snap, s, from, r, y);
+                        u32 row = r * 8 + y;
+                        if (map != NULL)
+                            v = map[row < 16 ? row : 15][v];
+                        SetColumnPixel(dst, d, dx + i, r, y, v);
+                    }
+                }
             }
         }
     }

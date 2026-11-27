@@ -16,6 +16,7 @@
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
 #include "port_lang_texts.h"
+#include "port_lang_gfx.h"
 #endif
 
 #include "data/shortcut_pointers.h"
@@ -5105,6 +5106,8 @@ static void FileSelectInit(void)
         CallLZ77UncompVram(sFileSelectBgIconsGfx, VRAM_BASE + 0x3800);
         CallLZ77UncompVram(sFileSelectLargeTextGfxPointers[gLanguage - LANGUAGE_ENGLISH], VRAM_BASE + 0x4800);
         CallLZ77UncompVram(sFileSelectDifficultyTextGfxPointers[gLanguage - LANGUAGE_ENGLISH], VRAM_BASE + 0x3400);
+        Port_LangGfx_Apply(PORT_LANG_GFX_FILE_SELECT_LARGE, (void*)(VRAM_BASE + 0x4800));
+        Port_LangGfx_Apply(PORT_LANG_GFX_FILE_SELECT_DIFFICULTY, (void*)(VRAM_BASE + 0x3400));
     }
     else
     {

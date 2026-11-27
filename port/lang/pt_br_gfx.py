@@ -188,4 +188,122 @@ GRAPHICS = {
             "TICKER": ("ticker", "TROCAR AREA TROCAR AREA", {"x0": 1, "x1": 88}),
         },
     },
+    # Pause map: names of the items the suit cannot identify yet
+    # (sMapScreenUnknownItemsNamesGfxPointers, OBJ VRAM 0x11400). PLASMA stays.
+    "unknown_items": {
+        "id": "PORT_LANG_GFX_UNKNOWN_ITEMS",
+        "symbol": "sMapScreenUnknownItemsNamesEnglishGfx",
+        "slots": {"STRIP": ([0], 20)},
+        "fonts": {
+            "unk": {
+                "sources": [("STRIP", "PLASMA", None, 7, 47), ("STRIP", "SPACE JUMP", None, 48, 103),
+                            ("STRIP", "GRAVITY", None, 104, 159)],
+                "bg_from": ("STRIP", 42),
+                "ink_rows": [2, 3, 4, 5, 6],
+                "rows": [2, 3, 4, 5, 6],
+                "gap": 1,
+                "space": 3,
+                "own_top": 2,
+                "own": {
+                    "O": ["3333", "3..3", "3..3", "3..3", "3333"],
+                    "D": ["333.", "3..3", "3..3", "3..3", "333."],
+                    ".": [".", ".", ".", ".", "3"],
+                },
+            },
+        },
+        "words": {
+            "STRIP@space": ("unk", "SALTO ESPAC.", {"x0": 48, "x1": 103}),
+            "STRIP@gravity": ("unk", "GRAVIDADE", {"x0": 104, "x1": 159}),
+        },
+    },
+    # File select: SAMUS DATA, OPTIONS, COPY, ERASE in the big 16-pixel font
+    # (file_select.c, sFileSelectLargeTextGfxPointers, VRAM 0x4800). Each word
+    # has its own colours (indices); letters taken from another word go
+    # through a colour map learnt from the letters both share.
+    "file_large": {
+        "id": "PORT_LANG_GFX_FILE_SELECT_LARGE",
+        "symbol": "sFileSelectLargeTextEnglishGfx",
+        "regions": ["eu"],
+        "slots": {
+            "SAMUS": ([0, 32], 20),
+            "OPTIONS": ([20, 52], 12),
+            "COPY": ([64, 96], 10),
+            "ERASE": ([74, 106], 11),
+        },
+        "fonts": {
+            "large": {
+                # in DATA the T touches its neighbours, so SAMUS DATA is given by hand
+                "sources": [("SAMUS", "SAMUS DATA", [(34, 8), (43, 9), (53, 10), (64, 9), (74, 8), (88, 9), (98, 9),
+                                                     (107, 10), (117, 9)]),
+                            ("OPTIONS", "OPTIONS"), ("COPY", "COPY", [(0, 9), (10, 9), (20, 9), (29, 10)]),
+                            ("ERASE", "ERASE")],
+                "bg_from": ("SAMUS", 2),
+                "gap": 1,
+                "space": 6,
+                "recolor": True,
+                # SAMUS DATA is drawn one row higher with its own shapes: its
+                # colours do not map onto the others
+                "no_recolor_from": ["SAMUS"],
+                # accented letters: base letter + [(x, y, index)] over it,
+                # indices of the OPTIONS colours (fill d, shadow 8)
+                "accent_colors": "OPTIONS",
+                # SAMUS DATA has its own shapes and a row gradient; its O and
+                # E are drawn here (as o and e, so the other words' O and E
+                # are not used for it)
+                "own": {
+                    "o": [".5666667.", "544444448", "633888338", "6338.7338", "6228.7228", "6228.7228",
+                          "6118.7118", "6228.7228", "6228.7228", "6338.7338", "633877338", "744444448",
+                          ".7888888."],
+                    "e": [".5666667", "54444448", "63388888", "6338....", "6228....", "62287778", "61111118",
+                          "62288888", "6228....", "6338....", "63386667", "64444448", "7888888."],
+                },
+                "accents": {
+                    "Ç": ("C", [(3, 14, 0xD), (4, 14, 0x8), (2, 15, 0xD), (3, 15, 0x8)]),
+                    "Õ": ("O", [(3, 0, 0xD), (4, 0, 0xD), (7, 0, 0xD), (2, 1, 0xD), (5, 1, 0xD), (6, 1, 0xD)]),
+                    # G: the C with a bar into its lower hook
+                    "G": ("C", [(4, 8, 0x5), (5, 8, 0x6), (6, 8, 0x6), (7, 8, 0x7),
+                                (4, 9, 0xD), (5, 9, 0xD), (6, 9, 0xD), (7, 9, 0xD), (8, 9, 0x8)]),
+                },
+            },
+        },
+        "words": {
+            "SAMUS": ("large", "DADoS De SAMUS", {"x0": 0, "x1": 160, "align": "center"}),
+            "OPTIONS": ("large", "OPÇÕES"),
+            "COPY": ("large", "COPIAR"),
+            "ERASE": ("large", "APAGAR"),
+        },
+    },
+    # File select: EASY NORMAL HARD TIME ATTACK (file_select.c,
+    # sFileSelectDifficultyTextGfxPointers, VRAM 0x3400). An outlined font
+    # whose letters share their outline column; NORMAL and TIME ATTACK stay
+    # (the game's Spanish keeps TIME ATTACK too).
+    "file_difficulty": {
+        "id": "PORT_LANG_GFX_FILE_SELECT_DIFFICULTY",
+        "symbol": "sFileSelectDifficultyTextEnglishGfx",
+        "regions": ["eu"],
+        "slots": {"STRIP": ([0], 20)},
+        "fonts": {
+            "diff": {
+                "sources": [("STRIP", "EASY", None, 0, 40), ("STRIP", "NORMAL", None, 40, 80),
+                            ("STRIP", "HARD", None, 80, 120), ("STRIP", "TI", None, 120, 127)],
+                "bg_from": ("STRIP", 30),
+                "ink": [1],
+                "ink_rows": [1, 2, 3, 4, 5, 6, 7],
+                "pad": 1,
+                "gap": -1,
+                "own_top": 1,
+                "own": {"F": ["666666", "611116", "616666", "61116.", "6166..", "616...", "666..."],
+                        "C": ["666666", "611116", "616666", "616...", "616666", "611116", "666666"]},
+                # the acute accent the game's Spanish uses (FACIL, DIFICIL)
+                "accents": {
+                    "Á": ("A", [(1, 0, 6), (2, 0, 6), (3, 0, 1), (4, 0, 6), (2, 1, 1)]),
+                    "Í": ("I", [(0, 0, 6), (1, 0, 6), (2, 0, 1), (3, 0, 6), (1, 1, 1)]),
+                },
+            },
+        },
+        "words": {
+            "STRIP@easy": ("diff", "FÁCIL", {"x0": 0, "x1": 40}),
+            "STRIP@hard": ("diff", "DIFÍCIL", {"x0": 80, "x1": 120}),
+        },
+    },
 }

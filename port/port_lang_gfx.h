@@ -18,6 +18,9 @@
 typedef enum PortLangGfxId {
     PORT_LANG_GFX_EQUIPMENT_NAMES,
     PORT_LANG_GFX_MENU_NAMES,
+    PORT_LANG_GFX_UNKNOWN_ITEMS,
+    PORT_LANG_GFX_FILE_SELECT_LARGE,
+    PORT_LANG_GFX_FILE_SELECT_DIFFICULTY,
 
     PORT_LANG_GFX_COUNT
 } PortLangGfxId;
@@ -30,18 +33,23 @@ typedef struct PortLangGfxSlot {
     u16 first[4];
 } PortLangGfxSlot;
 
-/* Ops, seven u16 each, the last one a mask of the pixel rows (0-15) the op
- * may change (the stream ends with PLG_END):
- *   PLG_COPY  dst slot, dst x, src slot, src x, count: copy columns of the
- *             English graphic
- *   PLG_FILL  dst slot, dst x, src slot, src x, count: repeat one column
- *   PLG_GLYPH dst slot, dst x, glyph offset, count, 0: columns of our own,
- *             rows * 8 pixels each, two per byte (low nibble first) */
+/* Ops, eight u16 each (the stream ends with PLG_END):
+ *   PLG_COPY  dst slot, dst x, src slot, src x, count, row mask, map: copy
+ *             columns of the English graphic
+ *   PLG_FILL  dst slot, dst x, src slot, src x, count, row mask, map: repeat
+ *             one column
+ *   PLG_GLYPH dst slot, dst x, glyph offset, count, 0, row mask, -: columns of
+ *             our own, rows * 8 pixels each, two per byte (low nibble first)
+ *   PLG_PIXEL dst slot, x, y, palette index, 0, -, -: one pixel (accents)
+ * The row mask says which pixel rows (0-15) the op may change; map is 0xFFFF
+ * or the colour map (per pixel row, old index -> new) the copied pixels go
+ * through, for letters taken from a word drawn in other colours. */
 enum {
     PLG_END = 0,
     PLG_COPY,
     PLG_FILL,
     PLG_GLYPH,
+    PLG_PIXEL,
 };
 
 typedef struct PortLangGfxPatch {
@@ -49,6 +57,7 @@ typedef struct PortLangGfxPatch {
     u32 regionMask;  /* 1 << PortRomRegion of the ROMs it was made for */
     const PortLangGfxSlot* slots;
     const u8* glyphs;
+    const u8 (*maps)[16][16];
     const u16* ops;
 } PortLangGfxPatch;
 

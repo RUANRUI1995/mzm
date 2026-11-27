@@ -8,21 +8,20 @@ to the game in place of the English text.
 
 The strings are encoded with the game's own charmap (charmap.txt, through
 tools/preproc.py). Centring ({CENTER}) is worked out from the font widths of
-each region's ROM, because the US and EU fonts differ, which is also why the
-English GAP values differ between the two regions. The ROMs are only read for
+the ROM. Port languages are offered with the EU ROM only (its own languages
+are five; the US and JP ROMs carry one), so only the EU ROM is read. The ROMs are only read for
 those widths and nothing of them ends up in the output.
 
 The script also checks every line against the space the game has for it: the
-widest line any official language uses for the same text in that region (EN,
-DE, FR, IT, ES on the EU ROM; EN on the US ROM), and the most lines any of
-them uses. Lines that would not fit are reported and make the script fail
+widest line any official language of the EU ROM (EN, DE, FR, IT, ES) uses
+for the same text, and the most lines any of them uses. Lines that would not fit are reported and make the script fail
 (--allow-overflow turns that into warnings).
 
 Usage:
     python tools/lang/gen_lang.py [--lang pt_br] [--rom-dir DIR]
 
-The ROMs are looked for in --rom-dir, $MZM_ROM_DIR, the repository root and
-its sibling "mzm" checkout, as mzm_eu_baserom.gba / mzm_us_baserom.gba.
+The ROM is looked for in --rom-dir, $MZM_ROM_DIR, the repository root and
+its sibling "mzm" checkout, as mzm_eu_baserom.gba.
 """
 
 import argparse
@@ -58,7 +57,6 @@ LANGUAGES = ["English", "German", "French", "Italian", "Spanish"]
 # the region's ROM carries).
 REGIONS = {
     "eu": ("BMXP", "mzm_eu_baserom.gba", 0x0840E5E4, LANGUAGES),
-    "us": ("BMXE", "mzm_us_baserom.gba", 0x0840D7B0, ["English"]),
 }
 WIDTH_COUNT = 1184
 
@@ -207,38 +205,25 @@ def text_width(codes, widths):
 
 
 def english_layout(english_codes, widths):
-    """(per-line centring box widths, whether the text uses leading GAPs)."""
+    """Per-line centring box widths of the English text (None where a line
+    is not centred)."""
     boxes = []
-    uses_gaps = False
     for codes in split_lines(english_codes):
         gap = leading_gap(codes)
-        if gap:
-            uses_gaps = True
         width = text_width(codes, widths)
         boxes.append(2 * gap + width if gap and width else None)
-    return boxes, uses_gaps
-
-
-def select_region(text, region):
-    def repl(m):
-        return m.group(1) if region == "eu" else (m.group(2) or "")
-    return re.sub(r"\{IFEU\}(.*?)(?:\{ELSE\}(.*?))?\{ENDIF\}", repl, text)
+    return boxes
 
 
 def encode_entry(lines, charmap, widths, english_codes, region):
-    boxes, uses_gaps = english_layout(english_codes, widths) if english_codes else ([], False)
+    boxes = english_layout(english_codes, widths) if english_codes else []
     known_boxes = [b for b in boxes if b]
     out = []
     for index, raw in enumerate(lines):
-        text = select_region(raw, region)
+        text = raw
         center = text.startswith("{CENTER}")
         if center:
             text = text[len("{CENTER}"):]
-        m = re.match(r"\{RGAP\((\d+)\)\}", text)
-        if m:
-            text = text[m.end():]
-            if uses_gaps:
-                text = "{GAP(" + m.group(1) + ")}" + text
         codes = charmap.convert_string(text)
         if center:
             box = boxes[index] if index < len(boxes) and boxes[index] else None

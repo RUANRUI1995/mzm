@@ -6,7 +6,6 @@
 
 /* port/generated/lang_pt_br.c */
 extern const PortLangTexts gPortLangPtBr_EU;
-extern const PortLangTexts gPortLangPtBr_US;
 
 static PortTextLanguage sLanguage = PORT_TEXT_LANGUAGE_GAME;
 
@@ -24,7 +23,7 @@ void Port_Lang_Set(PortTextLanguage language)
 
 bool Port_Lang_Available(void)
 {
-    return gRomRegion == PORT_ROM_REGION_EU || gRomRegion == PORT_ROM_REGION_US;
+    return gRomRegion == PORT_ROM_REGION_EU;
 }
 
 static const PortLangTexts* ActiveTexts(void)
@@ -33,7 +32,6 @@ static const PortLangTexts* ActiveTexts(void)
         return NULL;
     switch (gRomRegion) {
         case PORT_ROM_REGION_EU: return &gPortLangPtBr_EU;
-        case PORT_ROM_REGION_US: return &gPortLangPtBr_US;
         default: return NULL;
     }
 }

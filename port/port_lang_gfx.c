@@ -10,7 +10,6 @@
 /* port/generated/lang_pt_br_gfx.c: one table per ROM region (the English
  * graphics are not always the same); an entry without ops is not patched */
 extern const PortLangGfxPatch gPortLangGfxPtBr_EU[PORT_LANG_GFX_COUNT];
-extern const PortLangGfxPatch gPortLangGfxPtBr_US[PORT_LANG_GFX_COUNT];
 
 /* VRAM holds GBA halfwords in host order: on a big-endian host the two
  * bytes of each halfword are swapped. */
@@ -139,8 +138,6 @@ void Port_LangGfx_Apply(PortLangGfxId id, void* dstAddr)
         return;
     if (gRomRegion == PORT_ROM_REGION_EU)
         patch = &gPortLangGfxPtBr_EU[id];
-    else if (gRomRegion == PORT_ROM_REGION_US)
-        patch = &gPortLangGfxPtBr_US[id];
     else
         return;
     if (patch->ops == NULL)

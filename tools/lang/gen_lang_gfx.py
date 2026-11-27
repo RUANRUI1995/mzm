@@ -31,8 +31,8 @@ import sys
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
-REGIONS = {"eu": ("BMXP", "mzm_eu_baserom.gba"), "us": ("BMXE", "mzm_us_baserom.gba")}
-REGION_CASE = {"eu": "PORT_ROM_REGION_EU", "us": "PORT_ROM_REGION_US"}
+# Port languages are offered with the EU ROM only (port_lang.h).
+REGIONS = {"eu": ("BMXP", "mzm_eu_baserom.gba")}
 
 # Ops, as written to the C file (port_lang_gfx.c reads them).
 OP_END, OP_COPY, OP_FILL, OP_GLYPH, OP_PIXEL = 0, 1, 2, 3, 4
@@ -610,7 +610,7 @@ def main():
             continue
         # spec['regions']: the ROMs that load this graphic (the US file
         # select, for one, draws its words from another graphic)
-        regions = list(spec.get("regions", ["eu", "us"]))
+        regions = list(spec.get("regions", list(REGIONS)))
         # spec['parts'] [(symbol, byte offset)]: graphics the game loads next
         # to each other and the patch treats as one (default: 'symbol')
         parts = spec.get("parts", [(spec.get("symbol"), 0)])

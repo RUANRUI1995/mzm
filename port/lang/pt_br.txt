@@ -4,6 +4,7 @@
 # it is drawn instead of the English text while the game runs in English, and
 # neither the ROM nor gLanguage change (RetroAchievements identify the game by
 # the ROM's hash and read its RAM; both stay those of an English game).
+# It is offered with the EU ROM only, next to the five languages it carries.
 #
 # tools/lang/gen_lang.py turns this file into port/generated/lang_pt_br.c.
 # Run it after every edit (it also checks that each line fits on screen):
@@ -21,14 +22,9 @@
 #                        dropped; a line that is just "{GAP(110)}" is the
 #                        empty second line single-line messages have.
 #   {CENTER}             at the start of a line: centred the way the English
-#                        text centres that line in the same ROM region (the
-#                        GAP is worked out from that region's font widths).
-#                        Emits nothing where the English line is not centred.
-#   {RGAP(n)}            GAP(n) only where the English text of that region
-#                        starts its lines with a GAP (the EU story text is
-#                        indented by 8 pixels, the US one is not).
-#   {IFEU}a{ELSE}b{ENDIF}  a in the EU ROM, b in the others (the EU font has
-#                        glyphs the US one lacks, such as {hundred_percent}).
+#                        text centres that line (the GAP is worked out from
+#                        the font widths). Emits nothing where the English
+#                        line is not centred.
 #   # ...                a comment line.
 #
 # Glossary (kept the same in the text and in the graphics):
@@ -302,11 +298,11 @@ Uma pistola de {COLOR(5)}carga automática{COLOR(0)}.
 # ---------------------------------------------------------------- story
 
 [STORY_TEXT_PLANET_ZEBES]
-{RGAP(8)}Planeta Zebes... Já chamei este lugar
-{RGAP(8)}de lar, em tempos de paz, muito antes
-{RGAP(8)}de o mal assombrar as cavernas. Agora
-{RGAP(8)}vou enfim contar a história da minha
-{RGAP(8)}primeira batalha... A Missão Zero.
+{GAP(8)}Planeta Zebes... Já chamei este lugar
+{GAP(8)}de lar, em tempos de paz, muito antes
+{GAP(8)}de o mal assombrar as cavernas. Agora
+{GAP(8)}vou enfim contar a história da minha
+{GAP(8)}primeira batalha... A Missão Zero.
 {GAP(138)}-Samus Aran-
 
 [STORY_TEXT_THE_TIMING]
@@ -462,7 +458,7 @@ Já pode desligar o console (OFF).
 {CENTER}Recorde
 
 [FILE_SCREEN_TEXT_BEST_TIME_100]
-{IFEU}{CENTER}Recorde{hundred_percent}{ELSE}{CENTER}Recorde (100%){ENDIF}
+{CENTER}Recorde{hundred_percent}
 
 [FILE_SCREEN_TEXT_ID_PASSWORD]
 ID

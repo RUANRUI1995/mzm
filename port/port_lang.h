@@ -10,8 +10,12 @@
  * RetroAchievements identify the game by and read.
  *
  * The strings are compiled into the binary (port/generated/lang_<lang>.c,
- * built by tools/lang/gen_lang.py from port/lang/<lang>.txt), one copy per
- * ROM region because the US and EU fonts have different widths.
+ * built by tools/lang/gen_lang.py from port/lang/<lang>.txt).
+ *
+ * Port languages are offered with the EU ROM only: it is the version with
+ * several languages (EN, DE, FR, IT, ES), and PT-BR joins them; the US and
+ * JP ROMs carry one language each and stay as they are. The EU ROM also
+ * has the other languages' graphics, which the patches borrow letters from.
  *
  * This header only uses standard types, so the bottom screen UI and the
  * platform code (which see libctru's u32, not the game's) can include it.
@@ -35,7 +39,7 @@ PortTextLanguage Port_Lang_Get(void);
 void Port_Lang_Set(PortTextLanguage language);
 
 /* Whether a port language is being drawn right now: one is picked, the ROM
- * is one the translation has strings for (US or EU) and the game runs in
+ * is the EU one and the game runs in
  * English. */
 bool Port_Lang_Active(void);
 

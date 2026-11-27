@@ -1,4 +1,5 @@
-"""PT-BR words for the ROM graphics that carry English text.
+"""PT-BR words for the ROM graphics that carry English text (EU ROM: port
+languages are offered with it only, see port/port_lang.h).
 
 Read by tools/lang/gen_lang_gfx.py (see its docstring); run it after editing:
 
@@ -223,7 +224,6 @@ GRAPHICS = {
     "file_large": {
         "id": "PORT_LANG_GFX_FILE_SELECT_LARGE",
         "symbol": "sFileSelectLargeTextEnglishGfx",
-        "regions": ["eu"],
         "slots": {
             "SAMUS": ([0, 32], 20),
             "OPTIONS": ([20, 52], 12),
@@ -280,7 +280,6 @@ GRAPHICS = {
     "file_difficulty": {
         "id": "PORT_LANG_GFX_FILE_SELECT_DIFFICULTY",
         "symbol": "sFileSelectDifficultyTextEnglishGfx",
-        "regions": ["eu"],
         "slots": {"STRIP": ([0], 20)},
         "fonts": {
             "diff": {
@@ -358,7 +357,6 @@ GRAPHICS = {
     "title_menu": {
         "id": "PORT_LANG_GFX_TITLE_MENU",
         "parts": [("sTitleScreenEnglishMenuGfx_Top", 0), ("sTitleScreenEnglishMenuGfx_Bottom", 0x400)],
-        "regions": ["eu"],
         "headers": ["data/menus/title_screen_data.h"],
         "extra": {
             "ES": [("sTitleScreenSpanishMenuGfx_Top", 0), ("sTitleScreenSpanishMenuGfx_Bottom", 0x400)],
@@ -452,8 +450,8 @@ GRAPHICS = {
         "id": "PORT_LANG_GFX_ENDING_TEXT",
         "symbol": "sEndingImageTextEnglishGfx",
         "headers": ["data/ending_and_gallery_data.h"],
-        # EU only: the Spanish and Italian versions lend the letters of
-        # "See you next mission!" the English one lacks
+        # the Spanish and Italian versions lend the letters of "See you next
+        # mission!" the English one lacks
         "extra": {
             "ES": [("sEndingImageTextSpanishGfx", 0)],
             "IT": [("sEndingImageTextItalianGfx", 0)],
@@ -500,7 +498,7 @@ GRAPHICS = {
             # no YOUR RATE FOR line, as in the game's Spanish
             "YR": ("end", "", {"x0": 0, "x1": 128}),
             "COL": ("end", "ITENS COLETADOS", {"x0": 0, "x1": 168, "align": "center"}),
-            "NEXT": ("cursive", "Até a próxima missão!", {"x0": 0, "x1": 144, "align": "center", "regions": ["eu"]}),
+            "NEXT": ("cursive", "Até a próxima missão!", {"x0": 0, "x1": 144, "align": "center"}),
         },
     },
     # MISSION ACCOMPLISHED after the escape: its letters are sprites over

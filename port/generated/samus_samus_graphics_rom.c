@@ -13931,8 +13931,8 @@ void PortGen_samus_graphics_Init(void) {
             p_sSamusEffectGfx_Speedboosting_Frame7 = (const u8(*)[SAMUS_GFX_SIZE(4,0)])Port_ResolveRomData(0x082a0342u);
             p_sSamusEffectGfx_Speedboosting_Frame8 = (const u8(*)[SAMUS_GFX_SIZE(4,0)])Port_ResolveRomData(0x082a03c4u);
             p_sSamusEffectGfx_Speedboosting_Frame9 = (const u8(*)[SAMUS_GFX_SIZE(4,0)])Port_ResolveRomData(0x082a0446u);
-            p_sSamusEffectGfx_DelayBeforeBallsparking_Frame0 = (const u8(*)[SAMUS_GFX_SIZE(1,0)])Port_ResolveRomData(0x0829fef4u);
-            p_sSamusEffectGfx_DelayBeforeBallsparking_Frame1 = (const u8(*)[SAMUS_GFX_SIZE(2,0)])Port_ResolveRomData(0x082a00bau);
+            p_sSamusEffectGfx_DelayBeforeBallsparking_Frame0 = (const u8(*)[SAMUS_GFX_SIZE(1,0)])Port_ResolveRomData(0x082a04c8u);
+            p_sSamusEffectGfx_DelayBeforeBallsparking_Frame1 = (const u8(*)[SAMUS_GFX_SIZE(2,0)])Port_ResolveRomData(0x082a04eau);
             p_sSamusEffectGfx_DelayBeforeBallsparking_Frame2 = (const u8(*)[SAMUS_GFX_SIZE(4,2)])Port_ResolveRomData(0x082a052cu);
             p_sSamusEffectGfx_DelayBeforeBallsparking_Frame3 = (const u8(*)[SAMUS_GFX_SIZE(5,2)])Port_ResolveRomData(0x082a05eeu);
             p_sSamusEffectGfx_DelayBeforeBallsparking_Frame4 = (const u8(*)[SAMUS_GFX_SIZE(8,4)])Port_ResolveRomData(0x082a06d0u);

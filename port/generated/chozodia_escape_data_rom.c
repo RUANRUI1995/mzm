@@ -151,11 +151,11 @@ void PortGen_chozodia_escape_data_Init(void) {
             p_sChozodiaEscapeOam_BlueShipFarAway_Frame0 = (const u16(*)[OAM_DATA_SIZE(1)])Port_ResolveRomData(0x085f0bbcu);
             p_sChozodiaEscapeOam_BlueShipVeryClose_Frame0 = (const u16(*)[OAM_DATA_SIZE(4)])Port_ResolveRomData(0x085f0bc4u);
             p_sChozodiaEscapeOam_MissionAccomplishedEnglish_Frame0 = (const u16(*)[OAM_DATA_SIZE(20)])Port_ResolveRomData(0x085f0d42u);
-            p_sChozodiaEscapeOam_MissionAccomplishedHiragana_Frame0 = (const u16(*)[OAM_DATA_SIZE(9)])Port_ResolveRomData(0x085f0dbcu);
+            p_sChozodiaEscapeOam_MissionAccomplishedHiragana_Frame0 = (const u16(*)[OAM_DATA_SIZE(9)])Port_ResolveRomData(0x085f0bf8u);
             p_sChozodiaEscapeHeatingUpPalOffsets = (const u8(*)[8])Port_ResolveRomData(0x085f0df4u);
             p_sChozodiaEscape_5ca0c4 = (const struct FrameData* const(*)[5])Port_ResolveRomData(0x085f0dfcu);
-            p_sChozodiaEscape_5ca0d8 = (const u16(*)[8][2])Port_ResolveRomData(0x085f0e10u);
-            p_sChozodiaEscape_5ca0f8 = (const u16(*)[8][2])Port_ResolveRomData(0x085f0e30u);
+            p_sChozodiaEscape_5ca0d8 = (const u16(*)[8][2])Port_ResolveRomData(0x085f0df4u);
+            p_sChozodiaEscape_5ca0f8 = (const u16(*)[8][2])Port_ResolveRomData(0x085f0e14u);
             p_sChozodiaEscapeCraterBackgroundGfx = (const u32(*)[5227])Port_ResolveRomData(0x085f0e50u);
             p_sChozodiaEscapeCraterBackgroundTileTable = (const u32(*)[418])Port_ResolveRomData(0x085f5ffcu);
             p_sChozodiaEscapeBlueShipVeryCloseGfx = (const u32(*)[1079])Port_ResolveRomData(0x085f6684u);

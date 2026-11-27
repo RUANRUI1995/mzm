@@ -10,23 +10,29 @@ The recovery runs in passes, most reliable first:
 
 1. Search the US bytes at that address inside the CN ROM. Most data is byte
    identical and the layout shifts in whole segments, so this is exact.
-2. A table the localisation moved wholesale rather than shifted. The text
+   The candidates come from the nearest database.json resource *and* from the
+   shift of the nearest byte-matched symbols: a block can sit far from any
+   resource and still be bracketed by two symbols that already matched.
+
+2. Pointer tables the localisation rewrote. The table itself keeps its shape
+   (same length, same aliasing pattern) but its entries hold iQue addresses,
+   so its bytes never match. Once the table's own address is known, its
+   entries are the ROM's own statement of where each target now lives -- for
+   text, which the localisation re-flowed entry by entry, this is the only
+   reliable source. Those targets feed back in as anchors for everything
+   nearby, which is why the passes below run until nothing new is learned.
+
+3. A table the localisation moved wholesale rather than shifted. The text
    pointer tables were relocated to the tail of the ROM while the text they
    point at stayed put, so the table has one shift and its targets another.
    Those segments are listed in MOVED, with the evidence for each.
-3. Pointer tables. Their contents hold absolute addresses, which differ
-   between the two builds even though the table itself keeps its shape, so the
-   bytes never match: the shift has to come from the anchors instead. The
-   nearest byte-matched symbols on either side bracket it, and the table's own
-   shape (which entries are equal to which) confirms the guess. Nothing needs
-   patching afterwards -- a pointer table in the loaded ROM already holds iQue
-   addresses, because it *is* the iQue ROM.
-4. Everything else falls back to the shift of the nearest database.json
+
+4. Everything else falls back to the shift of the nearest anchor or database
    resource, which is how the non-pointer data was placed all along.
 
 A pointer table that no shift explains is left out of the CN case, so the
 symbol stays null and the failure is loud rather than silently reading the
-wrong bytes. Those symbols are written to tools/cn_unresolved.txt.
+wrong bytes. Those symbols are written to tools/cn_unresolved.list.
 
     python3 tools/gen_cn_region_case.py --us <us.gba> --cn <cn.gba> --apply
 """
@@ -48,6 +54,15 @@ TWEAK = 8
 SHAPE_WORDS = 16
 SHAPE_MIN_PTRS = 6
 
+# A table's entries are only trusted as ground truth when the two tables alias
+# the same way. The text tables match exactly; the allowance exists for tables
+# whose data was deduplicated slightly differently.
+SHAPE_MAX_DIFF = 0.02
+# ...and when this share of entries points at a symbol we know by name, which
+# is what keeps an ordinary block of data from being mistaken for a table.
+TABLE_MIN_COVER = 0.8
+TABLE_MAX_WORDS = 8192
+
 # .list, not .txt: tools/*.txt is ignored as build output.
 UNRESOLVED_LIST = os.path.join("tools", "cn_unresolved.list")
 
@@ -56,16 +71,34 @@ UNRESOLVED_LIST = os.path.join("tools", "cn_unresolved.list")
 #
 # The text pointer tables: in the US build they sit at 0x760420..0x760AA0,
 # right behind the location names they index. In the iQue build the same runs
-# of pointers appear at 0x79F620..0x79FCA0 -- the same lengths (1058, 376, 34,
-# 35, 416, 52 entries), in the same order, with the same equality pattern in
-# every table -- but the text they point at moved down by 0x2220C, not by the
-# table's own shift. So the tables were re-emitted at the end of the ROM rather
-# than carried along with their data.
+# of pointers appear at 0x79F620..0x79FCA0 -- the same lengths (14, 202, 14,
+# 186, 1, 2, 2 words), in the same order, aliasing exactly the same entries --
+# but the text they point at moved down by a different amount. So the tables
+# were re-emitted at the end of the ROM rather than carried along with their
+# data.
 MOVED = [
     (0x760420, 0x760AA0, 0x3F200, "text pointer tables moved to the tail of the ROM"),
 ]
 
+# Pointer tables the localisation moved to the tail of the ROM, as
+# (us_start, cn_start, why). Read entry by entry: entry i of the iQue table is
+# where the target of entry i lives now, which is the only exact source for
+# text the localisation re-flowed string by string.
+#
+# 0x760458 holds 407 words in both builds, both runs ending on the same
+# non-pointer word (0x111100) followed by identical bytes, and the two runs
+# alias exactly the same entries -- 388 of which are symbols the US build
+# knows by name. The tables just before it (0x760420..0x760458) are gfx
+# pointers and move with it, which is what MOVED covers.
+TEXT_TABLES = [
+    (0x760458, 0x79F658, "text pointer tables"),
+]
+
 LINE = re.compile(r'^(\s*)(\w+) = (.*?)Port_ResolveRomData\((0x[0-9a-f]+)u\);(.*)$')
+
+
+def u32(buf, off):
+    return struct.unpack_from("<I", buf, off)[0]
 
 
 def load_ranges(db_path):
@@ -129,12 +162,69 @@ def shape(buf, off):
     return tuple(ids.setdefault(v, len(ids)) for v in vals)
 
 
-def byte_match(us, cn, items, starts, off):
-    """Exact copy of the US bytes, near a resource's predicted address."""
+def table_run(buf, off, limit=TABLE_MAX_WORDS):
+    """Number of consecutive words at `off` that point into `buf`."""
+    base = 0x08000000
+    end = base + len(buf)
+    n = 0
+    while n < limit:
+        if off + 4 * (n + 1) > len(buf):
+            break
+        v = u32(buf, off + 4 * n)
+        if not (base <= v < end):
+            break
+        n += 1
+    return n
+
+
+def aliasing(vals):
+    """Canonical equality class per position: index of its first occurrence."""
+    first = {}
+    return [first.setdefault(v, i) for i, v in enumerate(vals)]
+
+
+def alias_diff(us_vals, cn_vals):
+    """Fraction of positions where the two tables disagree about aliasing."""
+    a = aliasing(us_vals)
+    b = aliasing(cn_vals)
+    bad_a = sum(1 for i, (x, y) in enumerate(zip(a, b)) if (x == i) != (y == i))
+    # Compare class membership, not just "is this the first occurrence".
+    same = 0
+    n = len(us_vals)
+    group = {}
+    for i in range(n):
+        group.setdefault(a[i], []).append(i)
+    for members in group.values():
+        if len(members) < 2:
+            continue
+        for i in members:
+            for j in members:
+                if i < j:
+                    same += 1 if cn_vals[i] == cn_vals[j] else 0
+    pairs = 0
+    for members in group.values():
+        k = len(members)
+        if k > 1:
+            pairs += k * (k - 1) // 2
+    # Positions that alias in US but not in CN count against, plus vice versa.
+    if pairs == 0:
+        return 0.0 if bad_a == 0 else 1.0
+    return 1.0 - same / pairs
+
+
+def byte_match(us, cn, items, starts, off, anchors=None, anchor_offs=None):
+    """Exact copy of the US bytes, near any address we have reason to expect."""
     probe = us[off:off + PROBE]
     if len(probe) < PROBE:
         return None, None
-    for cand in nearest_candidates(items, starts, off)[:2]:
+    cands = list(nearest_candidates(items, starts, off)[:2])
+    if anchors:
+        cands += [off + s for s in ladder(anchors, anchor_offs, off)]
+    seen = set()
+    for cand in cands:
+        if cand in seen:
+            continue
+        seen.add(cand)
         if cand < 0 or cand + PROBE > len(cn):
             continue
         if cn[cand:cand + PROBE] == probe:
@@ -146,9 +236,27 @@ def byte_match(us, cn, items, starts, off):
     return None, None
 
 
+def unique_match(us, cn, off, probe_len=32):
+    """The one place in the CN ROM where this block appears, if it is one.
+
+    Last resort for data no resource and no anchor brackets -- the minimaps,
+    which the localisation re-packed as a group. A block that appears more than
+    once is left alone: there would be no way to tell the copies apart.
+    """
+    probe = us[off:off + probe_len]
+    if len(probe) < PROBE:
+        return None
+    first = cn.find(probe)
+    if first == -1:
+        return None
+    if cn.find(probe, first + 1) != -1:
+        return None
+    return first
+
+
 def resolve(us, cn, items, starts, anchors, anchor_offs, off):
     """Return (cn_offset, method); cn_offset is None if it cannot be trusted."""
-    got, how = byte_match(us, cn, items, starts, off)
+    got, how = byte_match(us, cn, items, starts, off, anchors, anchor_offs)
     if got is not None:
         return got, how
 
@@ -172,6 +280,96 @@ def resolve(us, cn, items, starts, anchors, anchor_offs, off):
     if cands and 0 <= cands[0] < len(cn):
         return cands[0], "shift"
     return None, "unresolved"
+
+
+def propagate(us, cn, us_off, cn_off, sym_by_us, out):
+    """Read a pointer table's entries as ground truth for its targets.
+
+    Returns the number of targets learned, 0 if this is not a table we can
+    trust. `out` maps us_off -> cn_off.
+
+    The run length has to match in both builds: a run that keeps going in one
+    and stops in the other is a block that merely looks like a table, and its
+    entries are not the same thing on both sides.
+    """
+    n = table_run(us, us_off)
+    if n < SHAPE_MIN_PTRS:
+        return 0
+    if table_run(cn, cn_off, n + 1) != n:
+        return 0
+    us_vals = struct.unpack_from("<%dI" % n, us, us_off)
+    cn_vals = struct.unpack_from("<%dI" % n, cn, cn_off)
+    named = [i for i, v in enumerate(us_vals) if (v - 0x08000000) in sym_by_us]
+    if len(named) < TABLE_MIN_COVER * n:
+        return 0
+    if alias_diff(us_vals, cn_vals) > SHAPE_MAX_DIFF:
+        return 0
+    got = 0
+    for i in named:
+        out[us_vals[i] - 0x08000000] = cn_vals[i] - 0x08000000
+        got += 1
+    return got
+
+
+def place_all(us, cn, items, starts, symbols, rounds=4):
+    """Decide every symbol's CN offset, letting exact matches feed back."""
+    sym_by_us = dict((off, name) for _p, _i, name, _t, off, _s in symbols)
+    placements = {}
+    verified = {}
+    anchors = []
+    anchor_offs = []
+    rank = {"match": 0, "match+tweak": 0, "table": 1, "moved": 2,
+            "shift+shape": 3, "resource+shape": 3, "shift": 4,
+            "no-shape": 5, "unresolved": 5}
+
+    for _round in range(rounds):
+        learned = 0
+        # Byte-exact copies, bracketed by whatever we know so far.
+        for off in sym_by_us:
+            got, how = byte_match(us, cn, items, starts, off, anchors, anchor_offs)
+            if got is not None:
+                prev = placements.get(off)
+                if prev is None or rank[how] < rank[prev[1]]:
+                    placements[off] = (got, how)
+                    learned += 1
+        anchors = sorted((o, p[0] - o) for o, p in placements.items()
+                         if p[1] in ("match", "match+tweak"))
+        anchor_offs = [a for a, _ in anchors]
+        if not learned:
+            break
+
+    # The tables the localisation re-emitted at the tail of the ROM are the
+    # one case a byte match cannot settle and whose targets changed on purpose:
+    # text was re-flowed string by string, so the table is the ROM's own
+    # statement of where each one landed. Read those first, then everything
+    # else in the usual order.
+    for us_start, cn_start, _why in TEXT_TABLES:
+        n = propagate(us, cn, us_start, cn_start, sym_by_us, verified)
+        if not n:
+            print(f"warning: {_why} at 0x{us_start:06x} did not read as a table",
+                  file=sys.stderr)
+
+    # Verified targets win over byte matches: the localisation kept dead copies
+    # of the original Japanese text, so a byte match there is a real copy of
+    # the wrong string.
+    for off, cn_off in verified.items():
+        placements[off] = (cn_off, "table")
+
+    for off in sym_by_us:
+        if off in placements:
+            continue
+        placements[off] = resolve(us, cn, items, starts, anchors, anchor_offs, off)
+
+    # Anything still placed on a guess gets one more chance: if the block
+    # appears exactly once in the CN ROM, that occurrence is not a guess.
+    for off, (got, how) in list(placements.items()):
+        if rank[how] < rank["shift"]:
+            continue
+        hit = unique_match(us, cn, off)
+        if hit is not None:
+            placements[off] = (hit, "unique")
+
+    return placements, verified
 
 
 def iter_symbols(path):
@@ -209,69 +407,64 @@ def main():
     if args.limit:
         files = files[:args.limit]
 
-    # Pass one: read every symbol and byte-match the ones that allow it. Those
-    # matches are the anchors the second pass measures shifts against.
     symbols = []
-    anchors = []
     for path in files:
         for indent, name, typ, addr, suffix in iter_symbols(path):
-            off = int(addr, 16) - 0x08000000
-            symbols.append((path, indent, name, typ, off, suffix))
-            got, how = byte_match(us, cn, items, starts, off)
-            if got is not None:
-                anchors.append((off, got - off))
-    anchors.sort()
-    anchor_offs = [a for a, _ in anchors]
-    print(f"symbols {len(symbols)}: byte-matched {len(anchors)}")
+            symbols.append((path, indent, name, typ, int(addr, 16) - 0x08000000, suffix))
+    print(f"symbols {len(symbols)}")
 
-    # Pass two: place the rest, file by file.
-    totals = {}
+    placements, verified = place_all(us, cn, items, starts, symbols)
+    print(f"table-verified targets {len(verified)}")
+
     unresolved = []
     per_file = {}
+    totals = {}
     for path, indent, name, typ, off, suffix in symbols:
-        got, how = resolve(us, cn, items, starts, anchors, anchor_offs, off)
-        totals[how] = totals.get(how, 0) + 1
+        got, how = placements.get(off, (None, "unresolved"))
         per_file.setdefault(path, []).append((indent, name, typ, got, suffix))
+        totals[how] = totals.get(how, 0) + 1
         if got is None:
             unresolved.append((path, name))
 
-    if args.apply:
-        for path, rows in per_file.items():
-            rows = [r for r in rows if r[3] is not None]
-            if not rows:
-                continue
-            with open(path, encoding="utf-8") as f:
-                src = f.read()
-            if "PORT_ROM_REGION_CN" in src:
-                raise SystemExit(f"{path} already has a CN case; strip it first")
-            body = [f"{indent}{name} = {typ}Port_ResolveRomData(0x{got + 0x08000000:08x}u);{suffix}"
-                    for indent, name, typ, got, suffix in rows]
-            case = ("        case PORT_ROM_REGION_CN: {\n"
-                    + "\n".join(body)
-                    + "\n            break;\n        }\n")
-            src = src.replace("        default:", case + "        default:", 1)
-            with open(path, "w", encoding="utf-8", newline="\n") as f:
-                f.write(src)
+    print(f"symbols {len(symbols)}: " + ", ".join(f"{k} {v}" for k, v in sorted(totals.items())))
 
-        with open(UNRESOLVED_LIST, "w", encoding="utf-8", newline="\n") as f:
-            f.write("# Symbols the CN port has no trustworthy address for.\n"
-                    "# Written by tools/gen_cn_region_case.py; read by\n"
-                    "# tools/check_cn_offsets.py. They are left out of the CN case on\n"
-                    "# purpose, so they stay null instead of reading the wrong bytes.\n")
-            for path, name in unresolved:
-                f.write(f"{name}  {os.path.basename(path)}\n")
-
-    total = sum(totals.values())
-    print(f"symbols {total}: " + ", ".join(f"{k} {v}" for k, v in sorted(totals.items())))
     bad = totals.get("no-shape", 0) + totals.get("unresolved", 0)
-    if total:
-        print(f"placed {100.0 * (total - bad) / total:.1f}%")
+    placed_n = sum(totals.values())
+    if placed_n:
+        print(f"placed {100.0 * (placed_n - bad) / placed_n:.1f}%")
     if unresolved:
         print(f"left null: {len(unresolved)} -> {UNRESOLVED_LIST}")
         for path, name in unresolved[:8]:
             print(f"  {os.path.basename(path)}: {name}")
     if not args.apply:
         print("dry run; pass --apply to write")
+        return 0
+
+    for path, rows in per_file.items():
+        rows = [r for r in rows if r[3] is not None]
+        if not rows:
+            continue
+        with open(path, encoding="utf-8") as f:
+            src = f.read()
+        if "PORT_ROM_REGION_CN" in src:
+            raise SystemExit(f"{path} already has a CN case; strip it first")
+        body = [f"{indent}{name} = {typ}Port_ResolveRomData(0x{got + 0x08000000:08x}u);{suffix}"
+                for indent, name, typ, got, suffix in rows]
+        case = ("        case PORT_ROM_REGION_CN: {\n"
+                + "\n".join(body)
+                + "\n            break;\n        }\n")
+        src = src.replace("        default:", case + "        default:", 1)
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(src)
+
+    with open(UNRESOLVED_LIST, "w", encoding="utf-8", newline="\n") as f:
+        f.write("# Symbols the CN port has no trustworthy address for.\n"
+                "# Written by tools/gen_cn_region_case.py; read by\n"
+                "# tools/check_cn_offsets.py. They are left out of the CN case on\n"
+                "# purpose, so they stay null instead of reading the wrong bytes.\n")
+        for path, name in unresolved:
+            f.write(f"{name}  {os.path.basename(path)}\n")
+    return 0
 
 
 if __name__ == "__main__":

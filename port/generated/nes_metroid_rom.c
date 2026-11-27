@@ -22,7 +22,7 @@ void PortGen_nes_metroid_Init(void) {
             break;
         }
         case PORT_ROM_REGION_CN: {
-            p_sNesMetroid = (const u8(*)[])Port_ResolveRomData(0x087ff000u);
+            p_sNesMetroid = (const u8(*)[])Port_ResolveRomData(0x087d8000u);
             break;
         }
         default:

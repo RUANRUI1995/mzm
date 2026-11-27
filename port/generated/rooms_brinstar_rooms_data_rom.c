@@ -977,8 +977,8 @@ void PortGen_brinstar_rooms_data_Init(void) {
             p_sBrinstar_6_Bg0 = (const u8(*)[186])Port_ResolveRomData(0x0863602au);
             p_sBrinstar_7_Clipdata = (const u8(*)[692])Port_ResolveRomData(0x086360e4u);
             p_sBrinstar_7_Bg2 = (const u8*)Port_ResolveRomData(0x08636398u);
-            p_sBrinstar_7_Spriteset1 = (const u8(*)[ENEMY_ROOM_DATA_ARRAY_SIZE(19)])Port_ResolveRomData(0x086364d1u);
-            p_sBrinstar_7_Bg1 = (const u8*)Port_ResolveRomData(0x0863650au);
+            p_sBrinstar_7_Spriteset1 = (const u8(*)[ENEMY_ROOM_DATA_ARRAY_SIZE(19)])Port_ResolveRomData(0x086364bdu);
+            p_sBrinstar_7_Bg1 = (const u8*)Port_ResolveRomData(0x086364f6u);
             p_sBrinstar_7_Spriteset0 = (const u8(*)[ENEMY_ROOM_DATA_ARRAY_SIZE(18)])Port_ResolveRomData(0x08636cd1u);
             p_sBrinstar_3_Scrolls = (const u8(*)[SCROLL_DATA_SIZE(2)])Port_ResolveRomData(0x08636d08u);
             p_sBrinstar_8_Clipdata = (const u8(*)[143])Port_ResolveRomData(0x08636d1au);

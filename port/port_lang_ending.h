@@ -13,3 +13,7 @@ typedef struct PortEndingLetter {
  * active, returns 1 with its letters (count may be 0: the set shows
  * nothing); otherwise 0 and the game uses its own tables. */
 int Port_LangEnding_TextOam(u32 set, const PortEndingLetter** letters, u32* count);
+
+/* The MISSION ACCOMPLISHED frame (chozodia_escape.c) of the active port
+ * language, or NULL to keep the game's. */
+const u16* Port_LangMissionAccomplished_Frame(void);

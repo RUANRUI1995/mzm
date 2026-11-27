@@ -503,4 +503,23 @@ GRAPHICS = {
             "NEXT": ("cursive", "Até a próxima missão!", {"x0": 0, "x1": 144, "align": "center", "regions": ["eu"]}),
         },
     },
+    # MISSION ACCOMPLISHED after the escape: its letters are sprites over
+    # this alphabet (chozodia_escape.c); the PT-BR frame (port_lang_ending.c)
+    # spells MISSAO CUMPRIDA! with them and puts this tilde, drawn into a
+    # free tile (0x1E), over the A.
+    "mission_letters": {
+        "id": "PORT_LANG_GFX_MISSION_LETTERS",
+        "symbol": "sChozodiaEscapeMissionAccomplishedLettersGfx",
+        "slots": {"TILDE": ([0x1E], 1)},
+        "fonts": {
+            "tilde": {
+                "sources": [],
+                "bg_from": ("TILDE", 0),
+                "auto_outline": 1,
+                "own_top": 1,
+                "own": {"~": ["99.9", "9.99"]},
+            },
+        },
+        "words": {"TILDE": ("tilde", "~", {"x0": 1, "x1": 8})},
+    },
 }

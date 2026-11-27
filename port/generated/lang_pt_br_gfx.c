@@ -1177,6 +1177,32 @@ static const u16 sOps_ending_text_us[] = {
     PLG_END
 };
 
+static const PortLangGfxSlot sSlots_mission_letters[] = {
+    { 1, 1, 0, { 30 } }, /* TILDE */
+};
+static const u8 sGlyphs_mission_letters[] = {
+    0x11, 0x11, 0x00, 0x00, 0x91, 0x19, 0x00, 0x00, 0x91, 0x11, 0x00, 0x00, 0x11, 0x19, 0x00, 0x00,
+    0x91, 0x19, 0x00, 0x00, 0x11, 0x11, 0x00, 0x00,
+};
+static const u16 sOps_mission_letters[] = {
+    PLG_FILL, 0, 1, 0, 0, 7, 0xFFFF, 0xFFFF,
+    PLG_GLYPH, 0, 1, 0, 6, 0, 0xFFFF, 0xFFFF,
+    PLG_END
+};
+
+static const PortLangGfxSlot sSlots_mission_letters_us[] = {
+    { 1, 1, 0, { 30 } }, /* TILDE */
+};
+static const u8 sGlyphs_mission_letters_us[] = {
+    0x11, 0x11, 0x00, 0x00, 0x91, 0x19, 0x00, 0x00, 0x91, 0x11, 0x00, 0x00, 0x11, 0x19, 0x00, 0x00,
+    0x91, 0x19, 0x00, 0x00, 0x11, 0x11, 0x00, 0x00,
+};
+static const u16 sOps_mission_letters_us[] = {
+    PLG_FILL, 0, 1, 0, 0, 7, 0xFFFF, 0xFFFF,
+    PLG_GLYPH, 0, 1, 0, 6, 0, 0xFFFF, 0xFFFF,
+    PLG_END
+};
+
 const PortLangGfxPatch gPortLangGfxPtBr_EU[PORT_LANG_GFX_COUNT] = {
     [PORT_LANG_GFX_EQUIPMENT_NAMES] = { 5120, sSlots_equipment_names, sGlyphs_equipment_names, NULL, sOps_equipment_names, 0, 0, NULL, NULL, NULL },
     [PORT_LANG_GFX_MENU_NAMES] = { 704, sSlots_menu_names, sGlyphs_menu_names, NULL, sOps_menu_names, 0, 0, NULL, NULL, NULL },
@@ -1187,6 +1213,7 @@ const PortLangGfxPatch gPortLangGfxPtBr_EU[PORT_LANG_GFX_COUNT] = {
     [PORT_LANG_GFX_TITLE_MENU] = { 1664, sSlots_title_menu, NULL, NULL, sOps_title_menu, 2, 4, sParts_title_menu, sExtraSizes_title_menu, GetRoms_title_menu },
     [PORT_LANG_GFX_GAME_OVER] = { 6144, sSlots_game_over, sGlyphs_game_over, NULL, sOps_game_over, 0, 0, NULL, NULL, NULL },
     [PORT_LANG_GFX_ENDING_TEXT] = { 10240, sSlots_ending_text, NULL, NULL, sOps_ending_text, 2, 2, sParts_ending_text, sExtraSizes_ending_text, GetRoms_ending_text },
+    [PORT_LANG_GFX_MISSION_LETTERS] = { 12288, sSlots_mission_letters, sGlyphs_mission_letters, NULL, sOps_mission_letters, 0, 0, NULL, NULL, NULL },
 };
 
 const PortLangGfxPatch gPortLangGfxPtBr_US[PORT_LANG_GFX_COUNT] = {
@@ -1196,4 +1223,5 @@ const PortLangGfxPatch gPortLangGfxPtBr_US[PORT_LANG_GFX_COUNT] = {
     [PORT_LANG_GFX_FILE_SELECT_OPTIONS] = { 6144, sSlots_file_options_us, sGlyphs_file_options_us, NULL, sOps_file_options_us, 0, 0, NULL, NULL, NULL },
     [PORT_LANG_GFX_GAME_OVER] = { 6144, sSlots_game_over_us, sGlyphs_game_over_us, NULL, sOps_game_over_us, 0, 0, NULL, NULL, NULL },
     [PORT_LANG_GFX_ENDING_TEXT] = { 10240, sSlots_ending_text_us, NULL, NULL, sOps_ending_text_us, 0, 0, NULL, NULL, NULL },
+    [PORT_LANG_GFX_MISSION_LETTERS] = { 7168, sSlots_mission_letters_us, sGlyphs_mission_letters_us, NULL, sOps_mission_letters_us, 0, 0, NULL, NULL, NULL },
 };

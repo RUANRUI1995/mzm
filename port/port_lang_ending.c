@@ -109,3 +109,47 @@ int Port_LangEnding_TextOam(u32 set, const PortEndingLetter** letters, u32* coun
     *count = line->count;
     return 1;
 }
+
+/* MISSAO / CUMPRIDA! over the MISSION ACCOMPLISHED alphabet
+ * (sChozodiaEscapeMissionAccomplishedLettersGfx), spaced like the English
+ * frame: 16x16 letters (I and ! are 8x16), and the tilde the PT-BR patch
+ * draws into tile 0x1E as an 8x8 sprite over the A. */
+#define MA_A 0x00
+#define MA_C 0x02
+#define MA_D 0x04
+#define MA_I 0x0A
+#define MA_EXCL 0x0B
+#define MA_M 0x0F
+#define MA_O 0x13
+#define MA_P 0x15
+#define MA_R 0x17
+#define MA_S 0x40
+#define MA_U 0x44
+#define MA_TILDE 0x1E
+
+static const u16 sMissionAccomplishedPtBr[OAM_DATA_SIZE(16)] = {
+    16,
+    /* MISSAO */
+    OAM_ENTRY(-35, -24, OAM_DIMS_16x16, OAM_NO_FLIP, MA_M, 0, 0),
+    OAM_ENTRY(-22, -24, OAM_DIMS_8x16, OAM_NO_FLIP, MA_I, 0, 0),
+    OAM_ENTRY(-13, -24, OAM_DIMS_16x16, OAM_NO_FLIP, MA_S, 0, 0),
+    OAM_ENTRY(0, -24, OAM_DIMS_16x16, OAM_NO_FLIP, MA_S, 0, 0),
+    OAM_ENTRY(12, -24, OAM_DIMS_16x16, OAM_NO_FLIP, MA_A, 0, 0),
+    OAM_ENTRY(13, -24, OAM_DIMS_8x8, OAM_NO_FLIP, MA_TILDE, 0, 0),
+    OAM_ENTRY(24, -24, OAM_DIMS_16x16, OAM_NO_FLIP, MA_O, 0, 0),
+    /* CUMPRIDA! */
+    OAM_ENTRY(-49, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_C, 0, 0),
+    OAM_ENTRY(-37, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_U, 0, 0),
+    OAM_ENTRY(-25, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_M, 0, 0),
+    OAM_ENTRY(-12, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_P, 0, 0),
+    OAM_ENTRY(0, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_R, 0, 0),
+    OAM_ENTRY(12, 0, OAM_DIMS_8x16, OAM_NO_FLIP, MA_I, 0, 0),
+    OAM_ENTRY(21, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_D, 0, 0),
+    OAM_ENTRY(32, 0, OAM_DIMS_16x16, OAM_NO_FLIP, MA_A, 0, 0),
+    OAM_ENTRY(45, 0, OAM_DIMS_8x16, OAM_NO_FLIP, MA_EXCL, 0, 0),
+};
+
+const u16* Port_LangMissionAccomplished_Frame(void)
+{
+    return Port_Lang_Active() ? sMissionAccomplishedPtBr : NULL;
+}

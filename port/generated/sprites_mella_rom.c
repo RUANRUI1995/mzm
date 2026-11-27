@@ -53,6 +53,18 @@ void PortGen_mella_Init(void) {
             p_sMellowOam_Moving = (const struct FrameData(*)[9])Port_ResolveRomData(0x082f6810u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMellaIdleYMovement = (const s16(*)[65])Port_ResolveRomData(0x0830fb10u);
+            p_sMellaIdleXMovement = (const s16(*)[49])Port_ResolveRomData(0x0830fb92u);
+            p_sMellaGoingDownYMovement = (const u16(*)[6])Port_ResolveRomData(0x0830fbf4u);
+            p_sMellaGoingUpYMovement = (const u16(*)[7])Port_ResolveRomData(0x0830fc00u);
+            p_sMellaMovingXMovement = (const u16(*)[7])Port_ResolveRomData(0x0830fc0eu);
+            p_sMellaGfx = (const u32(*)[162])Port_ResolveRomData(0x0830fc1cu);
+            p_sMellaPal = (const u16(*)[16])Port_ResolveRomData(0x0830fea4u);
+            p_sMellaOam_Idle = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830ff58u);
+            p_sMellowOam_Moving = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830ffa0u);
+            break;
+        }
         default:
             break;
     }

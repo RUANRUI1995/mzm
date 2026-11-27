@@ -137,6 +137,36 @@ void PortGen_chozodia_escape_data_Init(void) {
             p_sChozodiaEscapeMissionAccomplishedLettersGfx = (const u32*)Port_ResolveRomData(0x085d8be4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sChozodiaEscapeShipHeatingUpPal = (const u16(*)[8*16])Port_ResolveRomData(0x085f020cu);
+            p_sChozodiaEscapeGroundHeatingUpPal = (const u16(*)[8*16])Port_ResolveRomData(0x085f030cu);
+            p_sChozodiaEscapeShipExplodingPal = (const u16(*)[9*16])Port_ResolveRomData(0x085f040cu);
+            p_sChozodiaEscapeMissionAccomplishedPal = (const u16(*)[16*16])Port_ResolveRomData(0x085f052cu);
+            p_sChozodiaEscapeSamusInBlueShipPal = (const u16(*)[1*16])Port_ResolveRomData(0x085f072cu);
+            p_sChozodiaEscapeOam_ShipExterior_Frame0 = (const u16(*)[OAM_DATA_SIZE(10)])Port_ResolveRomData(0x085f074cu);
+            p_sChozodiaEscapeOam_BlueShipAngledDown_Frame0 = (const u16(*)[OAM_DATA_SIZE(2)])Port_ResolveRomData(0x085f078au);
+            p_sChozodiaEscapeOam_BlueShipAngledUp_Frame0 = (const u16(*)[OAM_DATA_SIZE(3)])Port_ResolveRomData(0x085f0798u);
+            p_sChozodiaEscapeOam_MotherShipDoorClosed_Frame0 = (const u16(*)[OAM_DATA_SIZE(6)])Port_ResolveRomData(0x085f07acu);
+            p_sChozodiaEscapeOam_MotherShipDoorOpening = (const struct FrameData(*)[9])Port_ResolveRomData(0x085f0c2cu);
+            p_sChozodiaEscapeOam_BlueShipFarAway_Frame0 = (const u16(*)[OAM_DATA_SIZE(1)])Port_ResolveRomData(0x085f0bbcu);
+            p_sChozodiaEscapeOam_BlueShipVeryClose_Frame0 = (const u16(*)[OAM_DATA_SIZE(4)])Port_ResolveRomData(0x085f0bc4u);
+            p_sChozodiaEscapeOam_MissionAccomplishedEnglish_Frame0 = (const u16(*)[OAM_DATA_SIZE(20)])Port_ResolveRomData(0x085f0d42u);
+            p_sChozodiaEscapeOam_MissionAccomplishedHiragana_Frame0 = (const u16(*)[OAM_DATA_SIZE(9)])Port_ResolveRomData(0x085f0dbcu);
+            p_sChozodiaEscapeHeatingUpPalOffsets = (const u8(*)[8])Port_ResolveRomData(0x085f0df4u);
+            p_sChozodiaEscape_5ca0c4 = (const struct FrameData* const(*)[5])Port_ResolveRomData(0x085f0dfcu);
+            p_sChozodiaEscape_5ca0d8 = (const u16(*)[8][2])Port_ResolveRomData(0x085f0e10u);
+            p_sChozodiaEscape_5ca0f8 = (const u16(*)[8][2])Port_ResolveRomData(0x085f0e30u);
+            p_sChozodiaEscapeCraterBackgroundGfx = (const u32(*)[5227])Port_ResolveRomData(0x085f0e50u);
+            p_sChozodiaEscapeCraterBackgroundTileTable = (const u32(*)[418])Port_ResolveRomData(0x085f5ffcu);
+            p_sChozodiaEscapeBlueShipVeryCloseGfx = (const u32(*)[1079])Port_ResolveRomData(0x085f6684u);
+            p_sChozodiaEscapeZebesBackgroundTileTable = (const u32(*)[176])Port_ResolveRomData(0x085f7760u);
+            p_sChozodiaEscapeZebesAndSkyGfx = (const u32(*)[4574])Port_ResolveRomData(0x085f7a20u);
+            p_sChozodiaEscapeZebesSkyTileTable = (const u32(*)[418])Port_ResolveRomData(0x085fc198u);
+            p_sChozodiaEscapeSamusInBlueShipGfx = (const u32(*)[2699])Port_ResolveRomData(0x085fc820u);
+            p_sChozodiaEscapeSamusInBlueShipTileTable = (const u32(*)[368])Port_ResolveRomData(0x085ff24cu);
+            p_sChozodiaEscapeMissionAccomplishedLettersGfx = (const u32*)Port_ResolveRomData(0x085ff80cu);
+            break;
+        }
         default:
             break;
     }

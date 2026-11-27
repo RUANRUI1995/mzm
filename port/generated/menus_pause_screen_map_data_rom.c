@@ -39,6 +39,14 @@ void PortGen_pause_screen_map_data_Init(void) {
             p_sMinimapTilesPal = (const u16(*)[5*16])Port_ResolveRomData(0x084113bcu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMinimapTilesGfx = (const u8(*)[5120])Port_ResolveRomData(0x0842fc60u);
+            p_sPauseScreen_40f4c4 = (const u32(*)[1792])Port_ResolveRomData(0x08431060u);
+            p_sMinimapTilesAreaNamesEnglishGfx = (const u32(*)[79])Port_ResolveRomData(0x08433c60u);
+            p_sMinimapTilesAreaNamesHiraganaGfx = (const u32(*)[88])Port_ResolveRomData(0x08433d9cu);
+            p_sMinimapTilesPal = (const u16(*)[5*16])Port_ResolveRomData(0x08433efcu);
+            break;
+        }
         default:
             break;
     }

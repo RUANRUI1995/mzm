@@ -41,6 +41,15 @@ void PortGen_geron_Init(void) {
             p_sGeronOam_Shaking = (const struct FrameData(*)[37])Port_ResolveRomData(0x083093a4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGeronGfx = (const u32(*)[711])Port_ResolveRomData(0x08320e68u);
+            p_sGeronPal = (const u16(*)[48])Port_ResolveRomData(0x08321984u);
+            p_sGeronOam_Idle = (const struct FrameData(*)[11])Port_ResolveRomData(0x083229ccu);
+            p_sGeronOam_Destroyed = (const struct FrameData(*)[2])Port_ResolveRomData(0x08322a24u);
+            p_sGeronOam_GettingDestroyed = (const struct FrameData(*)[32])Port_ResolveRomData(0x08322a34u);
+            p_sGeronOam_Shaking = (const struct FrameData(*)[37])Port_ResolveRomData(0x08322b34u);
+            break;
+        }
         default:
             break;
     }

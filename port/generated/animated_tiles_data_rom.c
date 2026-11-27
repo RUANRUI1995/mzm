@@ -28,6 +28,12 @@ void PortGen_animated_tiles_data_Init(void) {
             p_sAnimatedLiquidsGfx = (const u8(*)[12*512])Port_ResolveRomData(0x087533c4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sAnimatedTilesGfx = (const u8(*)[100*128])Port_ResolveRomData(0x087768b4u);
+            p_sAnimatedTankGfx = (const u8(*)[4*512])Port_ResolveRomData(0x08779ab4u);
+            p_sAnimatedLiquidsGfx = (const u8(*)[12*512])Port_ResolveRomData(0x0877a2b4u);
+            break;
+        }
         default:
             break;
     }

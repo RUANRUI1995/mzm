@@ -33,6 +33,13 @@ void PortGen_power_grip_Init(void) {
             p_sPowerGripGlowOam_Idle = (const struct FrameData(*)[15])Port_ResolveRomData(0x082b3190u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sPowerGripGfx = (const u32(*)[279])Port_ResolveRomData(0x082cc3ecu);
+            p_sPowerGripPal = (const u16(*)[32])Port_ResolveRomData(0x082cc848u);
+            p_sPowerGripOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cc8f8u);
+            p_sPowerGripGlowOam_Idle = (const struct FrameData(*)[15])Port_ResolveRomData(0x082cc920u);
+            break;
+        }
         default:
             break;
     }

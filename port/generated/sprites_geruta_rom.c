@@ -61,6 +61,20 @@ void PortGen_geruta_Init(void) {
             p_sGerutaOam_BouncingOnCeiling = (const struct FrameData(*)[3])Port_ResolveRomData(0x082d1524u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGerutaRedGfx = (const u32(*)[321])Port_ResolveRomData(0x082e9ed4u);
+            p_sGerutaRedPal = (const u16(*)[16])Port_ResolveRomData(0x082ea3d8u);
+            p_sGerutaGreenGfx = (const u32(*)[308])Port_ResolveRomData(0x082ea3f8u);
+            p_sGerutaGreenPal = (const u16(*)[16])Port_ResolveRomData(0x082ea8c8u);
+            p_sGerutaOam_Idle = (const struct FrameData(*)[3])Port_ResolveRomData(0x082eabecu);
+            p_sGerutaOam_Warning = (const struct FrameData(*)[4])Port_ResolveRomData(0x082eac04u);
+            p_sGerutaOam_Launching = (const struct FrameData(*)[5])Port_ResolveRomData(0x082eac24u);
+            p_sGerutaOam_GoingDown = (const struct FrameData(*)[5])Port_ResolveRomData(0x082eac4cu);
+            p_sGerutaOam_Bouncing = (const struct FrameData(*)[3])Port_ResolveRomData(0x082eac74u);
+            p_sGerutaOam_GoingUp = (const struct FrameData(*)[5])Port_ResolveRomData(0x082eac8cu);
+            p_sGerutaOam_BouncingOnCeiling = (const struct FrameData(*)[3])Port_ResolveRomData(0x082eacb4u);
+            break;
+        }
         default:
             break;
     }

@@ -54,6 +54,18 @@ void PortGen_holtz_Init(void) {
             p_sHoltzOam_BonkingOnCeiling = (const struct FrameData(*)[10])Port_ResolveRomData(0x082f1638u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sHoltzIdleYVelocity = (const s16(*)[65])Port_ResolveRomData(0x0830a6fcu);
+            p_sHoltzGfx = (const u32(*)[200])Port_ResolveRomData(0x0830a780u);
+            p_sHoltzPal = (const u16(*)[16])Port_ResolveRomData(0x0830aaa0u);
+            p_sHoltzOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x0830acd8u);
+            p_sHoltzOam_Warning = (const struct FrameData(*)[10])Port_ResolveRomData(0x0830ad00u);
+            p_sHoltzOam_GoingDown = (const struct FrameData(*)[3])Port_ResolveRomData(0x0830ad50u);
+            p_sHoltzOam_IdleAware = (const struct FrameData(*)[4])Port_ResolveRomData(0x0830ad68u);
+            p_sHoltzOam_GoingUp = (const struct FrameData(*)[8])Port_ResolveRomData(0x0830ad88u);
+            p_sHoltzOam_BonkingOnCeiling = (const struct FrameData(*)[10])Port_ResolveRomData(0x0830adc8u);
+            break;
+        }
         default:
             break;
     }

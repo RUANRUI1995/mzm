@@ -41,6 +41,15 @@ void PortGen_glass_tube_Init(void) {
             p_sGlassTubeOam_Broken = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830d6c0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGlassTubeGfx = (const u32(*)[514])Port_ResolveRomData(0x08324a04u);
+            p_sGlassTubePal = (const u16(*)[80])Port_ResolveRomData(0x0832520cu);
+            p_sGlassTubeOam_Intact = (const struct FrameData(*)[2])Port_ResolveRomData(0x08326d48u);
+            p_sGlassTubeOam_Cracking = (const struct FrameData(*)[12])Port_ResolveRomData(0x08326d58u);
+            p_sGlassTubeOam_Breaking = (const struct FrameData(*)[19])Port_ResolveRomData(0x08326db8u);
+            p_sGlassTubeOam_Broken = (const struct FrameData(*)[2])Port_ResolveRomData(0x08326e50u);
+            break;
+        }
         default:
             break;
     }

@@ -30,6 +30,12 @@ void PortGen_space_pirate_carrying_power_bomb_Init(void) {
             p_sFakePowerBombOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x0831c7c8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sFakePowerBombGfx = (const u32(*)[115])Port_ResolveRomData(0x08335d4cu);
+            p_sFakePowerBombPal = (const u16(*)[16])Port_ResolveRomData(0x08335f18u);
+            p_sFakePowerBombOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x08335f58u);
+            break;
+        }
         default:
             break;
     }

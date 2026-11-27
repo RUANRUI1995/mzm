@@ -33,6 +33,13 @@ void PortGen_gekitai_machine_Init(void) {
             p_sGekitaiMachine_array_2f1d3c = (const s16(*)[82])Port_ResolveRomData(0x082f1d98u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGekitaiMachineGfx = (const u32(*)[364])Port_ResolveRomData(0x0830ae18u);
+            p_sGekitaiMachinePal = (const u16(*)[80])Port_ResolveRomData(0x0830b3c8u);
+            p_sGekitaiMachine_array_2f1c7c = (const s16(*)[96])Port_ResolveRomData(0x0830b468u);
+            p_sGekitaiMachine_array_2f1d3c = (const s16(*)[82])Port_ResolveRomData(0x0830b528u);
+            break;
+        }
         default:
             break;
     }

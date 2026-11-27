@@ -61,6 +61,20 @@ void PortGen_gadora_Init(void) {
             p_sGadoraOam_BeforeClosing = (const struct FrameData(*)[5])Port_ResolveRomData(0x08318900u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGadoraGfx = (const u32(*)[585])Port_ResolveRomData(0x0833121cu);
+            p_sGadoraPal = (const u16(*)[32])Port_ResolveRomData(0x08331b40u);
+            p_sGadoraOam_EyeClosed = (const struct FrameData(*)[5])Port_ResolveRomData(0x08331f10u);
+            p_sGadoraOam_Warning = (const struct FrameData(*)[7])Port_ResolveRomData(0x08331f38u);
+            p_sGadoraOam_OpeningEye = (const struct FrameData(*)[7])Port_ResolveRomData(0x08331f70u);
+            p_sGadoraBeamOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x08331fa8u);
+            p_sGadoraOam_EyeMoving = (const struct FrameData(*)[7])Port_ResolveRomData(0x08331fd0u);
+            p_sGadoraOam_ClosingEye = (const struct FrameData(*)[5])Port_ResolveRomData(0x08332008u);
+            p_sGadoraOam_Death = (const struct FrameData(*)[5])Port_ResolveRomData(0x08332030u);
+            p_sGadoraOam_EyeOpened = (const struct FrameData(*)[7])Port_ResolveRomData(0x08332058u);
+            p_sGadoraOam_BeforeClosing = (const struct FrameData(*)[5])Port_ResolveRomData(0x08332090u);
+            break;
+        }
         default:
             break;
     }

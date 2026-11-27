@@ -58,6 +58,19 @@ void PortGen_metroid_Init(void) {
             p_sMetroidOam_Spawning = (const struct FrameData(*)[3])Port_ResolveRomData(0x082edd7cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMetroidSpawningYMovement = (const s16(*)[65])Port_ResolveRomData(0x0830634cu);
+            p_sMetroidSpawningXMovement = (const s16(*)[81])Port_ResolveRomData(0x083063ceu);
+            p_sMetroidGfx = (const u32(*)[793])Port_ResolveRomData(0x08306470u);
+            p_sMetroidPal = (const u16(*)[80])Port_ResolveRomData(0x083070d4u);
+            p_sMetroidPal_SamusGrabbed = (const u16(*)[80])Port_ResolveRomData(0x08307174u);
+            p_sMetroidOam_Moving_Frame10 = (const u16(*)[OAM_DATA_SIZE(6)])Port_ResolveRomData(0x083072e4u);
+            p_sMetroidShellOam_Idle = (const struct FrameData(*)[3])Port_ResolveRomData(0x083073f4u);
+            p_sMetroidOam_Moving = (const struct FrameData(*)[17])Port_ResolveRomData(0x0830740cu);
+            p_sMetroidOam_SamusGrabbed = (const struct FrameData(*)[15])Port_ResolveRomData(0x08307494u);
+            p_sMetroidOam_Spawning = (const struct FrameData(*)[3])Port_ResolveRomData(0x0830750cu);
+            break;
+        }
         default:
             break;
     }

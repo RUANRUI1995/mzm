@@ -81,6 +81,25 @@ void PortGen_parasite_Init(void) {
             p_sParasiteOam_Dying = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e85f4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sParasiteGfx = (const u32(*)[309])Port_ResolveRomData(0x08301440u);
+            p_sParasitePal = (const u16(*)[16])Port_ResolveRomData(0x08301914u);
+            p_sParasiteOam_Idle = (const struct FrameData(*)[7])Port_ResolveRomData(0x08301b04u);
+            p_sParasiteOam_LandingAfterFalling = (const struct FrameData(*)[5])Port_ResolveRomData(0x08301b3cu);
+            p_sParasiteOam_Landing = (const struct FrameData(*)[4])Port_ResolveRomData(0x08301b64u);
+            p_sParasiteOam_Tumbling = (const struct FrameData(*)[5])Port_ResolveRomData(0x08301b84u);
+            p_sParasiteOam_TurningBackOnFeet = (const struct FrameData(*)[8])Port_ResolveRomData(0x08301bacu);
+            p_sParasiteOam_TurningAround = (const struct FrameData(*)[2])Port_ResolveRomData(0x08301becu);
+            p_sParasiteOam_JumpingUp_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x08301bfcu);
+            p_sParasiteOam_JumpingDown_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x08301c34u);
+            p_sParasiteOam_JumpingUp = (const struct FrameData(*)[3])Port_ResolveRomData(0x08301c6cu);
+            p_sParasiteOam_Attached_Unused = (const struct FrameData(*)[9])Port_ResolveRomData(0x08301c84u);
+            p_sParasiteOam_Attached = (const struct FrameData(*)[9])Port_ResolveRomData(0x08301cccu);
+            p_sParasiteOam_Expelled = (const struct FrameData(*)[9])Port_ResolveRomData(0x08301d14u);
+            p_sParasiteOam_Dying_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x08301d5cu);
+            p_sParasiteOam_Dying = (const struct FrameData(*)[11])Port_ResolveRomData(0x08301d84u);
+            break;
+        }
         default:
             break;
     }

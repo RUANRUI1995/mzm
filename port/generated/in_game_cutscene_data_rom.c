@@ -22,6 +22,10 @@ void PortGen_in_game_cutscene_data_Init(void) {
             p_sInGameCutsceneData = (const struct InGameCutsceneData(*)[IGC_COUNT])Port_ResolveRomData(0x08360344u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sInGameCutsceneData = (const struct InGameCutsceneData(*)[IGC_COUNT])Port_ResolveRomData(0x08379ad4u);
+            break;
+        }
         default:
             break;
     }

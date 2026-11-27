@@ -30,6 +30,12 @@ void PortGen_audio_Init(void) {
             p_sSoundDataEntries = (const struct SoundEntry(*)[SOUND_COUNT])Port_ResolveRomData(0x0808f31cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sDma1ControlPointer = (void* const*)Port_ResolveRomData(0x080a66d8u);
+            p_sDma1ControlValue = (const u32*)Port_ResolveRomData(0x080a66dcu);
+            p_sSoundDataEntries = (const struct SoundEntry(*)[SOUND_COUNT])Port_ResolveRomData(0x080a8aacu);
+            break;
+        }
         default:
             break;
     }

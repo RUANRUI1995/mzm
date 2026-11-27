@@ -81,6 +81,25 @@ void PortGen_zeela_Init(void) {
             p_sZeelaEyesOam_Exploding = (const struct FrameData(*)[4])Port_ResolveRomData(0x082c5a94u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sZeelaEyesFallingFromUpSpeed = (const s16(*)[16])Port_ResolveRomData(0x082de374u);
+            p_sZeelaEyesFallingFromBottomSpeed = (const s16(*)[12])Port_ResolveRomData(0x082de394u);
+            p_sZeelaGfx = (const u32(*)[578])Port_ResolveRomData(0x082de3acu);
+            p_sZeelaPal = (const u16(*)[32])Port_ResolveRomData(0x082decb4u);
+            p_sZeelaOam_OnGround = (const struct FrameData(*)[5])Port_ResolveRomData(0x082df064u);
+            p_sZeelaOam_TurningEdgeLeft = (const struct FrameData(*)[4])Port_ResolveRomData(0x082df08cu);
+            p_sZeelaOam_TurningEdgeRight = (const struct FrameData(*)[4])Port_ResolveRomData(0x082df0acu);
+            p_sZeelaOam_OnWall = (const struct FrameData(*)[5])Port_ResolveRomData(0x082df0ccu);
+            p_sZeelaOam_TurningCornerRight = (const struct FrameData(*)[4])Port_ResolveRomData(0x082df0f4u);
+            p_sZeelaOam_TurningCornerLeft = (const struct FrameData(*)[4])Port_ResolveRomData(0x082df114u);
+            p_sZeelaOam_WalkingOnSlope = (const struct FrameData(*)[5])Port_ResolveRomData(0x082df134u);
+            p_sZeelaOam_FallingOnGround = (const struct FrameData(*)[9])Port_ResolveRomData(0x082df15cu);
+            p_sZeelaOam_FallingOnWall = (const struct FrameData(*)[9])Port_ResolveRomData(0x082df1a4u);
+            p_sZeelaEyesOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082df1ecu);
+            p_sZeelaEyesOam_Spinning_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x082df1fcu);
+            p_sZeelaEyesOam_Exploding = (const struct FrameData(*)[4])Port_ResolveRomData(0x082df224u);
+            break;
+        }
         default:
             break;
     }

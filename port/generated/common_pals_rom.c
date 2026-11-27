@@ -40,6 +40,15 @@ void PortGen_common_pals_Init(void) {
             p_sHatchFlashingPal = (const u16(*)[16*16])Port_ResolveRomData(0x085e0530u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sCommonTilesPal = (const u16(*)[1*16])Port_ResolveRomData(0x08607028u);
+            p_sDoorTransitionPal = (const u16(*)[15*16])Port_ResolveRomData(0x08607048u);
+            p_sCommonTilesMotherShipPal = (const u16(*)[1*16])Port_ResolveRomData(0x08607028u);
+            p_sDoorTransitionMotherShipPal = (const u16(*)[15*16])Port_ResolveRomData(0x08607248u);
+            p_sHatchFlashingMotherShipPal = (const u16(*)[16*16])Port_ResolveRomData(0x08607428u);
+            p_sHatchFlashingPal = (const u16(*)[16*16])Port_ResolveRomData(0x08607628u);
+            break;
+        }
         default:
             break;
     }

@@ -121,6 +121,35 @@ void PortGen_security_laser_Init(void) {
             p_sSecurityLaserOam_HorizontalVeryLargeDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x082f0f34u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSecurityLaserGfx = (const u32(*)[104])Port_ResolveRomData(0x08309284u);
+            p_sSecurityLaserPal = (const u16(*)[16])Port_ResolveRomData(0x08309424u);
+            p_sSecurityLaserOam_VerticalSmall = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a0bcu);
+            p_sSecurityLaserOam_VerticalMedium = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a114u);
+            p_sSecurityLaserOam_VerticalLarge = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a16cu);
+            p_sSecurityLaserOam_VerticalVeryLarge = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a1c4u);
+            p_sSecurityLaserOam_HorizontalSmall = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a21cu);
+            p_sSecurityLaserOam_HorizontalMedium = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a274u);
+            p_sSecurityLaserOam_HorizontalLarge = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a2ccu);
+            p_sSecurityLaserOam_HorizontalVeryLarge = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830a324u);
+            p_sSecurityLaserOam_VerticalSmallDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a37cu);
+            p_sSecurityLaserOam_VerticalMediumDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a3b4u);
+            p_sSecurityLaserOam_VerticalLargeDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a3ecu);
+            p_sSecurityLaserOam_VerticalVeryLargeDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a424u);
+            p_sSecurityLaserOam_HorizontalSmallDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a45cu);
+            p_sSecurityLaserOam_HorizontalMediumDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a494u);
+            p_sSecurityLaserOam_HorizontalLargeDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a4ccu);
+            p_sSecurityLaserOam_HorizontalVeryLargeDisappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a504u);
+            p_sSecurityLaserOam_VerticalSmallDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a53cu);
+            p_sSecurityLaserOam_VerticalMediumDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a574u);
+            p_sSecurityLaserOam_VerticalLargeDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a5acu);
+            p_sSecurityLaserOam_VerticalVeryLargeDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a5e4u);
+            p_sSecurityLaserOam_HorizontalSmallDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a61cu);
+            p_sSecurityLaserOam_HorizontalMediumDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a654u);
+            p_sSecurityLaserOam_HorizontalLargeDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a68cu);
+            p_sSecurityLaserOam_HorizontalVeryLargeDisappearing_Unused = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830a6c4u);
+            break;
+        }
         default:
             break;
     }

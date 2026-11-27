@@ -61,6 +61,20 @@ void PortGen_polyp_Init(void) {
             p_sPolypProjectileOam_Exploding = (const struct FrameData(*)[5])Port_ResolveRomData(0x082eedd0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sPolypProjectileYVelocity = (const s16(*)[44])Port_ResolveRomData(0x08307f04u);
+            p_sPolypGfx = (const u32(*)[241])Port_ResolveRomData(0x08307f5cu);
+            p_sPolypPal = (const u16(*)[16])Port_ResolveRomData(0x08308320u);
+            p_sPolypOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x08308478u);
+            p_sPolypOam_Warning = (const struct FrameData(*)[5])Port_ResolveRomData(0x083084a0u);
+            p_sPolypOam_Spitting = (const struct FrameData(*)[2])Port_ResolveRomData(0x083084c8u);
+            p_sPolypOam_AfterSpitting = (const struct FrameData(*)[4])Port_ResolveRomData(0x083084d8u);
+            p_sPolypOam_Retracting = (const struct FrameData(*)[3])Port_ResolveRomData(0x083084f8u);
+            p_sPolypProjectileOam_Right = (const struct FrameData(*)[5])Port_ResolveRomData(0x08308510u);
+            p_sPolypProjectileOam_Left = (const struct FrameData(*)[5])Port_ResolveRomData(0x08308538u);
+            p_sPolypProjectileOam_Exploding = (const struct FrameData(*)[5])Port_ResolveRomData(0x08308560u);
+            break;
+        }
         default:
             break;
     }

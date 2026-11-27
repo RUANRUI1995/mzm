@@ -130,6 +130,37 @@ void PortGen_zebetite_and_cannon_Init(void) {
             p_sMotherBrainBlockOam = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fec58u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRinkaZebetiteAndCannonGfx = (const u32(*)[476])Port_ResolveRomData(0x083172acu);
+            p_sRinkaZebetiteAndCannonPal = (const u16(*)[32])Port_ResolveRomData(0x08317a1cu);
+            p_sRinkaMotherBrainOam_Spawning = (const struct FrameData(*)[16])Port_ResolveRomData(0x083180b8u);
+            p_sRinkaMotherBrainOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x08318138u);
+            p_sZebetiteOam_Phase1 = (const struct FrameData(*)[7])Port_ResolveRomData(0x08318160u);
+            p_sZebetiteOam_Phase2 = (const struct FrameData(*)[7])Port_ResolveRomData(0x08318198u);
+            p_sZebetiteOam_Phase4 = (const struct FrameData(*)[7])Port_ResolveRomData(0x083181d0u);
+            p_sZebetiteOam_Phase6 = (const struct FrameData(*)[7])Port_ResolveRomData(0x08318208u);
+            p_sCannonOam_AimingLeft = (const struct FrameData(*)[2])Port_ResolveRomData(0x08318240u);
+            p_sCannonOam_ShootingLeft = (const struct FrameData(*)[4])Port_ResolveRomData(0x08318250u);
+            p_sCannonOam_LeftToDownLeftTransition = (const struct FrameData(*)[2])Port_ResolveRomData(0x08318270u);
+            p_sCannonOam_AimingDownLeft = (const struct FrameData(*)[2])Port_ResolveRomData(0x08318280u);
+            p_sCannonOam_ShootingDownLeft = (const struct FrameData(*)[4])Port_ResolveRomData(0x08318290u);
+            p_sCannonOam_DownLeftToDownTransition = (const struct FrameData(*)[2])Port_ResolveRomData(0x083182b0u);
+            p_sCannonOam_AimingDown = (const struct FrameData(*)[2])Port_ResolveRomData(0x083182c0u);
+            p_sCannonOam_ShootingDown = (const struct FrameData(*)[4])Port_ResolveRomData(0x083182d0u);
+            p_sCannonOam_DownToDownRightTransition = (const struct FrameData(*)[2])Port_ResolveRomData(0x083182f0u);
+            p_sCannonOam_AimingDownRight = (const struct FrameData(*)[2])Port_ResolveRomData(0x08318300u);
+            p_sCannonOam_ShootingDownRight = (const struct FrameData(*)[4])Port_ResolveRomData(0x08318310u);
+            p_sCannonOam_DownRightToRightTransition = (const struct FrameData(*)[2])Port_ResolveRomData(0x08318330u);
+            p_sCannonOam_AimingRight = (const struct FrameData(*)[2])Port_ResolveRomData(0x08318340u);
+            p_sCannonOam_ShootingRight = (const struct FrameData(*)[4])Port_ResolveRomData(0x08318350u);
+            p_sCannonBulletOam_Left = (const struct FrameData(*)[3])Port_ResolveRomData(0x08318370u);
+            p_sCannonBulletOam_DownLeft = (const struct FrameData(*)[3])Port_ResolveRomData(0x08318388u);
+            p_sCannonBulletOam_Down = (const struct FrameData(*)[3])Port_ResolveRomData(0x083183a0u);
+            p_sCannonBulletOam_DownRight = (const struct FrameData(*)[3])Port_ResolveRomData(0x083183b8u);
+            p_sCannonBulletOam_Right = (const struct FrameData(*)[3])Port_ResolveRomData(0x083183d0u);
+            p_sMotherBrainBlockOam = (const struct FrameData(*)[5])Port_ResolveRomData(0x083183e8u);
+            break;
+        }
         default:
             break;
     }

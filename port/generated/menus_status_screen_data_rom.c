@@ -152,6 +152,18 @@ void PortGen_status_screen_data_Init(void) {
             p_sStatusScreenUnknownItemsNamesFlash = (const u8(*)[4])Port_ResolveRomData(0x0840dfceu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sStatusScreenUnknownItemsWhiteFlashingPal = (const u16(*)[6*16])Port_ResolveRomData(0x0842f8acu);
+            p_sStatusScreenUnknownItemsNamesFlashingPal = (const u16(*)[4*16])Port_ResolveRomData(0x0842f96cu);
+            p_sStatusScreenGroupsPositions = (const struct StatusScreenGroupPositions(*)[13])Port_ResolveRomData(0x0842f9ecu);
+            p_sStatusScreenUnknownItemsPositions = (const struct StatusScreenGroupPositions(*)[10])Port_ResolveRomData(0x0842fa2du);
+            p_sStatusScreenItemsData = (const struct StatusScreenItemData(*)[18])Port_ResolveRomData(0x0842fa60u);
+            p_sStatusScreenItemsAcquisitionData = (const struct StatusScreenItemAcquisitionData(*)[22])Port_ResolveRomData(0x0842faa8u);
+            p_sStatusScreenUnknownItemsPartialFlash = (const u8(*)[8])Port_ResolveRomData(0x0842fb00u);
+            p_sStatusScreenUnknownItemsFullFlash = (const u8(*)[6])Port_ResolveRomData(0x0842fb08u);
+            p_sStatusScreenUnknownItemsNamesFlash = (const u8(*)[4])Port_ResolveRomData(0x0842fb0eu);
+            break;
+        }
         default:
             break;
     }

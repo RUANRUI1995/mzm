@@ -160,6 +160,38 @@ void PortGen_file_select_data_Init(void) {
             p_sFileSelectCharactersGfx = (const u32(*)[1531])Port_ResolveRomData(0x08458e70u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sFileSelectPal = (const u16(*)[7*16])Port_ResolveRomData(0x084767dcu);
+            p_sFileSelect_4548f8 = (const u16(*)[2*16])Port_ResolveRomData(0x084768bcu);
+            p_sFileSelectIconsPal = (const u16(*)[6*16])Port_ResolveRomData(0x084768fcu);
+            p_sFileSelectOam_SamusHeadTurningOn = (const struct FrameData(*)[5])Port_ResolveRomData(0x084777dcu);
+            p_sFileSelectOam_SamusHeadTurning = (const struct FrameData(*)[11])Port_ResolveRomData(0x08477814u);
+            p_sFileSelectOam_SamusHeadSuitlessTurningOn = (const struct FrameData(*)[6])Port_ResolveRomData(0x08477b04u);
+            p_sFileSelectOam_SamusHeadSuitlessIdle = (const struct FrameData(*)[5])Port_ResolveRomData(0x08477a3cu);
+            p_sFileSelectOam_SamusHeadSuitlessTurning = (const struct FrameData(*)[8])Port_ResolveRomData(0x08477a64u);
+            p_sFileSelectChozoBackgroundGfx = (const u32(*)[2985])Port_ResolveRomData(0x08477fb8u);
+            p_sFileSelectOptionsTextEnglishGfx = (const u32(*)[345])Port_ResolveRomData(0x0847c648u);
+            p_sFileSelectOptionsTextGermanGfx = (const u32*)Port_ResolveRomData(0x0847cbacu);
+            p_sFileSelectOptionsTextFrenchGfx = (const u32*)Port_ResolveRomData(0x0847d110u);
+            p_sFileSelectOptionsTextItalianGfx = (const u32*)Port_ResolveRomData(0x0847d674u);
+            p_sFileSelectOptionsTextSpanishGfx = (const u32*)Port_ResolveRomData(0x0847dbd8u);
+            p_sFileSelectObjIconsGfx = (const u32(*)[1722])Port_ResolveRomData(0x0847e3d4u);
+            p_sFileSelectChozoBackgroundTileTable = (const u32(*)[368])Port_ResolveRomData(0x0847febcu);
+            p_sFileSelectMenuTileTable = (const u32*)Port_ResolveRomData(0x0848047cu);
+            p_sFileSelectOptionsTileTable = (const u32*)Port_ResolveRomData(0x084806c4u);
+            p_sFileSelect3BigPanelsTileTable = (const u32(*)[233])Port_ResolveRomData(0x084809b4u);
+            p_sFileSelect1Small2BigPanelsTileTable = (const u32(*)[233])Port_ResolveRomData(0x08480d58u);
+            p_sFileSelect2Big1SmallPanelsTileTable = (const u32(*)[230])Port_ResolveRomData(0x084810fcu);
+            p_sFileSelectOamData_Empty = (const struct MenuOamData(*)[2])Port_ResolveRomData(0x08481494u);
+            p_sFileSelectOam = (const struct OamArray(*)[FILE_SELECT_OAM_ID_COUNT])Port_ResolveRomData(0x084814b4u);
+            p_sOptionsOam = (const struct OamArray(*)[OPTIONS_OAM_ID_COUNT])Port_ResolveRomData(0x084815f4u);
+            p_sFileScreenMessagesInfo = (const u8(*)[FILE_SCREEN_MESSAGE_INFO_ID_COUNT][3])Port_ResolveRomData(0x084816a4u);
+            p_sFileScreenMessage_Empty = (const struct Message*)Port_ResolveRomData(0x08481708u);
+            p_sNesMetroidDataCheck = (const u8(*)[18])Port_ResolveRomData(0x08481718u);
+            p_sTimeAttackButtonCode = (const u16(*)[5])Port_ResolveRomData(0x0848172eu);
+            p_sFileSelectCharactersGfx = (const u32(*)[1531])Port_ResolveRomData(0x0847ae5cu);
+            break;
+        }
         default:
             break;
     }

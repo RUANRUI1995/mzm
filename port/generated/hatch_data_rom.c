@@ -58,6 +58,19 @@ void PortGen_hatch_data_Init(void) {
             p_sNumberOfHatchLockEventsPerArea = (const u16(*)[MAX_AMOUNT_OF_AREAS])Port_ResolveRomData(0x08360334u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sHatchTypeTable = (const HatchType(*)[HATCH_COUNT])Port_ResolveRomData(0x0837991cu);
+            p_sHatchLockEventsBrinstar = (const struct HatchLockEvent(*)[1])Port_ResolveRomData(0x08379924u);
+            p_sHatchLockEventsKraid = (const struct HatchLockEvent(*)[1])Port_ResolveRomData(0x0837992cu);
+            p_sHatchLockEventsCrateria = (const struct HatchLockEvent(*)[2])Port_ResolveRomData(0x08379934u);
+            p_sHatchLockEventsChozodia = (const struct HatchLockEvent(*)[15])Port_ResolveRomData(0x08379944u);
+            p_sEventBasedConnections = (const u8(*)[41][EVENT_BASED_CONNECTION_FIELD_COUNT])Port_ResolveRomData(0x083799bcu);
+            p_sAreaConnections = (const u8(*)[AREA_CONNECTION_FIELD_COUNT])Port_ResolveRomData(0x08379a60u);
+            p_sHatchesAnimationDurationCounter = (const u8(*)[6])Port_ResolveRomData(0x08379aaeu);
+            p_sHatchesTilemapValues = (const u16(*)[HATCH_COUNT])Port_ResolveRomData(0x08379ab4u);
+            p_sNumberOfHatchLockEventsPerArea = (const u16(*)[MAX_AMOUNT_OF_AREAS])Port_ResolveRomData(0x08379ac4u);
+            break;
+        }
         default:
             break;
     }

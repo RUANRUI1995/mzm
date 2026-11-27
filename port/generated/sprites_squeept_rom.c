@@ -49,6 +49,17 @@ void PortGen_squeept_Init(void) {
             p_sSqueeptOam_GoingUp = (const struct FrameData(*)[8])Port_ResolveRomData(0x082d1c3cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSqueeptRisingMovement = (const s16(*)[65])Port_ResolveRomData(0x082eacccu);
+            p_sSqueeptFallingMovement = (const s16(*)[16])Port_ResolveRomData(0x082ead4eu);
+            p_sSqueeptGfx = (const u32(*)[263])Port_ResolveRomData(0x082ead70u);
+            p_sSqueeptPal = (const u16(*)[16])Port_ResolveRomData(0x082eb18cu);
+            p_sSqueeptOam_TurningAround = (const struct FrameData(*)[6])Port_ResolveRomData(0x082eb354u);
+            p_sSqueeptOam_TurningAround_Unused = (const struct FrameData(*)[6])Port_ResolveRomData(0x082eb384u);
+            p_sSqueeptOam_GoingDown = (const struct FrameData(*)[3])Port_ResolveRomData(0x082eb3b4u);
+            p_sSqueeptOam_GoingUp = (const struct FrameData(*)[8])Port_ResolveRomData(0x082eb3ccu);
+            break;
+        }
         default:
             break;
     }

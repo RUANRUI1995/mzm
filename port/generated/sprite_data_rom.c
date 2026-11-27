@@ -92,6 +92,20 @@ void PortGen_sprite_data_Init(void) {
             p_sSecondarySpriteStats = (const u16(*)[SSPRITE_COUNT][9])Port_ResolveRomData(0x082b1c40u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sOamXFlipOffsets = (const u8(*)[3][4])Port_ResolveRomData(0x082ca480u);
+            p_sOamYFlipOffsets = (const u8(*)[3][4])Port_ResolveRomData(0x082ca48cu);
+            p_sSpriteRandomNumberTable = (const u8(*)[32])Port_ResolveRomData(0x082ca498u);
+            p_sSpriteRandomNumberTable_2 = (const u8(*)[24])Port_ResolveRomData(0x082ca4b8u);
+            p_sSpritesFallingCeilingSpeed = (const s16(*)[16])Port_ResolveRomData(0x082ca4d0u);
+            p_sSpritesFallingSpeed = (const s16(*)[16])Port_ResolveRomData(0x082ca4f0u);
+            p_sSpritesFallingSpeed_Unused = (const s16(*)[8])Port_ResolveRomData(0x082ca510u);
+            p_sSpritesFallingSpeed_Unused2 = (const s16(*)[16])Port_ResolveRomData(0x082ca520u);
+            p_sWorkerRobotSleepingFallingSpeed = (const s16(*)[10])Port_ResolveRomData(0x082ca540u);
+            p_sPrimarySpriteStats = (const u16(*)[PSPRITE_COUNT][9])Port_ResolveRomData(0x082ca554u);
+            p_sSecondarySpriteStats = (const u16(*)[SSPRITE_COUNT][9])Port_ResolveRomData(0x082cb3d0u);
+            break;
+        }
         default:
             break;
     }

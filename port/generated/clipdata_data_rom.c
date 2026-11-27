@@ -48,6 +48,16 @@ void PortGen_clipdata_data_Init(void) {
             p_sScrollVelocityCaps = (const struct CameraScrollVelocityCaps(*)[SCROLL_VELOCITY_CAP_COUNT])Port_ResolveRomData(0x083459e4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMovementClipdataValues = (const u16(*)[16])Port_ResolveRomData(0x0835f0d0u);
+            p_sHazardsDefinitions = (const u16(*)[EFFECT_HAZARD_COUNT][2])Port_ResolveRomData(0x0835f0f0u);
+            p_sHazardClipdataValues = (const u16(*)[4])Port_ResolveRomData(0x0835f110u);
+            p_sGroundEffectsClipdataValues = (const GroundEffect(*)[8])Port_ResolveRomData(0x0835f118u);
+            p_sElevatorRoomPairs = (const struct ElevatorPair(*)[ELEVATOR_ROUTE_COUNT])Port_ResolveRomData(0x0835f120u);
+            p_sScroll_Empty = (const u8(*)[11])Port_ResolveRomData(0x0835f168u);
+            p_sScrollVelocityCaps = (const struct CameraScrollVelocityCaps(*)[SCROLL_VELOCITY_CAP_COUNT])Port_ResolveRomData(0x0835f174u);
+            break;
+        }
         default:
             break;
     }

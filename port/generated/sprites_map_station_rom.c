@@ -69,6 +69,22 @@ void PortGen_map_station_Init(void) {
             p_sMapStationPartOam_FrontScreenDownloaded = (const struct FrameData(*)[6])Port_ResolveRomData(0x082d3974u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMapStationGfx = (const u32(*)[680])Port_ResolveRomData(0x082eb40cu);
+            p_sMapStationPal = (const u16(*)[64])Port_ResolveRomData(0x082ebeacu);
+            p_sMapStationOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ecee4u);
+            p_sMapStationOam_GrabbingSamus = (const struct FrameData(*)[10])Port_ResolveRomData(0x082ecef4u);
+            p_sMapStationOam_Downloading = (const struct FrameData(*)[4])Port_ResolveRomData(0x082ecf44u);
+            p_sMapStationOam_Retracting = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ecf64u);
+            p_sMapStationOam_Inactive = (const struct FrameData(*)[21])Port_ResolveRomData(0x082ecf74u);
+            p_sMapStationPartOam_BackScreenIdle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ed01cu);
+            p_sMapStationPartOam_BackScreenDownloading = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ed044u);
+            p_sMapStationPartOam_BackScreenDownloaded = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ed06cu);
+            p_sMapStationPartOam_FrontScreenIdle = (const struct FrameData(*)[7])Port_ResolveRomData(0x082ed094u);
+            p_sMapStationPartOam_FrontScreenDownloading = (const struct FrameData(*)[7])Port_ResolveRomData(0x082ed0ccu);
+            p_sMapStationPartOam_FrontScreenDownloaded = (const struct FrameData(*)[6])Port_ResolveRomData(0x082ed104u);
+            break;
+        }
         default:
             break;
     }

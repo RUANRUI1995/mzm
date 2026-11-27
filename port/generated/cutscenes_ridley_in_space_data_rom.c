@@ -163,6 +163,45 @@ void PortGen_ridley_in_space_data_Init(void) {
             p_sRidleyInSpaceSpaceBackgroundTileTable = (const u32(*)[577])Port_ResolveRomData(0x0839fc88u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRidleyInSpaceScrollingInfo = (const struct CutsceneScrollingInfo(*)[2])Port_ResolveRomData(0x083a074cu);
+            p_sRidleyInSpacePageData = (const struct CutscenePageData(*)[6])Port_ResolveRomData(0x083a075cu);
+            p_sRidleyInSpacePaletteData = (const struct CutscenePaletteData*)Port_ResolveRomData(0x083a078cu);
+            p_sRidleyInSpaceRedAlertPaletteRows = (const u8(*)[10])Port_ResolveRomData(0x083a0790u);
+            p_sRidleyInSpaceOam_MotherShipLeavingBack_Frame0 = (const u16(*)[7])Port_ResolveRomData(0x083b6fe4u);
+            p_sRidleyInSpaceOam_MotherShipLeavingFront_Frame0 = (const u16(*)[13])Port_ResolveRomData(0x083b6ff2u);
+            p_sRidleyInSpaceOam_LeftBlueShip_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083b6f50u);
+            p_sRidleyInSpaceOam_RightBlueShip_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083b6f58u);
+            p_sRidleyInSpaceOam_MotherShip_Frame0 = (const u16(*)[25])Port_ResolveRomData(0x083b6f60u);
+            p_sRidleyInSpaceOam_ViewOfShipParticle_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083b7024u);
+            p_sRidleyInSpaceOam_ShipLeavingParticle_Frame2 = (const u16(*)[4])Port_ResolveRomData(0x083b701cu);
+            p_sRidleyInSpaceOam_ViewOfShipParticleSecond_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083b7014u);
+            p_sRidleyInSpaceOam_ShipLeavingParticleSecond_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083b702cu);
+            p_sRidleyInSpaceOam_39d7e8 = (const struct FrameData(*)[2])Port_ResolveRomData(0x083b6fd4u);
+            p_sRidleyInSpaceOam_ShipLeavingParticle = (const struct FrameData(*)[5])Port_ResolveRomData(0x083b704cu);
+            p_sRidleyInSpaceOam_ShipLeavingParticleSecond = (const struct FrameData(*)[5])Port_ResolveRomData(0x083b7074u);
+            p_sRidleyInSpaceCutsceneOam = (const struct OamArray(*)[RIDLEY_IN_SPACE_OAM_ID_COUNT])Port_ResolveRomData(0x083a081cu);
+            p_sRidleyInSpaceShipsGfx = (const u32(*)[1565])Port_ResolveRomData(0x083a0874u);
+            p_sRidleyInSpaceRidleySittingGfx = (const u32(*)[3848])Port_ResolveRomData(0x083a20e8u);
+            p_sRidleyInSpaceShipInteriorGfx = (const u32(*)[4391])Port_ResolveRomData(0x083a5d08u);
+            p_sRidleyInSpaceRidleySuspiciousGfx = (const u32(*)[1961])Port_ResolveRomData(0x083aa1a4u);
+            p_sRidleyInSpaceShipInterior2Gfx = (const u32(*)[4235])Port_ResolveRomData(0x083ac048u);
+            p_sRidleyInSpaceMotherShipLeavingGfx = (const u32(*)[1497])Port_ResolveRomData(0x083b0274u);
+            p_sRidleyInSpaceSpaceBackgroundGfx = (const u32(*)[5470])Port_ResolveRomData(0x083b19d8u);
+            p_sRidleyInSpaceShipsPal = (const u16(*)[3*16])Port_ResolveRomData(0x083b709cu);
+            p_sRidleyInSpace_39d910_Pal = (const u16(*)[6*16])Port_ResolveRomData(0x083b70fcu);
+            p_sRidleyInSpaceRedAlertPal = (const u16(*)[6*16])Port_ResolveRomData(0x083b71bcu);
+            p_sRidleyInSpaceShipInteriorPal = (const u16(*)[15*16])Port_ResolveRomData(0x083b727cu);
+            p_sRidleyInSpace_39dc70_Pal = (const u16(*)[3*16])Port_ResolveRomData(0x083b745cu);
+            p_sRidleyInSpaceSpaceBackgroundPal = (const u16(*)[5*16])Port_ResolveRomData(0x083b74bcu);
+            p_sRidleyInSpaceRidleySittingTileTable = (const u32(*)[449])Port_ResolveRomData(0x083b755cu);
+            p_sRidleyInSpaceShipInteriorTileTable = (const u32(*)[559])Port_ResolveRomData(0x083b7c60u);
+            p_sRidleyInSpaceRidleySuspiciousEyesOpenTileTable = (const u32(*)[287])Port_ResolveRomData(0x083b851cu);
+            p_sRidleyInSpaceRidleySuspiciousEyesSquintedTileTable = (const u32(*)[287])Port_ResolveRomData(0x083b8998u);
+            p_sRidleyInSpaceShipInteriorTileTable2 = (const u32(*)[385])Port_ResolveRomData(0x083b8e14u);
+            p_sRidleyInSpaceSpaceBackgroundTileTable = (const u32(*)[577])Port_ResolveRomData(0x083b9418u);
+            break;
+        }
         default:
             break;
     }

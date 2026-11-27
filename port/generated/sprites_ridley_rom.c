@@ -258,6 +258,60 @@ void PortGen_ridley_Init(void) {
             p_sRidleyFireballOam_Big = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ecbacu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRidleyMultiSpriteData_Idle = (const struct MultiSpriteData(*)[6])Port_ResolveRomData(0x08302e10u);
+            p_sRidleyMultiSpriteData_SpittingFireballs = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x08302e40u);
+            p_sRidleyMultiSpriteData_TurningAroundFirstPart = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x08302e58u);
+            p_sRidleyMultiSpriteData_TurningAroundSecondPart = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x08302e70u);
+            p_sRidleyTailMultiSpriteData_Idle = (const struct MultiSpriteData(*)[16])Port_ResolveRomData(0x08302e88u);
+            p_sRidleyTailMultiSpriteData_Dying = (const struct MultiSpriteData(*)[16])Port_ResolveRomData(0x08302f08u);
+            p_sRidleyTailMultiSpriteData_MoveToAttack = (const struct MultiSpriteData(*)[12])Port_ResolveRomData(0x08302f88u);
+            p_sRidleyTailMultiSpriteData_SettingUpDiagonalTailAttack = (const struct MultiSpriteData(*)[12])Port_ResolveRomData(0x08302fe8u);
+            p_sRidleyTailMultiSpriteData_ChargingDiagonalTailAttack = (const struct MultiSpriteData(*)[12])Port_ResolveRomData(0x08303048u);
+            p_sRidleyTailMultiSpriteData_DiagonalTailAttack = (const struct MultiSpriteData(*)[21])Port_ResolveRomData(0x083030a8u);
+            p_sRidleyTailMultiSpriteData_ChargingVerticalTailAttack = (const struct MultiSpriteData(*)[13])Port_ResolveRomData(0x08303150u);
+            p_sRidleyTailMultiSpriteData_VerticalTailAttack = (const struct MultiSpriteData(*)[11])Port_ResolveRomData(0x083031b8u);
+            p_sRidleyTailMultiSpriteData_LastVerticalAttack = (const struct MultiSpriteData(*)[17])Port_ResolveRomData(0x08303210u);
+            p_sRidleyTailMultiSpriteData_BackToIdle = (const struct MultiSpriteData(*)[4])Port_ResolveRomData(0x08303298u);
+            p_sRidleySpawningSpittingFireballsYOffsets = (const s16(*)[81])Port_ResolveRomData(0x083032b8u);
+            p_sRidleyIdleYOffsets = (const s16(*)[65])Port_ResolveRomData(0x0830335au);
+            p_sRidleyGfx = (const u32(*)[2211])Port_ResolveRomData(0x083033dcu);
+            p_sRidleyPal = (const u16(*)[128])Port_ResolveRomData(0x08305668u);
+            p_sRidleyOam_Idle = (const struct FrameData(*)[7])Port_ResolveRomData(0x08305ec4u);
+            p_sRidleyOam_SpittingFireballs = (const struct FrameData(*)[5])Port_ResolveRomData(0x08305efcu);
+            p_sRidleyOam_TurningAroundFirstPart = (const struct FrameData(*)[3])Port_ResolveRomData(0x08305f24u);
+            p_sRidleyOam_TurningAroundSecondPart = (const struct FrameData(*)[3])Port_ResolveRomData(0x08305f3cu);
+            p_sRidleyPartOam_HeadIdle = (const struct FrameData(*)[3])Port_ResolveRomData(0x08305f54u);
+            p_sRidleyPartOam_OpeningMouth = (const struct FrameData(*)[2])Port_ResolveRomData(0x08305f6cu);
+            p_sRidleyPartOam_MouthOpened = (const struct FrameData(*)[3])Port_ResolveRomData(0x08305f7cu);
+            p_sRidleyPartOam_HeadDying = (const struct FrameData(*)[5])Port_ResolveRomData(0x08305f94u);
+            p_sRidleyPartOam_HeadTurningAround = (const struct FrameData(*)[2])Port_ResolveRomData(0x08305fbcu);
+            p_sRidleyPartOam_ClawIdle = (const struct FrameData(*)[7])Port_ResolveRomData(0x08305fccu);
+            p_sRidleyPartOam_ClawSpittingFireballs = (const struct FrameData(*)[5])Port_ResolveRomData(0x08306004u);
+            p_sRidleyPartOam_ClawTurningAroundFirstPart = (const struct FrameData(*)[3])Port_ResolveRomData(0x0830602cu);
+            p_sRidleyPartOam_ClawTurningAroundSecondPart = (const struct FrameData(*)[3])Port_ResolveRomData(0x08306044u);
+            p_sRidleyPartOam_ClawCarryingSamus = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830605cu);
+            p_sRidleyPartOam_ClawLiftingSamus = (const struct FrameData(*)[6])Port_ResolveRomData(0x0830606cu);
+            p_sRidleyPartOam_ClawSamusLifted = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830609cu);
+            p_sRidleyPartOam_ClawReleasingSamus = (const struct FrameData(*)[6])Port_ResolveRomData(0x083060acu);
+            p_sRidleyPartOam_LeftWingIdle = (const struct FrameData(*)[11])Port_ResolveRomData(0x083060dcu);
+            p_sRidleyPartOam_RightWingIdle = (const struct FrameData(*)[11])Port_ResolveRomData(0x08306134u);
+            p_sRidleyPartOam_LeftWing_Unused = (const struct FrameData(*)[11])Port_ResolveRomData(0x0830618cu);
+            p_sRidleyPartOam_RightWing_Unused = (const struct FrameData(*)[11])Port_ResolveRomData(0x083061e4u);
+            p_sRidleyPartOam_LeftWingSpittingFireballs = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830623cu);
+            p_sRidleyPartOam_RightWingSpittingFireballs = (const struct FrameData(*)[7])Port_ResolveRomData(0x08306274u);
+            p_sRidleyTailOam_Part = (const struct FrameData(*)[2])Port_ResolveRomData(0x083062acu);
+            p_sRidleyTailOam_TipPointingDown = (const struct FrameData(*)[2])Port_ResolveRomData(0x083062bcu);
+            p_sRidleyTailOam_TipPointingUp = (const struct FrameData(*)[2])Port_ResolveRomData(0x083062ccu);
+            p_sRidleyTailOam_TipPointingDiagonallyDownRight = (const struct FrameData(*)[2])Port_ResolveRomData(0x083062dcu);
+            p_sRidleyTailOam_TipPointingDiagonallyUpRight = (const struct FrameData(*)[2])Port_ResolveRomData(0x083062ecu);
+            p_sRidleyTailOam_TipPointingDiagonallyDownLeft = (const struct FrameData(*)[2])Port_ResolveRomData(0x083062fcu);
+            p_sRidleyTailOam_TipPointingDiagonallyUpLeft = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830630cu);
+            p_sRidleyOam_Square = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830631cu);
+            p_sRidleyFireballOam_Small = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830632cu);
+            p_sRidleyFireballOam_Big = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830633cu);
+            break;
+        }
         default:
             break;
     }

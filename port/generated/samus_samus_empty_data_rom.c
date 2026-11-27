@@ -29,6 +29,12 @@ void PortGen_samus_empty_data_Init(void) {
             p_sArmCannonOffset_Empty = (const struct ArmCannonOffset*)Port_ResolveRomData(0x08232144u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSamusGfx_Empty = (const u8(*)[2])Port_ResolveRomData(0x0824b8d0u);
+            p_sArmCannonOam_Empty = (const u16(*)[1])Port_ResolveRomData(0x0824b8d2u);
+            p_sArmCannonOffset_Empty = (const struct ArmCannonOffset*)Port_ResolveRomData(0x0824b8d4u);
+            break;
+        }
         default:
             break;
     }

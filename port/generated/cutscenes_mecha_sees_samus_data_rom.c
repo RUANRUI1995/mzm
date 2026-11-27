@@ -50,6 +50,17 @@ void PortGen_mecha_sees_samus_data_Init(void) {
             p_sMechaSeesSamusCoverMetalTileTable = (const u32(*)[368])Port_ResolveRomData(0x083c5e8cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMechaRidleySeesSamusPagesData = (const struct CutscenePageData(*)[1])Port_ResolveRomData(0x083da134u);
+            p_sMechaSeesSamusCutsceneOam = (const struct OamArray(*)[5])Port_ResolveRomData(0x083da13cu);
+            p_sMechaSeesSamusOam_FocusingEye = (const struct FrameData(*)[4])Port_ResolveRomData(0x083da5a8u);
+            p_sMechaSeesSamusOam_OpeningEye = (const struct FrameData(*)[4])Port_ResolveRomData(0x083da5c8u);
+            p_sMechaSeesSamusMetalGfx = (const u32(*)[2382])Port_ResolveRomData(0x083da5e8u);
+            p_sMechaSeesSamusCoverEyeGfx = (const u32(*)[2671])Port_ResolveRomData(0x083dcb20u);
+            p_sMechaSeesSamusPal = (const u16(*)[10*16])Port_ResolveRomData(0x083df4dcu);
+            p_sMechaSeesSamusCoverMetalTileTable = (const u32(*)[368])Port_ResolveRomData(0x083df61cu);
+            break;
+        }
         default:
             break;
     }

@@ -23,6 +23,10 @@ void PortGen_cutscenes_data_Init(void) {
             p_sCutsceneData = (const struct CutsceneInfo(*)[CUTSCENE_COUNT])Port_ResolveRomData(0x0836be08u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sCutsceneData = (const struct CutsceneInfo(*)[CUTSCENE_COUNT])Port_ResolveRomData(0x08385598u);
+            break;
+        }
         default:
             break;
     }

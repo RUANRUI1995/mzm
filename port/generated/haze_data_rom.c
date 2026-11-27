@@ -46,6 +46,16 @@ void PortGen_haze_data_Init(void) {
             p_sHazeLoop_Empty = (const struct HazeLoop*)Port_ResolveRomData(0x0835f9a0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sHaze_345ff8 = (const u8(*)[132])Port_ResolveRomData(0x0835f7e4u);
+            p_sHaze_Bg3_StrongEffect = (const s8(*)[48])Port_ResolveRomData(0x0835f868u);
+            p_sHaze_PowerBomb_WindowValuesPointers = (const s16* const(*)[161])Port_ResolveRomData(0x08378d5cu);
+            p_sHaze_Bg3Bg2Bg1 = (const s8(*)[9][32])Port_ResolveRomData(0x08378fe0u);
+            p_sHaze_Bg3_WeakOutside = (const s8(*)[16])Port_ResolveRomData(0x08379100u);
+            p_sHaze_Bg_WeakOutside = (const s8(*)[32])Port_ResolveRomData(0x08379110u);
+            p_sHazeLoop_Empty = (const struct HazeLoop*)Port_ResolveRomData(0x08379130u);
+            break;
+        }
         default:
             break;
     }

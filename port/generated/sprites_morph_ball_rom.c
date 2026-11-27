@@ -33,6 +33,13 @@ void PortGen_morph_ball_Init(void) {
             p_sMorphBallOutsideOam_Idle = (const struct FrameData(*)[6])Port_ResolveRomData(0x082b2c2cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMorphBallGfx = (const u32(*)[168])Port_ResolveRomData(0x082cc094u);
+            p_sMorphBallPal = (const u16(*)[16])Port_ResolveRomData(0x082cc334u);
+            p_sMorphBallOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cc394u);
+            p_sMorphBallOutsideOam_Idle = (const struct FrameData(*)[6])Port_ResolveRomData(0x082cc3bcu);
+            break;
+        }
         default:
             break;
     }

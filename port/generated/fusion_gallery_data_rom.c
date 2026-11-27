@@ -22,6 +22,10 @@ void PortGen_fusion_gallery_data_Init(void) {
             p_sFusionGalleryData = (const struct FusionGalleryImageEntry(*)[NUMBER_OF_FUSION_GALLERY_IMAGES])Port_ResolveRomData(0x084c1940u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sFusionGalleryData = (const struct FusionGalleryImageEntry(*)[NUMBER_OF_FUSION_GALLERY_IMAGES])Port_ResolveRomData(0x084e3bc0u);
+            break;
+        }
         default:
             break;
     }

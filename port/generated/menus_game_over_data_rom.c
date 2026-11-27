@@ -85,6 +85,25 @@ void PortGen_game_over_data_Init(void) {
             p_sGameOverOam = (const struct OamArray(*)[GAME_OVER_OAM_ID_COUNT])Port_ResolveRomData(0x0845482cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGameOverMenuPal = (const u16(*)[16*5])Port_ResolveRomData(0x08470ebcu);
+            p_sGameOverTextAndBackgroundGfx = (const u32(*)[2738])Port_ResolveRomData(0x08470f5cu);
+            p_sGameOverTextPromptEnglishGfx = (const u32(*)[333])Port_ResolveRomData(0x08473a24u);
+            p_sGameOverTextPromptHiraganaGfx = (const u32(*)[428])Port_ResolveRomData(0x08473f58u);
+            p_sGameOverTextPromptGermanGfx = (const u32*)Port_ResolveRomData(0x08474608u);
+            p_sGameOverTextPromptFrenchGfx = (const u32*)Port_ResolveRomData(0x08474b50u);
+            p_sGameOverTextPromptItalianGfx = (const u32*)Port_ResolveRomData(0x08475094u);
+            p_sGameOverTextPromptSpanishGfx = (const u32*)Port_ResolveRomData(0x084755dcu);
+            p_sGameOverBackgroundTileTable = (const u32(*)[370])Port_ResolveRomData(0x08475d50u);
+            p_sGameOverTextTileTable = (const u32(*)[116])Port_ResolveRomData(0x08476318u);
+            p_sGameOver_454520 = (const u32(*)[160])Port_ResolveRomData(0x084764e4u);
+            p_sGameOverDynamicPalette_Empty = (const struct GameOverDynamicPalette*)Port_ResolveRomData(0x08476764u);
+            p_sGameOverSamusHeadXPositions = (const u16(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x08476778u);
+            p_sGameOverSamusHeadYPositions = (const u16(*)[2])Port_ResolveRomData(0x08476786u);
+            p_sGameOverSamusHeadOamIds = (const GameOverOamId(*)[SUIT_COUNT][SAMUS_CURSOR_ACTION_COUNT])Port_ResolveRomData(0x0847678au);
+            p_sGameOverOam = (const struct OamArray(*)[GAME_OVER_OAM_ID_COUNT])Port_ResolveRomData(0x08476794u);
+            break;
+        }
         default:
             break;
     }

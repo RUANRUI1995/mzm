@@ -33,6 +33,13 @@ void PortGen_searchlight_Init(void) {
             p_sSearchlightOam_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x08317a64u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSearchlightGfx = (const u32(*)[172])Port_ResolveRomData(0x08330e24u);
+            p_sSearchlightPal = (const u16(*)[16])Port_ResolveRomData(0x083310d4u);
+            p_sSearchlightOam_Moving = (const struct FrameData(*)[7])Port_ResolveRomData(0x083311bcu);
+            p_sSearchlightOam_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x083311f4u);
+            break;
+        }
         default:
             break;
     }

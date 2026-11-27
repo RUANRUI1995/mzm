@@ -44,6 +44,16 @@ void PortGen_samus_close_up_data_Init(void) {
             p_sSamusCloseUpEyesTiletable = (const u32(*)[98])Port_ResolveRomData(0x0836bc80u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSamusCloseUpPal = (const u16(*)[6*16])Port_ResolveRomData(0x08381110u);
+            p_sSamusCloseUpGfx = (const u32(*)[2319])Port_ResolveRomData(0x083811d0u);
+            p_sSamusCloseUpEyesGfx_1 = (const u32(*)[80])Port_ResolveRomData(0x0838360cu);
+            p_sSamusCloseUpEyesGfx_2 = (const u32(*)[80])Port_ResolveRomData(0x0838360cu);
+            p_sSamusCloseUpEyesGfx_3 = (const u32(*)[1376])Port_ResolveRomData(0x0838388cu);
+            p_sSamusCloseUpBackgroundMap = (const u32(*)[385])Port_ResolveRomData(0x08384e0cu);
+            p_sSamusCloseUpEyesTiletable = (const u32(*)[98])Port_ResolveRomData(0x08385410u);
+            break;
+        }
         default:
             break;
     }

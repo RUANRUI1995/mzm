@@ -37,6 +37,14 @@ void PortGen_clipdata_types_tilemap_Init(void) {
             p_sClipdataBehaviorTypes_Test = (const ClipBehavior(*)[CLIPDATA_TEST_COUNT])Port_ResolveRomData(0x08365d1cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sClipdataBehaviorTypes_Tilemap = (const ClipBehavior(*)[CLIPDATA_TILEMAP_COUNT])Port_ResolveRomData(0x0837eb1cu);
+            p_sClipdataCollisionTypes_Tilemap = (const u8(*)[CLIPDATA_TILEMAP_COUNT])Port_ResolveRomData(0x0837ecbcu);
+            p_sCommonTilemap = (const u16(*)[832])Port_ResolveRomData(0x0837ed8cu);
+            p_sClipdataCollisionTypes_Test = (const u8(*)[CLIPDATA_TEST_COUNT])Port_ResolveRomData(0x0837f40cu);
+            p_sClipdataBehaviorTypes_Test = (const ClipBehavior(*)[CLIPDATA_TEST_COUNT])Port_ResolveRomData(0x0837f4acu);
+            break;
+        }
         default:
             break;
     }

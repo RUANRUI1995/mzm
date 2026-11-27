@@ -190,6 +190,52 @@ void PortGen_ruins_test_Init(void) {
             p_sRuinsTestGhostOutlineOam_ShootingGroundLightning = (const struct FrameData(*)[9])Port_ResolveRomData(0x082f6338u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRuinsTestGfx = (const u32(*)[1951])Port_ResolveRomData(0x0830b5ccu);
+            p_sRuinsTestGfx_SamusReflectionTurningRightTop = (const u32(*)[96])Port_ResolveRomData(0x0830d448u);
+            p_sRuinsTestGfx_SamusReflectionTurningRightBottom = (const u32(*)[64])Port_ResolveRomData(0x0830d5c8u);
+            p_sRuinsTestGfx_SamusReflectionTurningLeftTop = (const u32(*)[96])Port_ResolveRomData(0x0830d6c8u);
+            p_sRuinsTestGfx_SamusReflectionTurningLeftBottom = (const u32(*)[64])Port_ResolveRomData(0x0830d848u);
+            p_sRuinsTestGfx_SamusReflectionFullSuitTop = (const u32(*)[96])Port_ResolveRomData(0x0830d948u);
+            p_sRuinsTestGfx_SamusReflectionFullSuitBottom = (const u32(*)[64])Port_ResolveRomData(0x0830dac8u);
+            p_sRuinsTestGfx_SamusReflectionSuitlessTop = (const u32(*)[96])Port_ResolveRomData(0x0830dbc8u);
+            p_sRuinsTestGfx_SamusReflectionSuitlessBottom = (const u32(*)[64])Port_ResolveRomData(0x0830dd48u);
+            p_sRuinsTestPal = (const u16(*)[128])Port_ResolveRomData(0x0830de48u);
+            p_sRuinsTestPal_SymbolShot_Frame1 = (const u16(*)[8])Port_ResolveRomData(0x0830df48u);
+            p_sRuinsTestPal_SymbolShot_Frame2 = (const u16(*)[8])Port_ResolveRomData(0x0830df58u);
+            p_sRuinsTestPal_SymbolShot_Frame3 = (const u16(*)[8])Port_ResolveRomData(0x0830df68u);
+            p_sRuinsTestPal_SymbolShot_Frame4 = (const u16(*)[8])Port_ResolveRomData(0x0830df78u);
+            p_sRuinsTestPal_SymbolShot_Frame5 = (const u16(*)[8])Port_ResolveRomData(0x0830df88u);
+            p_sRuinsTestPal_SymbolShot_Frame6 = (const u16(*)[8])Port_ResolveRomData(0x0830df98u);
+            p_sRuinsTestPal_SamusReflection = (const u16(*)[15*16])Port_ResolveRomData(0x0830dfa8u);
+            p_sRuinsTestPal_SamusReflectionFullSuit = (const u16(*)[15*16])Port_ResolveRomData(0x0830e188u);
+            p_sRuinsTestSamusReflectionOam = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830f4c0u);
+            p_sRuinsTestGhostOutlineOam_Spawning = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830f4d0u);
+            p_sRuinsTestGhostOam_NotMoving = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830f518u);
+            p_sRuinsTestGhostOam_Moving = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830f528u);
+            p_sRuinsTestGhostOam_SymbolPlaced = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830f560u);
+            p_sRuinsTestSymbolOam_FourSymbols = (const struct FrameData(*)[14])Port_ResolveRomData(0x0830f570u);
+            p_sRuinsTestSymbolOam_Merging = (const struct FrameData(*)[3])Port_ResolveRomData(0x0830f5e0u);
+            p_sRuinsTestSymbolOam_Disappearing = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830f5f8u);
+            p_sRuinsTestOam_TurningIntoReflection = (const struct FrameData(*)[13])Port_ResolveRomData(0x0830f630u);
+            p_sRuinsTestReflectionCoverOam = (const struct FrameData(*)[3])Port_ResolveRomData(0x0830f698u);
+            p_sRuinsTestOam_Symbol = (const struct FrameData(*)[5])Port_ResolveRomData(0x0830f6b0u);
+            p_sRuinsTestShootableSymbolOam_Spawning = (const struct FrameData(*)[10])Port_ResolveRomData(0x0830f6d8u);
+            p_sRuinsTestShootableSymbolOam_Spawned = (const struct FrameData(*)[7])Port_ResolveRomData(0x0830f728u);
+            p_sRuinsTestShootableSymbolOam_Despawning = (const struct FrameData(*)[5])Port_ResolveRomData(0x0830f760u);
+            p_sRuinsTestShootableSymbolOam_TurningIntoSymbol = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830f788u);
+            p_sRuinsTestGhostOam_SymbolShot = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830f7d0u);
+            p_sRuinsTestGhostOam_SymbolPlacing = (const struct FrameData(*)[14])Port_ResolveRomData(0x0830f7e0u);
+            p_sRuinsTestOam_Despawn = (const struct FrameData(*)[6])Port_ResolveRomData(0x0830f850u);
+            p_sRuinsTestOam_Unused = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830f880u);
+            p_sRuinsTestOam_Spawning = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830f8c8u);
+            p_sRuinsTestLightningOam_InAir = (const struct FrameData(*)[12])Port_ResolveRomData(0x0830f910u);
+            p_sRuinsTestLightningOam_GoingOnGround = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830f970u);
+            p_sRuinsTestLightningOam_OnGroundHorizontal = (const struct FrameData(*)[17])Port_ResolveRomData(0x0830f9b8u);
+            p_sRuinsTestLightningOam_OnGroundVertical = (const struct FrameData(*)[17])Port_ResolveRomData(0x0830fa40u);
+            p_sRuinsTestGhostOutlineOam_ShootingGroundLightning = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830fac8u);
+            break;
+        }
         default:
             break;
     }

@@ -141,6 +141,40 @@ void PortGen_test_rooms_data_Init(void) {
             p_sTest3_3_SpriteData = (const u8(*)[3*3])Port_ResolveRomData(0x08367977u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sTileset_0_Gfx = (const u32(*)[445])Port_ResolveRomData(0x0837f5ecu);
+            p_sTileset_0_Tilemap = (const u8(*)[1410])Port_ResolveRomData(0x0837fce0u);
+            p_sTileset_0_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x08380262u);
+            p_sTest_0_Clipdata = (const u8(*)[306])Port_ResolveRomData(0x08380422u);
+            p_sTest_0_Bg2 = (const u8(*)[14])Port_ResolveRomData(0x08380554u);
+            p_sTest_0_Bg1 = (const u8(*)[369])Port_ResolveRomData(0x08380562u);
+            p_sTest_1_Clipdata = (const u8(*)[446])Port_ResolveRomData(0x083806d3u);
+            p_sTest_1_Bg2 = (const u8(*)[14])Port_ResolveRomData(0x08380891u);
+            p_sTest_1_Bg1 = (const u8(*)[485])Port_ResolveRomData(0x0838089fu);
+            p_sTest_2_Clipdata = (const u8(*)[280])Port_ResolveRomData(0x08380a84u);
+            p_sTest_2_Bg2 = (const u8(*)[116])Port_ResolveRomData(0x08380b9cu);
+            p_sTest_2_Bg1 = (const u8(*)[209])Port_ResolveRomData(0x08380c10u);
+            p_sTest_3_Clipdata = (const u8(*)[156])Port_ResolveRomData(0x08380ce1u);
+            p_sTest_3_Bg2 = (const u8(*)[14])Port_ResolveRomData(0x08380d7du);
+            p_sTest_3_Bg1 = (const u8(*)[159])Port_ResolveRomData(0x08380d8bu);
+            p_sTest_4_Clipdata = (const u8(*)[314])Port_ResolveRomData(0x08380e2au);
+            p_sTest_4_Bg2 = (const u8(*)[14])Port_ResolveRomData(0x08380f64u);
+            p_sTest_4_Bg1 = (const u8(*)[330])Port_ResolveRomData(0x08380f72u);
+            p_sTest1_0_SpriteData = (const u8(*)[2*3])Port_ResolveRomData(0x083810bcu);
+            p_sTest1_1_SpriteData = (const u8(*)[3*3])Port_ResolveRomData(0x083810c2u);
+            p_sTest1_2_SpriteData = (const u8(*)[2*3])Port_ResolveRomData(0x083810cbu);
+            p_sTest1_3_SpriteData = (const u8(*)[2*3])Port_ResolveRomData(0x083810d1u);
+            p_sTest_4_SpriteData = (const u8(*)[1*3])Port_ResolveRomData(0x083810d7u);
+            p_sTest2_0_SpriteData = (const u8(*)[2*3])Port_ResolveRomData(0x083810dau);
+            p_sTest2_1_SpriteData = (const u8(*)[1*3])Port_ResolveRomData(0x083810e0u);
+            p_sTest2_2_SpriteData = (const u8(*)[1*3])Port_ResolveRomData(0x083810e3u);
+            p_sTest2_3_SpriteData = (const u8(*)[2*3])Port_ResolveRomData(0x083810e6u);
+            p_sTest3_0_SpriteData = (const u8(*)[7*3])Port_ResolveRomData(0x083810ecu);
+            p_sTest3_1_SpriteData = (const u8(*)[1*3])Port_ResolveRomData(0x08381101u);
+            p_sTest3_2_SpriteData = (const u8(*)[1*3])Port_ResolveRomData(0x08381104u);
+            p_sTest3_3_SpriteData = (const u8(*)[3*3])Port_ResolveRomData(0x08381107u);
+            break;
+        }
         default:
             break;
     }

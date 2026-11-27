@@ -200,6 +200,55 @@ void PortGen_samus_palette_data_Init(void) {
             p_sSamusPal_Suitless_Frozen = (const u16(*)[3*16])Port_ResolveRomData(0x08238b64u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSamusPal_PowerSuit_Default = (const u16(*)[3*16])Port_ResolveRomData(0x08250e94u);
+            p_sSamusPal_PowerSuit_BeamRelease = (const u16(*)[5*16])Port_ResolveRomData(0x08250ef4u);
+            p_sSamusPal_PowerSuit_Flashing = (const u16(*)[2*16])Port_ResolveRomData(0x08250f94u);
+            p_sSamusPal_PowerSuit_Speedboost = (const u16(*)[3*16])Port_ResolveRomData(0x08250fd4u);
+            p_sSamusPal_PowerSuit_Unmorph = (const u16(*)[2*16])Port_ResolveRomData(0x08251034u);
+            p_sSamusPal_PowerSuit_Dying = (const u16(*)[1*16])Port_ResolveRomData(0x08250e94u);
+            p_sSamusPal_Generic_Dying = (const u16(*)[8*16])Port_ResolveRomData(0x08251094u);
+            p_sSamusPal_VariaSuit_Dying = (const u16(*)[1*16])Port_ResolveRomData(0x08251194u);
+            p_sSamusPal_FullSuit_Dying = (const u16(*)[1*16])Port_ResolveRomData(0x082511b4u);
+            p_sSamusPal_GravitySuit_Dying = (const u16(*)[1*16])Port_ResolveRomData(0x082511d4u);
+            p_sSamusPal_PowerSuit_Saving = (const u16(*)[3*16])Port_ResolveRomData(0x082511f4u);
+            p_sSamusPal_PowerSuit_ChargingBeam = (const u16(*)[10*16])Port_ResolveRomData(0x08251254u);
+            p_sSamusPal_PowerSuit_DownloadingMap = (const u16(*)[2*16])Port_ResolveRomData(0x08251394u);
+            p_sSamusPal_VariaSuit_Default = (const u16(*)[3*16])Port_ResolveRomData(0x082513d4u);
+            p_sSamusPal_VariaSuit_BeamRelease = (const u16(*)[5*16])Port_ResolveRomData(0x08251434u);
+            p_sSamusPal_VariaSuit_Flashing = (const u16(*)[2*16])Port_ResolveRomData(0x082514d4u);
+            p_sSamusPal_VariaSuit_Speedboost = (const u16(*)[3*16])Port_ResolveRomData(0x08251514u);
+            p_sSamusPal_VariaSuit_Unmorph = (const u16(*)[2*16])Port_ResolveRomData(0x08251574u);
+            p_sSamusPal_VariaSuit_Saving = (const u16(*)[3*16])Port_ResolveRomData(0x082515b4u);
+            p_sSamusPal_VariaSuit_ChargingBeam = (const u16(*)[10*16])Port_ResolveRomData(0x08251614u);
+            p_sSamusPal_VariaSuit_DownloadingMap = (const u16(*)[2*16])Port_ResolveRomData(0x08251754u);
+            p_sSamusPal_FullSuit_Default = (const u16(*)[3*16])Port_ResolveRomData(0x08251794u);
+            p_sSamusPal_FullSuit_BeamRelease = (const u16(*)[5*16])Port_ResolveRomData(0x082517f4u);
+            p_sSamusPal_FullSuit_Flashing = (const u16(*)[2*16])Port_ResolveRomData(0x08251894u);
+            p_sSamusPal_FullSuit_Speedboost = (const u16(*)[3*16])Port_ResolveRomData(0x082518d4u);
+            p_sSamusPal_FullSuit_Unmorph = (const u16(*)[2*16])Port_ResolveRomData(0x08251934u);
+            p_sSamusPal_FullSuit_Saving = (const u16(*)[3*16])Port_ResolveRomData(0x08251974u);
+            p_sSamusPal_FullSuit_ChargingBeam = (const u16(*)[10*16])Port_ResolveRomData(0x082519d4u);
+            p_sSamusPal_FullSuit_DownloadingMap = (const u16(*)[2*16])Port_ResolveRomData(0x08251b14u);
+            p_sSamusPal_FullSuit_Frozen = (const u16(*)[3*16])Port_ResolveRomData(0x08251b54u);
+            p_sSamusPal_GravitySuit_Default = (const u16(*)[3*16])Port_ResolveRomData(0x08251bb4u);
+            p_sSamusPal_GravitySuit_BeamRelease = (const u16(*)[5*16])Port_ResolveRomData(0x082517f4u);
+            p_sSamusPal_GravitySuit_Flashing = (const u16(*)[2*16])Port_ResolveRomData(0x08251894u);
+            p_sSamusPal_GravitySuit_Speedboost = (const u16(*)[3*16])Port_ResolveRomData(0x082518d4u);
+            p_sSamusPal_GravitySuit_Unmorph = (const u16(*)[2*16])Port_ResolveRomData(0x08251d54u);
+            p_sSamusPal_GravitySuit_Saving = (const u16(*)[3*16])Port_ResolveRomData(0x08251d94u);
+            p_sSamusPal_GravitySuit_ChargingBeam = (const u16(*)[10*16])Port_ResolveRomData(0x08251df4u);
+            p_sSamusPal_GravitySuit_DownloadingMap = (const u16(*)[2*16])Port_ResolveRomData(0x08251f34u);
+            p_sSamusPal_GravitySuit_Frozen = (const u16(*)[3*16])Port_ResolveRomData(0x08251f74u);
+            p_sSamusPal_Suitless_Default = (const u16(*)[3*16])Port_ResolveRomData(0x08251fd4u);
+            p_sSamusPal_Suitless_BeamRelease = (const u16(*)[5*16])Port_ResolveRomData(0x08252034u);
+            p_sSamusPal_Suitless_Flashing = (const u16(*)[2*16])Port_ResolveRomData(0x082520d4u);
+            p_sSamusPal_Suitless_Saving = (const u16(*)[3*16])Port_ResolveRomData(0x08252114u);
+            p_sSamusPal_Suitless_ChargingBeam = (const u16(*)[10*16])Port_ResolveRomData(0x08252174u);
+            p_sSamusPal_Suitless_DownloadingMap = (const u16(*)[2*16])Port_ResolveRomData(0x082522b4u);
+            p_sSamusPal_Suitless_Frozen = (const u16(*)[3*16])Port_ResolveRomData(0x082522f4u);
+            break;
+        }
         default:
             break;
     }

@@ -93,6 +93,28 @@ void PortGen_save_platform_Init(void) {
             p_sSavePlatformPartOam_Ray = (const struct FrameData(*)[9])Port_ResolveRomData(0x082d5148u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSavePlatformGfx = (const u32(*)[603])Port_ResolveRomData(0x082ed134u);
+            p_sSavePlatformPal = (const u16(*)[64])Port_ResolveRomData(0x082edaa0u);
+            p_sSavePlatformOam_Idle = (const struct FrameData(*)[7])Port_ResolveRomData(0x082ee4e8u);
+            p_sSavePlatformOam_Opening = (const struct FrameData(*)[4])Port_ResolveRomData(0x082ee520u);
+            p_sSavePlatformOam_Opened = (const struct FrameData(*)[7])Port_ResolveRomData(0x082ee540u);
+            p_sSavePlatformOam_Saving = (const struct FrameData(*)[7])Port_ResolveRomData(0x082ee578u);
+            p_sSavePlatformOam_OpenedOff = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ee5b0u);
+            p_sSavePlatformOam_Closing = (const struct FrameData(*)[4])Port_ResolveRomData(0x082ee5c0u);
+            p_sSavePlatformOam_IdleOff = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ee5e0u);
+            p_sSavePlatformPartOam_TopIdle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ee5f0u);
+            p_sSavePlatformPartOam_TopExtending = (const struct FrameData(*)[6])Port_ResolveRomData(0x082ee600u);
+            p_sSavePlatformPartOam_TopExtended = (const struct FrameData(*)[2])Port_ResolveRomData(0x082ee630u);
+            p_sSavePlatformPartOam_TopRetracting = (const struct FrameData(*)[6])Port_ResolveRomData(0x082ee640u);
+            p_sSavePlatformPartOam_TubeSpawning = (const struct FrameData(*)[39])Port_ResolveRomData(0x082ee670u);
+            p_sSavePlatformPartOam_TubeShadow = (const struct FrameData(*)[13])Port_ResolveRomData(0x082ee7a8u);
+            p_sSavePlatformPartOam_TubeIdle = (const struct FrameData(*)[3])Port_ResolveRomData(0x082ee810u);
+            p_sSavePlatformPartOam_Tube_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ee828u);
+            p_sSavePlatformPartOam_TubeDespawning = (const struct FrameData(*)[17])Port_ResolveRomData(0x082ee850u);
+            p_sSavePlatformPartOam_Ray = (const struct FrameData(*)[9])Port_ResolveRomData(0x082ee8d8u);
+            break;
+        }
         default:
             break;
     }

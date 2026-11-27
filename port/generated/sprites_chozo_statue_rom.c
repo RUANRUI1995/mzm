@@ -182,6 +182,45 @@ void PortGen_chozo_statue_Init(void) {
             p_sChozoStatueVariaPal = (const u16(*)[80])Port_ResolveRomData(0x082bf328u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sChozoStatueMultiSpriteData_Standing = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x082cd338u);
+            p_sChozoStatueMultiSpriteData_Sitting = (const struct MultiSpriteData(*)[11])Port_ResolveRomData(0x082cd348u);
+            p_sChozoStatueMultiSpriteData_Seated = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x082cd3a0u);
+            p_sChozoStatueFlashingPaletteRows = (const u8(*)[4])Port_ResolveRomData(0x082cd3b0u);
+            p_sChozoStatueLongBeamGfx = (const u32(*)[1335])Port_ResolveRomData(0x082cd3b4u);
+            p_sChozoStatueLongBeamPal = (const u16(*)[80])Port_ResolveRomData(0x082ce890u);
+            p_sChozoStatuePartOam_LegStanding = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cef1cu);
+            p_sChozoStatuePartOam_LegSitting = (const struct FrameData(*)[10])Port_ResolveRomData(0x082cef2cu);
+            p_sChozoStatuePartOam_LegSeated = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cef7cu);
+            p_sChozoStatueOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cef8cu);
+            p_sChozoStatuePartOam_EyeOpened = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cef9cu);
+            p_sChozoStatuePartOam_EyeClosing = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cefacu);
+            p_sChozoStatuePartOam_EyeOpening = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cefc4u);
+            p_sChozoStatuePartOam_EyeClosed = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cefdcu);
+            p_sChozoStatuePartOam_ArmIdle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cefecu);
+            p_sChozoStatuePartOam_ArmGlow = (const struct FrameData(*)[9])Port_ResolveRomData(0x082ceffcu);
+            p_sChozoStatuePartOam_ArmSamusGrabbed = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cf044u);
+            p_sChozoBallOam_NormalClosed = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cf054u);
+            p_sChozoBallOam_NormalRevealing = (const struct FrameData(*)[4])Port_ResolveRomData(0x082cf07cu);
+            p_sChozoBallOam_NormalRevealed = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cf09cu);
+            p_sChozoStatueRefillOam = (const struct FrameData(*)[41])Port_ResolveRomData(0x082cf0c4u);
+            p_sChozoStatuePartOam_GlowIdle = (const struct FrameData(*)[41])Port_ResolveRomData(0x082cf20cu);
+            p_sChozoStatueIceBeamGfx = (const u32(*)[1335])Port_ResolveRomData(0x082cf354u);
+            p_sChozoStatueIceBeamPal = (const u16(*)[80])Port_ResolveRomData(0x082d0830u);
+            p_sChozoStatueWaveBeamGfx = (const u32(*)[1335])Port_ResolveRomData(0x082d08d0u);
+            p_sChozoStatueWaveBeamPal = (const u16(*)[80])Port_ResolveRomData(0x082d1dacu);
+            p_sChozoStatueBombsGfx = (const u32(*)[1339])Port_ResolveRomData(0x082d1e4cu);
+            p_sChozoStatueBombsPal = (const u16(*)[80])Port_ResolveRomData(0x082d3338u);
+            p_sChozoStatueSpeedboosterGfx = (const u32(*)[1342])Port_ResolveRomData(0x082d33d8u);
+            p_sChozoStatueSpeedboosterPal = (const u16(*)[80])Port_ResolveRomData(0x082d48d0u);
+            p_sChozoStatueHighJumpGfx = (const u32(*)[1372])Port_ResolveRomData(0x082d4970u);
+            p_sChozoStatueHighJumpPal = (const u16(*)[80])Port_ResolveRomData(0x082d5ee0u);
+            p_sChozoStatueScrewAttackGfx = (const u32(*)[1378])Port_ResolveRomData(0x082d5f80u);
+            p_sChozoStatueScrewAttackPal = (const u16(*)[80])Port_ResolveRomData(0x082d7508u);
+            p_sChozoStatueVariaGfx = (const u32(*)[1348])Port_ResolveRomData(0x082d75a8u);
+            p_sChozoStatueVariaPal = (const u16(*)[80])Port_ResolveRomData(0x082d8ab8u);
+            break;
+        }
         default:
             break;
     }

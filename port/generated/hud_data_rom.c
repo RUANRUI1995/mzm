@@ -232,6 +232,62 @@ void PortGen_hud_data_Init(void) {
             p_sSuitlessHudChargeBarGfx = (const u8(*)[SUITLESS_BAR_NBR_ELEMS*SUITLESS_BAR_SIZE])Port_ResolveRomData(0x08336304u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sCommonSpritesPal = (const u16(*)[96])Port_ResolveRomData(0x083451f4u);
+            p_sCommonSpritesGfx = (const u32(*)[3584])Port_ResolveRomData(0x083452b4u);
+            p_sMissileDigitsGfx = (const u8(*)[2304])Port_ResolveRomData(0x08348ab4u);
+            p_sPowerBombDigitsGfx = (const u8(*)[2304])Port_ResolveRomData(0x083493b4u);
+            p_sMissileHudGfx_Inactive = (const u8(*)[64])Port_ResolveRomData(0x08349cb4u);
+            p_sMissileHudGfx_Selected = (const u8(*)[64])Port_ResolveRomData(0x08349cf4u);
+            p_sMissileHudGfx_Active = (const u8(*)[64])Port_ResolveRomData(0x08349d34u);
+            p_sMissileHudGfx_Refill1 = (const u8(*)[64])Port_ResolveRomData(0x08349d74u);
+            p_sMissileHudGfx_Refill2 = (const u8(*)[64])Port_ResolveRomData(0x08349db4u);
+            p_sMissileHudGfx_Refill3 = (const u8(*)[64])Port_ResolveRomData(0x08349d74u);
+            p_sSuperMissileHudGfx_Inactive = (const u8(*)[64])Port_ResolveRomData(0x08349e34u);
+            p_sSuperMissileHudGfx_Selected = (const u8(*)[64])Port_ResolveRomData(0x08349e74u);
+            p_sSuperMissileHudGfx_Active = (const u8(*)[64])Port_ResolveRomData(0x08349eb4u);
+            p_sSuperMissileHudGfx_Refill1 = (const u8(*)[64])Port_ResolveRomData(0x08349ef4u);
+            p_sSuperMissileHudGfx_Refill2 = (const u8(*)[64])Port_ResolveRomData(0x08349f34u);
+            p_sSuperMissileHudGfx_Refill3 = (const u8(*)[64])Port_ResolveRomData(0x08349ef4u);
+            p_sPowerBombHudGfx_Inactive = (const u8(*)[64])Port_ResolveRomData(0x08349fb4u);
+            p_sPowerBombHudGfx_Selected = (const u8(*)[64])Port_ResolveRomData(0x08349ff4u);
+            p_sPowerBombHudGfx_Active = (const u8(*)[64])Port_ResolveRomData(0x0834a034u);
+            p_sPowerBombHudGfx_Refill1 = (const u8(*)[64])Port_ResolveRomData(0x0834a074u);
+            p_sPowerBombHudGfx_Refill2 = (const u8(*)[64])Port_ResolveRomData(0x0834a0b4u);
+            p_sPowerBombHudGfx_Refill3 = (const u8(*)[64])Port_ResolveRomData(0x0834a074u);
+            p_sEnergyDigitsTensGfx = (const u8(*)[10*32])Port_ResolveRomData(0x0834a134u);
+            p_sEnergyDigitsOnesGfx = (const u8(*)[10*32])Port_ResolveRomData(0x0834a274u);
+            p_sEnergyDigitsRefill1Gfx = (const u8(*)[20*32])Port_ResolveRomData(0x0834a3b4u);
+            p_sEnergyDigitsRefill2Gfx = (const u8(*)[20*32])Port_ResolveRomData(0x0834a634u);
+            p_sEnergyDigitsRefill3Gfx = (const u8(*)[20*32])Port_ResolveRomData(0x0834a3b4u);
+            p_sEnergyTanksGfx_Zero = (const u8(*)[160*1])Port_ResolveRomData(0x0834ab34u);
+            p_sEnergyTanksGfx_One = (const u8(*)[160*2])Port_ResolveRomData(0x0834abd4u);
+            p_sEnergyTanksGfx_Two = (const u8(*)[160*3])Port_ResolveRomData(0x0834ad14u);
+            p_sEnergyTanksGfx_Three = (const u8(*)[160*4])Port_ResolveRomData(0x0834aef4u);
+            p_sEnergyTanksGfx_Four = (const u8(*)[160*5])Port_ResolveRomData(0x0834b174u);
+            p_sEnergyTanksGfx_Five = (const u8(*)[160*6])Port_ResolveRomData(0x0834b494u);
+            p_sEnergyTanksGfx_Six = (const u8(*)[160*7])Port_ResolveRomData(0x0834b854u);
+            p_sEnergyTanksGfx_Seven = (const u8(*)[160*8])Port_ResolveRomData(0x0834bcb4u);
+            p_sEnergyTanksGfx_Eight = (const u8(*)[160*9])Port_ResolveRomData(0x0834c1b4u);
+            p_sEnergyTanksGfx_Nine = (const u8(*)[160*10])Port_ResolveRomData(0x0834c754u);
+            p_sEnergyTanksGfx_Ten = (const u8(*)[160*11])Port_ResolveRomData(0x0834cd94u);
+            p_sEnergyTanksGfx_Eleven = (const u8(*)[160*12])Port_ResolveRomData(0x0834d474u);
+            p_sEnergyTanksGfx_Twelve = (const u8(*)[160*13])Port_ResolveRomData(0x0834dbf4u);
+            p_sEnergyTanksRefillGfx_One = (const u8(*)[160*3])Port_ResolveRomData(0x0834e414u);
+            p_sEnergyTanksRefillGfx_Two = (const u8(*)[160*3])Port_ResolveRomData(0x0834e5f4u);
+            p_sEnergyTanksRefillGfx_Three = (const u8(*)[160*3])Port_ResolveRomData(0x0834e7d4u);
+            p_sEnergyTanksRefillGfx_Four = (const u8(*)[160*3])Port_ResolveRomData(0x0834e9b4u);
+            p_sEnergyTanksRefillGfx_Five = (const u8(*)[160*3])Port_ResolveRomData(0x0834eb94u);
+            p_sEnergyTanksRefillGfx_Six = (const u8(*)[160*3])Port_ResolveRomData(0x0834ed74u);
+            p_sEnergyTanksRefillGfx_Seven = (const u8(*)[160*3])Port_ResolveRomData(0x0834ef54u);
+            p_sEnergyTanksRefillGfx_Eight = (const u8(*)[160*3])Port_ResolveRomData(0x0834f134u);
+            p_sEnergyTanksRefillGfx_Nine = (const u8(*)[160*3])Port_ResolveRomData(0x0834f314u);
+            p_sEnergyTanksRefillGfx_Ten = (const u8(*)[160*3])Port_ResolveRomData(0x0834f4f4u);
+            p_sEnergyTanksRefillGfx_Eleven = (const u8(*)[160*3])Port_ResolveRomData(0x0834f6d4u);
+            p_sEnergyTanksRefillGfx_Twelve = (const u8(*)[160*3])Port_ResolveRomData(0x0834f8b4u);
+            p_sSuitlessHudChargeBarGfx = (const u8(*)[SUITLESS_BAR_NBR_ELEMS*SUITLESS_BAR_SIZE])Port_ResolveRomData(0x0834fa94u);
+            break;
+        }
         default:
             break;
     }

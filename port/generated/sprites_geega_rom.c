@@ -41,6 +41,15 @@ void PortGen_geega_Init(void) {
             p_sGeegaOam_Moving = (const struct FrameData(*)[9])Port_ResolveRomData(0x082fdad4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGeegaGfx = (const u32(*)[153])Port_ResolveRomData(0x08316d04u);
+            p_sGeegaPal = (const u16(*)[16])Port_ResolveRomData(0x08316f68u);
+            p_sGeegaWhiteGfx = (const u32(*)[153])Port_ResolveRomData(0x08316d04u);
+            p_sGeegaWhitePal = (const u16(*)[16])Port_ResolveRomData(0x083171ecu);
+            p_sGeegaOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x0831723cu);
+            p_sGeegaOam_Moving = (const struct FrameData(*)[9])Port_ResolveRomData(0x08317264u);
+            break;
+        }
         default:
             break;
     }

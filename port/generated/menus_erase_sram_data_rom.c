@@ -122,6 +122,35 @@ void PortGen_erase_sram_data_Init(void) {
             p_sEraseSramMenuOam = (const struct OamArray(*)[ERASE_SRAM_OAM_ID_COUNT])Port_ResolveRomData(0x08415484u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sEraseSramMenuObjectsPal = (const u16(*)[7*16])Port_ResolveRomData(0x084340c4u);
+            p_sEraseSramMenuBackgroundPal = (const u16(*)[15*16-1])Port_ResolveRomData(0x084341a4u);
+            p_sEraseSramMenuObjectsGfx = (const u32(*)[477])Port_ResolveRomData(0x08434700u);
+            p_sEraseSramMenuFirstBoxGfx = (const u32(*)[118])Port_ResolveRomData(0x08434e74u);
+            p_sEraseSramMenuConfirmJapaneseGfx = (const u32(*)[245])Port_ResolveRomData(0x0843504cu);
+            p_sEraseSramMenuConfirmEnglishGfx = (const u32(*)[191])Port_ResolveRomData(0x08435420u);
+            p_sEraseSramMenuConfirmFrenchGfx = (const u32(*)[209])Port_ResolveRomData(0x0843571cu);
+            p_sEraseSramMenuConfirmGermanGfx = (const u32(*)[222])Port_ResolveRomData(0x08435a60u);
+            p_sEraseSramMenuConfirmItalianGfx = (const u32(*)[201])Port_ResolveRomData(0x08435dd8u);
+            p_sEraseSramMenuConfirmSpanishGfx = (const u32(*)[204])Port_ResolveRomData(0x084360fcu);
+            p_sEraseSramMenuQuestionJapaneseGfx = (const u32(*)[245])Port_ResolveRomData(0x0843642cu);
+            p_sEraseSramMenuQuestionEnglishGfx = (const u32(*)[185])Port_ResolveRomData(0x08436800u);
+            p_sEraseSramMenuQuestionFrenchGfx = (const u32(*)[187])Port_ResolveRomData(0x08436ae4u);
+            p_sEraseSramMenuQuestionGermanGfx = (const u32(*)[205])Port_ResolveRomData(0x08436dd0u);
+            p_sEraseSramMenuQuestionItalianGfx = (const u32(*)[221])Port_ResolveRomData(0x08437104u);
+            p_sEraseSramMenuQuestionSpanishGfx = (const u32(*)[208])Port_ResolveRomData(0x08437478u);
+            p_sEraseSramMenuBoxTileTable = (const u32(*)[137])Port_ResolveRomData(0x084371bcu);
+            p_sEraseSramMenuBackgroundTileTable = (const u32(*)[368])Port_ResolveRomData(0x084373e0u);
+            p_sEraseSramQuestionWindowNoSelectedOamId = (const EraseSramOamId*)Port_ResolveRomData(0x084379a0u);
+            p_sEraseSramQuestionWindowYesSelectedOamId = (const EraseSramOamId*)Port_ResolveRomData(0x084379a1u);
+            p_sEraseSramConfirmWindowNoSelectedOamId = (const EraseSramOamId*)Port_ResolveRomData(0x084379a2u);
+            p_sEraseSramConfirmWindowYesSelectedOamId = (const EraseSramOamId*)Port_ResolveRomData(0x084379a3u);
+            p_sEraseSramMenuSoundsId = (const u16(*)[ERASE_SRAM_SOUND_COUNT])Port_ResolveRomData(0x084379a4u);
+            p_sEraseSramMenuCursorPosition = (const u16(*)[2][2])Port_ResolveRomData(0x084379aeu);
+            p_sEraseSramMenuCursorPositionOffset = (const u16(*)[ERASE_SRAM_OPTION_COUNT][2])Port_ResolveRomData(0x084379b6u);
+            p_sEraseSramMenuOam = (const struct OamArray(*)[ERASE_SRAM_OAM_ID_COUNT])Port_ResolveRomData(0x084379c8u);
+            break;
+        }
         default:
             break;
     }

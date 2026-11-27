@@ -43,6 +43,15 @@ void PortGen_samus_in_blue_ship_data_Init(void) {
             p_sSamusInBlueShipSamusTileTable = (const u32(*)[368])Port_ResolveRomData(0x083fc98cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSamusInBlueShipPageData = (const struct CutscenePageData(*)[1])Port_ResolveRomData(0x084103f8u);
+            p_sSamusInBlueShipOam = (const struct OamArray(*)[3])Port_ResolveRomData(0x08410404u);
+            p_sSamusInBlueShipPal = (const u16(*)[9*16])Port_ResolveRomData(0x08410d70u);
+            p_sSamusInBlueShipSamusGfx = (const u32(*)[3641])Port_ResolveRomData(0x08410e90u);
+            p_sSamusInBlueShipControlsGfx = (const u32(*)[1642])Port_ResolveRomData(0x08414774u);
+            p_sSamusInBlueShipSamusTileTable = (const u32(*)[368])Port_ResolveRomData(0x0841611cu);
+            break;
+        }
         default:
             break;
     }

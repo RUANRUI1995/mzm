@@ -178,6 +178,42 @@ void PortGen_crocomire_Init(void) {
             p_sCrocomirePartOam_3070b8 = (const struct FrameData(*)[6])Port_ResolveRomData(0x08307114u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sCrocomireMultiSpriteData_Idle = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x0831d7c0u);
+            p_sCrocomireMultiSpriteData_WalkingForward = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x0831d7d8u);
+            p_sCrocomireMultiSpriteData_WalkingBackwards = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x0831d7f0u);
+            p_sCrocomireMultiSpriteData_Screaming = (const struct MultiSpriteData(*)[3])Port_ResolveRomData(0x0831d808u);
+            p_sCrocomireMultiSpriteData_Dying = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x0831d820u);
+            p_sCrocomireMultiSpriteData_Angry = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x0831d830u);
+            p_sCrocomireGfx = (const u32(*)[1954])Port_ResolveRomData(0x0831d840u);
+            p_sCrocomirePal = (const u16(*)[128])Port_ResolveRomData(0x0831f6c8u);
+            p_sCrocomirePartOam_BodyIdle = (const struct FrameData(*)[5])Port_ResolveRomData(0x0832032cu);
+            p_sCrocomirePartOam_BodyAngry = (const struct FrameData(*)[5])Port_ResolveRomData(0x08320354u);
+            p_sCrocomireOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x0832037cu);
+            p_sCrocomireOam_Screaming = (const struct FrameData(*)[9])Port_ResolveRomData(0x083203a4u);
+            p_sCrocomireOam_Dying = (const struct FrameData(*)[3])Port_ResolveRomData(0x083203ecu);
+            p_sCrocomirePartOam_RightArmIdle = (const struct FrameData(*)[5])Port_ResolveRomData(0x08320404u);
+            p_sCrocomirePartOam_LeftArmIdle = (const struct FrameData(*)[5])Port_ResolveRomData(0x0832042cu);
+            p_sCrocomirePartOam_LeftArmScreaming = (const struct FrameData(*)[3])Port_ResolveRomData(0x08320454u);
+            p_sCrocomirePartOam_RightArmWalkingForward = (const struct FrameData(*)[18])Port_ResolveRomData(0x0832046cu);
+            p_sCrocomirePartOam_LeftArmWalkingForward = (const struct FrameData(*)[18])Port_ResolveRomData(0x083204fcu);
+            p_sCrocomirePartOam_RightArmWalkingBackwards = (const struct FrameData(*)[18])Port_ResolveRomData(0x0832058cu);
+            p_sCrocomirePartOam_LeftArmWalkingBackwards = (const struct FrameData(*)[18])Port_ResolveRomData(0x0832061cu);
+            p_sCrocomirePartOam_RightArmDying = (const struct FrameData(*)[3])Port_ResolveRomData(0x083206acu);
+            p_sCrocomirePartOam_LeftArmDying = (const struct FrameData(*)[3])Port_ResolveRomData(0x083206c4u);
+            p_sCrocomirePartOam_LegsIdle = (const struct FrameData(*)[3])Port_ResolveRomData(0x083206dcu);
+            p_sCrocomirePartOam_LegsWalkingForward = (const struct FrameData(*)[8])Port_ResolveRomData(0x083206f4u);
+            p_sCrocomirePartOam_LegsWalkingBackwards = (const struct FrameData(*)[9])Port_ResolveRomData(0x08320734u);
+            p_sCrocomirePartOam_LegsDying = (const struct FrameData(*)[7])Port_ResolveRomData(0x0832077cu);
+            p_sCrocomirePartOam_Tongue = (const struct FrameData(*)[5])Port_ResolveRomData(0x083207b4u);
+            p_sCrocomirePartOam_TongueDying = (const struct FrameData(*)[5])Port_ResolveRomData(0x083207dcu);
+            p_sCrocomireProjectileOam = (const struct FrameData(*)[2])Port_ResolveRomData(0x08320804u);
+            p_sCrocomirePartOam_307028 = (const struct FrameData(*)[6])Port_ResolveRomData(0x08320814u);
+            p_sCrocomirePartOam_307058 = (const struct FrameData(*)[6])Port_ResolveRomData(0x08320844u);
+            p_sCrocomirePartOam_307088 = (const struct FrameData(*)[6])Port_ResolveRomData(0x08320874u);
+            p_sCrocomirePartOam_3070b8 = (const struct FrameData(*)[6])Port_ResolveRomData(0x083208a4u);
+            break;
+        }
         default:
             break;
     }

@@ -73,6 +73,23 @@ void PortGen_atomic_Init(void) {
             p_sAtomicElectricityOam_Charging = (const struct FrameData(*)[12])Port_ResolveRomData(0x082f7c8cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sAtomicIdleYMovement = (const s16(*)[65])Port_ResolveRomData(0x0830ffe8u);
+            p_sAtomicIdleXMovement = (const s16(*)[81])Port_ResolveRomData(0x0831006au);
+            p_sAtomicGfx = (const u32(*)[752])Port_ResolveRomData(0x0831010cu);
+            p_sAtomicPal = (const u16(*)[64])Port_ResolveRomData(0x08310cccu);
+            p_sAtomicOam_Idle = (const struct FrameData(*)[13])Port_ResolveRomData(0x08311184u);
+            p_sAtomicElectricityOam_MovingVertical = (const struct FrameData(*)[13])Port_ResolveRomData(0x083111ecu);
+            p_sAtomicElectricityOam_MovingVertical_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x08311254u);
+            p_sAtomicElectricityOam_MovingDiagonal = (const struct FrameData(*)[13])Port_ResolveRomData(0x0831127cu);
+            p_sAtomicElectricityOam_MovingDiagonal_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x083112e4u);
+            p_sAtomicElectricityOam_MovingHorizontal = (const struct FrameData(*)[13])Port_ResolveRomData(0x0831130cu);
+            p_sAtomicElectricityOam_MovingHorizontal_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x08311374u);
+            p_sAtomicElectricityOam_ExplodingNonDiagonal = (const struct FrameData(*)[8])Port_ResolveRomData(0x0831139cu);
+            p_sAtomicElectricityOam_ExplodingDiagonal = (const struct FrameData(*)[8])Port_ResolveRomData(0x083113dcu);
+            p_sAtomicElectricityOam_Charging = (const struct FrameData(*)[12])Port_ResolveRomData(0x0831141cu);
+            break;
+        }
         default:
             break;
     }

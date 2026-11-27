@@ -49,6 +49,17 @@ void PortGen_rinka_Init(void) {
             p_sRinkaGreenOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ee74cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRinkaOrangeGfx = (const u32(*)[242])Port_ResolveRomData(0x08307524u);
+            p_sRinkaOrangePal = (const u16(*)[16])Port_ResolveRomData(0x083078ecu);
+            p_sRinkaGreenGfx = (const u32(*)[242])Port_ResolveRomData(0x08307524u);
+            p_sRinkaGreenPal = (const u16(*)[16])Port_ResolveRomData(0x08307cd4u);
+            p_sRinkaOrangeOam_Spawning = (const struct FrameData(*)[16])Port_ResolveRomData(0x08307d54u);
+            p_sRinkaOrangeOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x08307dd4u);
+            p_sRinkaGreenOam_Spawning = (const struct FrameData(*)[16])Port_ResolveRomData(0x08307e5cu);
+            p_sRinkaGreenOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x08307edcu);
+            break;
+        }
         default:
             break;
     }

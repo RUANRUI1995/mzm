@@ -65,6 +65,21 @@ void PortGen_boss_statues_Init(void) {
             p_sRidleyStatueOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x08317684u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sBossStatuesGfx = (const u32(*)[2388])Port_ResolveRomData(0x0832daf0u);
+            p_sBossStatuesPal = (const u16(*)[128])Port_ResolveRomData(0x08330040u);
+            p_sKraidStatueOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x083309f4u);
+            p_sKraidStatueOam_Activating = (const struct FrameData(*)[13])Port_ResolveRomData(0x08330a04u);
+            p_sKraidStatueOam_Activated = (const struct FrameData(*)[7])Port_ResolveRomData(0x08330a6cu);
+            p_sKraidStatueOam_Opening = (const struct FrameData(*)[43])Port_ResolveRomData(0x08330aa4u);
+            p_sKraidStatueOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x08330bfcu);
+            p_sRidleyStatueOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x08330c0cu);
+            p_sRidleyStatueOam_Activating = (const struct FrameData(*)[13])Port_ResolveRomData(0x08330c1cu);
+            p_sRidleyStatueOam_Activated = (const struct FrameData(*)[7])Port_ResolveRomData(0x08330c84u);
+            p_sRidleyStatueOam_Opening = (const struct FrameData(*)[43])Port_ResolveRomData(0x08330cbcu);
+            p_sRidleyStatueOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x08330e14u);
+            break;
+        }
         default:
             break;
     }

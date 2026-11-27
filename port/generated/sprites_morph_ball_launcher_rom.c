@@ -41,6 +41,15 @@ void PortGen_morph_ball_launcher_Init(void) {
             p_sMorphBallLauncherPartOam_Energy = (const struct FrameData(*)[9])Port_ResolveRomData(0x082de1d4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMorphBallLauncherGfx = (const u32(*)[303])Port_ResolveRomData(0x082f700cu);
+            p_sMorphBallLauncherPal = (const u16(*)[16])Port_ResolveRomData(0x082f74c8u);
+            p_sMorphBallLauncherOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f78e4u);
+            p_sMorphBallLauncherOam_Launching = (const struct FrameData(*)[9])Port_ResolveRomData(0x082f790cu);
+            p_sMorphBallLauncherPartOam_Back = (const struct FrameData(*)[2])Port_ResolveRomData(0x082f7954u);
+            p_sMorphBallLauncherPartOam_Energy = (const struct FrameData(*)[9])Port_ResolveRomData(0x082f7964u);
+            break;
+        }
         default:
             break;
     }

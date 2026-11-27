@@ -41,6 +41,15 @@ void PortGen_escape_gate_Init(void) {
             p_sEscapeGateOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x08326cf4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sEscapeGateAndTimerGfx = (const u8(*)[2048])Port_ResolveRomData(0x0833f978u);
+            p_sEscapeGateAndTimerPal = (const u16(*)[16])Port_ResolveRomData(0x08340178u);
+            p_sEscapeGateFlashingPal = (const u16(*)[96])Port_ResolveRomData(0x08340198u);
+            p_sEscapeGateOam_Closed = (const struct FrameData(*)[2])Port_ResolveRomData(0x083403e4u);
+            p_sEscapeGateOam_Opening = (const struct FrameData(*)[18])Port_ResolveRomData(0x083403f4u);
+            p_sEscapeGateOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x08340484u);
+            break;
+        }
         default:
             break;
     }

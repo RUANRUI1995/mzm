@@ -25,6 +25,11 @@ void PortGen_cable_link_data_Init(void) {
             p_sTransferRom = (const u8*)Port_ResolveRomData(0x087567d4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sTransferData_8754bd0 = (const u8*)Port_ResolveRomData(0x0877bbd0u);
+            p_sTransferRom = (const u8*)Port_ResolveRomData(0x0877d6c4u);
+            break;
+        }
         default:
             break;
     }

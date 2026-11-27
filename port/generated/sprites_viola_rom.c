@@ -49,6 +49,17 @@ void PortGen_viola_Init(void) {
             p_sViolaOam_MovingOffsetDown = (const struct FrameData(*)[17])Port_ResolveRomData(0x082efa6cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sViolaBlueGfx = (const u32(*)[302])Port_ResolveRomData(0x08308588u);
+            p_sViolaBluePal = (const u16(*)[16])Port_ResolveRomData(0x08308a40u);
+            p_sViolaOrangeGfx = (const u32(*)[305])Port_ResolveRomData(0x08308a60u);
+            p_sViolaOrangePal = (const u16(*)[16])Port_ResolveRomData(0x08308f24u);
+            p_sViolaOam_Moving = (const struct FrameData(*)[17])Port_ResolveRomData(0x08309064u);
+            p_sViolaOam_MovingOffsetUp = (const struct FrameData(*)[17])Port_ResolveRomData(0x083090ecu);
+            p_sViolaOam_MovingOffsetRight = (const struct FrameData(*)[17])Port_ResolveRomData(0x08309174u);
+            p_sViolaOam_MovingOffsetDown = (const struct FrameData(*)[17])Port_ResolveRomData(0x083091fcu);
+            break;
+        }
         default:
             break;
     }

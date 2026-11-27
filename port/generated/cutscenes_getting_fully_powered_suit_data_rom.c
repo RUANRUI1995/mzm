@@ -90,6 +90,27 @@ void PortGen_getting_fully_powered_suit_data_Init(void) {
             p_sGettingFullyPoweredSuitRingPal = (const u16(*)[7*16])Port_ResolveRomData(0x083ce3e8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGettingFullyPoweredSuitPageData = (const struct CutscenePageData(*)[3])Port_ResolveRomData(0x083dfbdcu);
+            p_sGettingFullyPoweredSuitPaletteData = (const struct CutscenePaletteData*)Port_ResolveRomData(0x083dfbf4u);
+            p_sGettingFullyPoweredSuitRingPaletteRows = (const u8(*)[7])Port_ResolveRomData(0x083dfbf8u);
+            p_sGettingFullyPoweredSuitRingSparklesPositions = (const u16(*)[OAM_RING_SPARKLES_AMOUNT][2])Port_ResolveRomData(0x083dfc00u);
+            p_sGettingFullyPoweredSuitUpSparklesXPositions = (const u16(*)[6])Port_ResolveRomData(0x083dfc18u);
+            p_sGettingFullyPoweredSuitCutsceneOam = (const struct OamArray(*)[GETTING_FULLY_POWERED_SUIT_OAM_ID_COUNT])Port_ResolveRomData(0x083dfc24u);
+            p_sGettingFullyPoweredSuitOam_SparkleGoingUp = (const struct FrameData(*)[7])Port_ResolveRomData(0x083dfd84u);
+            p_sGettingFullyPoweredSuitOam_SparkleAroundRing1 = (const struct FrameData(*)[11])Port_ResolveRomData(0x083dfdbcu);
+            p_sGettingFullyPoweredSuitOam_RingBottom = (const struct FrameData(*)[3])Port_ResolveRomData(0x083dfe14u);
+            p_sGettingFullyPoweredSuitOam_RingTop = (const struct FrameData(*)[3])Port_ResolveRomData(0x083dfe2cu);
+            p_sGettingFullyPoweredSuitOam_SparkleAroundRing2 = (const struct FrameData(*)[9])Port_ResolveRomData(0x083dfe44u);
+            p_sGettingFullyPoweredSuitPal = (const u16(*)[19*16])Port_ResolveRomData(0x083dfe8cu);
+            p_sGettingFullyPoweredSuitSamusGfx = (const u32(*)[2608])Port_ResolveRomData(0x083e00ecu);
+            p_sGettingFullyPoweredSuitRingSparklesGfx = (const u32(*)[646])Port_ResolveRomData(0x083e29acu);
+            p_sGettingFullyPoweredSuitSamusTileTable = (const u32(*)[387])Port_ResolveRomData(0x083e33c4u);
+            p_sGettingFullyPoweredSuitBackgroundGfx = (const u8(*)[13872])Port_ResolveRomData(0x083e39d0u);
+            p_sGettingFullyPoweredSuitBackgroundTileTable = (const u32(*)[734])Port_ResolveRomData(0x083e7000u);
+            p_sGettingFullyPoweredSuitRingPal = (const u16(*)[7*16])Port_ResolveRomData(0x083e7b78u);
+            break;
+        }
         default:
             break;
     }

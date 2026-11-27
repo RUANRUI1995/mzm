@@ -41,6 +41,15 @@ void PortGen_zeb_Init(void) {
             p_sZebOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ccab0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sZebPinkGfx = (const u32(*)[162])Port_ResolveRomData(0x082e5c9cu);
+            p_sZebPinkPal = (const u16(*)[16])Port_ResolveRomData(0x082e5f24u);
+            p_sZebBlueGfx = (const u32(*)[162])Port_ResolveRomData(0x082e5c9cu);
+            p_sZebBluePal = (const u16(*)[16])Port_ResolveRomData(0x082e61ccu);
+            p_sZebOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e6218u);
+            p_sZebOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e6240u);
+            break;
+        }
         default:
             break;
     }

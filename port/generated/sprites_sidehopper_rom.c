@@ -53,6 +53,18 @@ void PortGen_sidehopper_Init(void) {
             p_sSidehopperOam_Landing = (const struct FrameData(*)[7])Port_ResolveRomData(0x082fccd4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSidehopperHighJumpVelocity = (const s16(*)[10])Port_ResolveRomData(0x08315c34u);
+            p_sSidehopperLowJumpVelocity = (const s16(*)[10])Port_ResolveRomData(0x08315c48u);
+            p_sSidehopperGfx = (const u32(*)[303])Port_ResolveRomData(0x08315c5cu);
+            p_sSidehopperPal = (const u16(*)[16])Port_ResolveRomData(0x08316118u);
+            p_sSidehopperOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x083163a4u);
+            p_sSidehopperOam_ShakingHead = (const struct FrameData(*)[9])Port_ResolveRomData(0x083163ccu);
+            p_sSidehopperOam_JumpWarning = (const struct FrameData(*)[6])Port_ResolveRomData(0x08316414u);
+            p_sSidehopperOam_Jumping = (const struct FrameData(*)[4])Port_ResolveRomData(0x08316444u);
+            p_sSidehopperOam_Landing = (const struct FrameData(*)[7])Port_ResolveRomData(0x08316464u);
+            break;
+        }
         default:
             break;
     }

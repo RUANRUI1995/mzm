@@ -95,6 +95,25 @@ void PortGen_mother_brain_Init(void) {
             p_sMotherBrainPartOam_EyeClosing = (const struct FrameData(*)[4])Port_ResolveRomData(0x082fab50u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMotherBrainMultiSpriteData = (const struct MultiSpriteData(*)[7])Port_ResolveRomData(0x08311b90u);
+            p_sMotherBrainDynamicPaletteData = (const u8(*)[19][2])Port_ResolveRomData(0x08311bc8u);
+            p_sMotherBrainGfx = (const u32(*)[1871])Port_ResolveRomData(0x08311bf0u);
+            p_sMotherBrainPal = (const u16(*)[96])Port_ResolveRomData(0x0831392cu);
+            p_sMotherBrainOam_Idle = (const struct FrameData(*)[12])Port_ResolveRomData(0x08314038u);
+            p_sMotherBrainOam_ChargingBeam = (const struct FrameData(*)[5])Port_ResolveRomData(0x08314098u);
+            p_sMotherBrainPartOam_EyeClosed = (const struct FrameData(*)[12])Port_ResolveRomData(0x083140c0u);
+            p_sMotherBrainPartOam_2fa934 = (const struct FrameData(*)[5])Port_ResolveRomData(0x08314120u);
+            p_sMotherBrainPartOam_EyeOpening = (const struct FrameData(*)[5])Port_ResolveRomData(0x08314148u);
+            p_sMotherBrainPartOam_2fa984 = (const struct FrameData(*)[8])Port_ResolveRomData(0x08314170u);
+            p_sMotherBrainPartOam_EyeDying = (const struct FrameData(*)[5])Port_ResolveRomData(0x083141b0u);
+            p_sMotherBrainPartOam_Bottom = (const struct FrameData(*)[7])Port_ResolveRomData(0x083141d8u);
+            p_sMotherBrainPartOam_BeamSpawning = (const struct FrameData(*)[5])Port_ResolveRomData(0x08314210u);
+            p_sMotherBrainBeamOam_Moving = (const struct FrameData(*)[3])Port_ResolveRomData(0x08314238u);
+            p_sMotherBrainGlassBreakingOam_Breaking = (const struct FrameData(*)[18])Port_ResolveRomData(0x08314250u);
+            p_sMotherBrainPartOam_EyeClosing = (const struct FrameData(*)[4])Port_ResolveRomData(0x083142e0u);
+            break;
+        }
         default:
             break;
     }

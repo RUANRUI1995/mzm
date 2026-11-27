@@ -57,6 +57,19 @@ void PortGen_unknown_item_block_Init(void) {
             p_sUnknownItemBlockLightOam_Idle = (const struct FrameData(*)[3])Port_ResolveRomData(0x0831a58cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sPlasmaBeamBlockGfx = (const u32(*)[306])Port_ResolveRomData(0x08332b58u);
+            p_sPlasmaBeamBlockPal = (const u16(*)[16])Port_ResolveRomData(0x08333020u);
+            p_sGravityBlockGfx = (const u32(*)[303])Port_ResolveRomData(0x08333040u);
+            p_sGravityBlockPal = (const u16(*)[16])Port_ResolveRomData(0x083334fcu);
+            p_sSpaceJumpBlockGfx = (const u32(*)[297])Port_ResolveRomData(0x0833351cu);
+            p_sSpaceJumpBlockPal = (const u16(*)[16])Port_ResolveRomData(0x083339c0u);
+            p_sUnknownItemBlockOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x08333c7cu);
+            p_sUnknownItemBlockOam_Activated = (const struct FrameData(*)[7])Port_ResolveRomData(0x08333c8cu);
+            p_sUnknownItemBlockOam_Exploding = (const struct FrameData(*)[11])Port_ResolveRomData(0x08333cc4u);
+            p_sUnknownItemBlockLightOam_Idle = (const struct FrameData(*)[3])Port_ResolveRomData(0x08333d1cu);
+            break;
+        }
         default:
             break;
     }

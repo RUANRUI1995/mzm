@@ -45,6 +45,16 @@ void PortGen_ripper_Init(void) {
             p_sRipperOam_TurningAroundPart2 = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cc0e4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRipperBrownGfx = (const u32(*)[141])Port_ResolveRomData(0x082e5358u);
+            p_sRipperBrownPal = (const u16(*)[16])Port_ResolveRomData(0x082e558cu);
+            p_sRipperPurpleGfx = (const u32(*)[141])Port_ResolveRomData(0x082e55acu);
+            p_sRipperPurplePal = (const u16(*)[16])Port_ResolveRomData(0x082e57e0u);
+            p_sRipperOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e5834u);
+            p_sRipperOam_TurningAround = (const struct FrameData(*)[3])Port_ResolveRomData(0x082e585cu);
+            p_sRipperOam_TurningAroundPart2 = (const struct FrameData(*)[3])Port_ResolveRomData(0x082e5874u);
+            break;
+        }
         default:
             break;
     }

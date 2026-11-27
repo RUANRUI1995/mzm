@@ -47,6 +47,16 @@ void PortGen_statue_opening_data_Init(void) {
             p_sStatueOpening_3effc8 = (const u32(*)[242])Port_ResolveRomData(0x083f0024u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sStatueOpeningPageData = (const struct CutscenePageData(*)[3])Port_ResolveRomData(0x08406c84u);
+            p_sStatueOpening_Padding3ed4b0 = (const u8(*)[4])Port_ResolveRomData(0x08406c9cu);
+            p_sStatueOpeningOam = (const struct OamArray(*)[STATUE_OPENING_OAM_ID_COUNT])Port_ResolveRomData(0x08406ca0u);
+            p_sStatueOpeningPal = (const u16(*)[8*16])Port_ResolveRomData(0x08406ce8u);
+            p_sStatueOpeningRoomGfx = (const u32(*)[2357])Port_ResolveRomData(0x08406de8u);
+            p_sStatueOpeningRoomTileTable = (const u32(*)[318])Port_ResolveRomData(0x084092bcu);
+            p_sStatueOpening_3effc8 = (const u32(*)[242])Port_ResolveRomData(0x084097b4u);
+            break;
+        }
         default:
             break;
     }

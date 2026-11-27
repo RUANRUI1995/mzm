@@ -53,6 +53,18 @@ void PortGen_area_banner_Init(void) {
             p_sAreaBannerOam_RemovingBottom = (const struct FrameData(*)[8])Port_ResolveRomData(0x082f8360u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sAreaBannerGfx = (const u32(*)[65])Port_ResolveRomData(0x0831147cu);
+            p_sAreaBannerPal = (const u16(*)[16])Port_ResolveRomData(0x08311580u);
+            p_sAreaBannerLocationTextPal = (const u16(*)[16])Port_ResolveRomData(0x083115a0u);
+            p_sAreaBannerOam_StaticMiddle = (const struct FrameData(*)[2])Port_ResolveRomData(0x08311a00u);
+            p_sAreaBannerOam_SpawnMiddle = (const struct FrameData(*)[9])Port_ResolveRomData(0x08311a10u);
+            p_sAreaBannerOam_RemovingMiddle = (const struct FrameData(*)[9])Port_ResolveRomData(0x08311a58u);
+            p_sAreaBannerOam_StaticBottom = (const struct FrameData(*)[2])Port_ResolveRomData(0x08311aa0u);
+            p_sAreaBannerOam_SpawnBottom = (const struct FrameData(*)[8])Port_ResolveRomData(0x08311ab0u);
+            p_sAreaBannerOam_RemovingBottom = (const struct FrameData(*)[8])Port_ResolveRomData(0x08311af0u);
+            break;
+        }
         default:
             break;
     }

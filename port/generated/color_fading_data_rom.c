@@ -31,6 +31,12 @@ void PortGen_color_fading_data_Init(void) {
             p_sColorFadingColorInfo = (const struct ColorFadingColorInfo(*)[5])Port_ResolveRomData(0x0834602cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sDoorTransitionTilemap = (const u8(*)[184])Port_ResolveRomData(0x0837e76cu);
+            p_sColorFadingData = (const struct ColorFadingData(*)[COLOR_FADING_COUNT])Port_ResolveRomData(0x0835f4ecu);
+            p_sColorFadingColorInfo = (const struct ColorFadingColorInfo(*)[5])Port_ResolveRomData(0x0835f7bcu);
+            break;
+        }
         default:
             break;
     }

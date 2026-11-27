@@ -87,6 +87,26 @@ void PortGen_ridley_spawn_data_Init(void) {
             p_sRidleySpawnSamusFaceTileTable = (const u32(*)[189])Port_ResolveRomData(0x083c06b0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRidleySpawnOam_RidleyFlying_Frame0 = (const u16(*)[13])Port_ResolveRomData(0x083cf5b4u);
+            p_sRidleySpawnOam_RidleyScreaming_Frame0 = (const u16(*)[13])Port_ResolveRomData(0x083cf5ceu);
+            p_sRidleySpawnOam_RidleyFlyingReflection_Frame0 = (const u16(*)[22])Port_ResolveRomData(0x083cf576u);
+            p_sRidleySpawnPageData = (const struct CutscenePageData(*)[4])Port_ResolveRomData(0x083cf4e4u);
+            p_sRidleySpawnOam = (const struct OamArray(*)[RIDLEY_SPAWN_OAM_ID_COUNT])Port_ResolveRomData(0x083cf534u);
+            p_sRidleySpawnOam_Samus = (const struct FrameData(*)[2])Port_ResolveRomData(0x083cf5a4u);
+            p_sRidleySpawnSamusPal = (const u16(*)[3*16])Port_ResolveRomData(0x083cf600u);
+            p_sRidleySpawnSamusVariaPal = (const u16(*)[3*16])Port_ResolveRomData(0x083cf660u);
+            p_sRidleySpawnBackgroundPal = (const u16(*)[13*16])Port_ResolveRomData(0x083cf6c0u);
+            p_sRidleySpawnRidleyScreamingPal = (const u16(*)[1*16])Port_ResolveRomData(0x083cf860u);
+            p_sRidleySpawnBackgroundGfx = (const u32(*)[2830])Port_ResolveRomData(0x083cf880u);
+            p_sRidleySpawnSamusAndRidleyGfx = (const u32(*)[2215])Port_ResolveRomData(0x083d24b8u);
+            p_sRidleySpawnSamusHelmetFaceGfx = (const u32(*)[3164])Port_ResolveRomData(0x083d4754u);
+            p_sRidleySpawnScreamingGfx = (const u32(*)[1663])Port_ResolveRomData(0x083d78c4u);
+            p_sRidleySpawnBackgroundTileTable = (const u32(*)[368])Port_ResolveRomData(0x083d92c0u);
+            p_sRidleySpawnSamusHelmetTileTable = (const u32(*)[368])Port_ResolveRomData(0x083d9880u);
+            p_sRidleySpawnSamusFaceTileTable = (const u32(*)[189])Port_ResolveRomData(0x083d9e40u);
+            break;
+        }
         default:
             break;
     }

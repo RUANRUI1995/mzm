@@ -58,6 +58,19 @@ void PortGen_worker_robot_Init(void) {
             p_sWorkerRobotOam_WakingUp = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e7c68u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sWorkerRobotGfx = (const u32(*)[376])Port_ResolveRomData(0x083008d4u);
+            p_sWorkerRobotPal = (const u16(*)[32])Port_ResolveRomData(0x08300eb4u);
+            p_sWorkerRobotOam_Walking = (const struct FrameData(*)[9])Port_ResolveRomData(0x083012d0u);
+            p_sWorkerRobotOam_WalkingBackwards = (const struct FrameData(*)[9])Port_ResolveRomData(0x08301318u);
+            p_sWorkerRobotOam_Standing = (const struct FrameData(*)[2])Port_ResolveRomData(0x08301360u);
+            p_sWorkerRobotOam_BackToSleep = (const struct FrameData(*)[9])Port_ResolveRomData(0x08301370u);
+            p_sWorkerRobotOam_Sleeping = (const struct FrameData(*)[2])Port_ResolveRomData(0x083013b8u);
+            p_sWorkerRobotOam_GoingToSleep = (const struct FrameData(*)[3])Port_ResolveRomData(0x083013c8u);
+            p_sWorkerRobotOam_TurningAround = (const struct FrameData(*)[3])Port_ResolveRomData(0x083013e0u);
+            p_sWorkerRobotOam_WakingUp = (const struct FrameData(*)[9])Port_ResolveRomData(0x083013f8u);
+            break;
+        }
         default:
             break;
     }

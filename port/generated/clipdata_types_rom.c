@@ -33,6 +33,13 @@ void PortGen_clipdata_types_Init(void) {
             p_sCommonTilesMothershipGfx = (const u8(*)[4096])Port_ResolveRomData(0x085da51cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sClipdataCollisionTypes = (const u8(*)[CLIPDATA_COUNT])Port_ResolveRomData(0x08600404u);
+            p_sClipdataBehaviorTypes = (const u16(*)[CLIPDATA_COUNT])Port_ResolveRomData(0x086004b4u);
+            p_sCommonTilesGfx = (const u8(*)[4096])Port_ResolveRomData(0x08600614u);
+            p_sCommonTilesMothershipGfx = (const u8(*)[4096])Port_ResolveRomData(0x08601614u);
+            break;
+        }
         default:
             break;
     }

@@ -45,6 +45,16 @@ void PortGen_searchlight_eye_Init(void) {
             p_sSearchlightEyeOam_Shooting = (const struct FrameData(*)[4])Port_ResolveRomData(0x083076b8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSearchlightEyeGfx = (const u32(*)[177])Port_ResolveRomData(0x083208d4u);
+            p_sSearchlightEyePal = (const u16(*)[16])Port_ResolveRomData(0x08320b98u);
+            p_sSearchlightEyeOam_Idle = (const struct FrameData(*)[13])Port_ResolveRomData(0x08320d60u);
+            p_sSearchlightEyeBeamOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x08320dc8u);
+            p_sSearchlightEyeBeamOam_Unused = (const struct FrameData(*)[2])Port_ResolveRomData(0x08320df0u);
+            p_sSearchlightEyeProjectileOam_Moving = (const struct FrameData(*)[9])Port_ResolveRomData(0x08320e00u);
+            p_sSearchlightEyeOam_Shooting = (const struct FrameData(*)[4])Port_ResolveRomData(0x08320e48u);
+            break;
+        }
         default:
             break;
     }

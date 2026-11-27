@@ -29,6 +29,12 @@ void PortGen_imago_larva_right_side_Init(void) {
             p_sImagoLarvaRightSideOam = (const struct FrameData(*)[35])Port_ResolveRomData(0x082ff990u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sImagoLarvaRightSideGfx = (const u32(*)[592])Port_ResolveRomData(0x08318410u);
+            p_sImagoLarvaRightSidePal = (const u16(*)[32])Port_ResolveRomData(0x08318d50u);
+            p_sImagoLarvaRightSideOam = (const struct FrameData(*)[35])Port_ResolveRomData(0x08319120u);
+            break;
+        }
         default:
             break;
     }

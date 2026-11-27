@@ -167,6 +167,46 @@ void PortGen_kraid_rising_data_Init(void) {
             p_sKraidRisingCaveBackgroundTileTable = (const u32(*)[370])Port_ResolveRomData(0x083747b0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sKraidRisingPagesData = (const struct CutscenePageData(*)[4])Port_ResolveRomData(0x08385690u);
+            p_sKraidRisingScreenShakeData = (const struct CutsceneScreenShakeInfo*)Port_ResolveRomData(0x083856b0u);
+            p_sKraidRisingScrollingInfo = (const struct CutsceneScrollingInfo*)Port_ResolveRomData(0x083856b4u);
+            p_sKraidRisingCutsceneOam = (const struct OamArray(*)[KRAID_RISING_OAM_ID_COUNT])Port_ResolveRomData(0x083856bcu);
+            p_sKraidRisingOam_Samus_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083856e4u);
+            p_sKraidRisingOam_Samus_Frame1 = (const u16(*)[4])Port_ResolveRomData(0x083856ecu);
+            p_sKraidRisingOam_Debris_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x083856f4u);
+            p_sKraidRisingOam_Debris_Frame1 = (const u16(*)[4])Port_ResolveRomData(0x083856fcu);
+            p_sKraidRisingOam_Debris_Frame2 = (const u16(*)[4])Port_ResolveRomData(0x08385704u);
+            p_sKraidRisingOam_Debris_Frame3 = (const u16(*)[4])Port_ResolveRomData(0x0838570cu);
+            p_sKraidRisingOam_SmallPuff_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x08385714u);
+            p_sKraidRisingOam_SmallPuff_Frame1 = (const u16(*)[4])Port_ResolveRomData(0x0838571cu);
+            p_sKraidRisingOam_SmallPuff_Frame2 = (const u16(*)[4])Port_ResolveRomData(0x08385724u);
+            p_sKraidRisingOam_SmallPuff_Frame3 = (const u16(*)[4])Port_ResolveRomData(0x0838572cu);
+            p_sKraidRisingOam_BigPuff_Frame0 = (const u16(*)[4])Port_ResolveRomData(0x08385734u);
+            p_sKraidRisingOam_BigPuff_Frame1 = (const u16(*)[4])Port_ResolveRomData(0x0838573cu);
+            p_sKraidRisingOam_BigPuff_Frame2 = (const u16(*)[4])Port_ResolveRomData(0x08385744u);
+            p_sKraidRisingOam_BigPuff_Frame3 = (const u16(*)[4])Port_ResolveRomData(0x0838574cu);
+            p_sKraidRisingOam_Samus = (const struct FrameData(*)[3])Port_ResolveRomData(0x08385754u);
+            p_sKraidRisingOam_Debris = (const struct FrameData(*)[5])Port_ResolveRomData(0x0838576cu);
+            p_sKraidRisingOam_SmallPuff = (const struct FrameData(*)[5])Port_ResolveRomData(0x08385794u);
+            p_sKraidRisingOam_BigPuff = (const struct FrameData(*)[5])Port_ResolveRomData(0x083857bcu);
+            p_sKraidRisingCloseUpPal = (const u16(*)[5*16])Port_ResolveRomData(0x083857e4u);
+            p_sKraidRisingSamusPal = (const u16(*)[1*16])Port_ResolveRomData(0x08385884u);
+            p_sKraidRisingParticlesPal = (const u16(*)[1*16])Port_ResolveRomData(0x083858a4u);
+            p_sKraidRisingSamusVariaPal = (const u16(*)[1*16])Port_ResolveRomData(0x083858c4u);
+            p_sKraidRisingRisingPal = (const u16(*)[7*16])Port_ResolveRomData(0x083858e4u);
+            p_sKraidRisingKraidCloseUpGfx = (const u32(*)[3087])Port_ResolveRomData(0x083859c4u);
+            p_sKraidRisingOamGfx = (const u32(*)[753])Port_ResolveRomData(0x08388a00u);
+            p_sKraidRisingKraidRisingGfx = (const u32(*)[1609])Port_ResolveRomData(0x083895c4u);
+            p_sKraidRisingCaveBackgroundGfx = (const u32(*)[1327])Port_ResolveRomData(0x0838aee8u);
+            p_sKraidRisingKraidCloseUpEyesClosedTileTable = (const u32(*)[368])Port_ResolveRomData(0x0838c3a4u);
+            p_sKraidRisingKraidCloseUpEyesBarelyOpenedTileTable = (const u32(*)[368])Port_ResolveRomData(0x0838c964u);
+            p_sKraidRisingKraidCloseUpEyesALittleOpenedTileTable = (const u32(*)[368])Port_ResolveRomData(0x0838cf24u);
+            p_sKraidRisingKraidCloseUpEyesOpenedTileTable = (const u32(*)[368])Port_ResolveRomData(0x0838d4e4u);
+            p_sKraidRisingKraidRisingTileTable = (const u32(*)[295])Port_ResolveRomData(0x0838daa4u);
+            p_sKraidRisingCaveBackgroundTileTable = (const u32(*)[370])Port_ResolveRomData(0x0838df40u);
+            break;
+        }
         default:
             break;
     }

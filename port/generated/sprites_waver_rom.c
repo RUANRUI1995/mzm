@@ -29,6 +29,12 @@ void PortGen_waver_Init(void) {
             p_sWaverOam = (const struct FrameData(*)[7])Port_ResolveRomData(0x082d8908u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sWaverGfx = (const u32(*)[289])Port_ResolveRomData(0x082f1bb0u);
+            p_sWaverPal = (const u16(*)[16])Port_ResolveRomData(0x082f2034u);
+            p_sWaverOam = (const struct FrameData(*)[7])Port_ResolveRomData(0x082f2098u);
+            break;
+        }
         default:
             break;
     }

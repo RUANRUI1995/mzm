@@ -197,6 +197,54 @@ void PortGen_space_pirate_Init(void) {
             p_sSpacePirateCarryingPowerBombOam = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e49ccu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSpacePirateWallJumpingVelocity = (const s16(*)[8])Port_ResolveRomData(0x082fa80cu);
+            p_sSpacePirate_2e1030 = (const s16(*)[11])Port_ResolveRomData(0x082fa81cu);
+            p_sSpacePirateJumpingVelocity = (const s16(*)[10])Port_ResolveRomData(0x082fa832u);
+            p_sSpacePirate_2e105a = (const s16(*)[11])Port_ResolveRomData(0x082fa846u);
+            p_sSpacePirate_2e1070 = (const s16(*)[12])Port_ResolveRomData(0x082fa85cu);
+            p_sSpacePirateGfx = (const u32(*)[810])Port_ResolveRomData(0x082fa874u);
+            p_sSpacePiratePal = (const u16(*)[48])Port_ResolveRomData(0x082fb51cu);
+            p_sSpacePirateOam_Crouched = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdae4u);
+            p_sSpacePirateOam_Walking = (const struct FrameData(*)[9])Port_ResolveRomData(0x082fdb0cu);
+            p_sSpacePirateOam_ChargingLaserForward = (const struct FrameData(*)[8])Port_ResolveRomData(0x082fdb54u);
+            p_sSpacePirateLaserOam_Forward = (const struct FrameData(*)[4])Port_ResolveRomData(0x082fdb94u);
+            p_sSpacePirateOam_TurningAroundFirstPart = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdbb4u);
+            p_sSpacePirateOam_TurningAroundSecondPart = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdbdcu);
+            p_sSpacePirateOam_StandingMotionless_Unused = (const struct FrameData(*)[2])Port_ResolveRomData(0x082fdc04u);
+            p_sSpacePirateOam_ShootingForward = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdc14u);
+            p_sSpacePirateOam_Jumping = (const struct FrameData(*)[8])Port_ResolveRomData(0x082fdc3cu);
+            p_sSpacePirateOam_ChargingLaserDiagonallyDown = (const struct FrameData(*)[8])Port_ResolveRomData(0x082fdc7cu);
+            p_sSpacePirateOam_Falling = (const struct FrameData(*)[2])Port_ResolveRomData(0x082fdcbcu);
+            p_sSpacePirateOam_Landing = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdcccu);
+            p_sSpacePirateOam_ShootingDiagonallyDown = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdcf4u);
+            p_sSpacePirateOam_LookingUpwards_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdd1cu);
+            p_sSpacePirateOam_ChargingLaserDiagonallyUp = (const struct FrameData(*)[8])Port_ResolveRomData(0x082fdd44u);
+            p_sSpacePirateOam_ShootingDiagonallyUp = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdd84u);
+            p_sSpacePirateOam_ClimbingUp = (const struct FrameData(*)[9])Port_ResolveRomData(0x082fddacu);
+            p_sSpacePirateOam_ClimbingDown = (const struct FrameData(*)[9])Port_ResolveRomData(0x082fddf4u);
+            p_sSpacePirateOam_StartingToCrawl = (const struct FrameData(*)[6])Port_ResolveRomData(0x082fde3cu);
+            p_sSpacePirateOam_Crawling = (const struct FrameData(*)[9])Port_ResolveRomData(0x082fde6cu);
+            p_sSpacePirateOam_StandingUp = (const struct FrameData(*)[6])Port_ResolveRomData(0x082fdeb4u);
+            p_sSpacePirateOam_TurningAroundWhileCrawlingFirstPart = (const struct FrameData(*)[6])Port_ResolveRomData(0x082fdee4u);
+            p_sSpacePirateOam_TurningAroundWhileCrawlingSecondPart = (const struct FrameData(*)[6])Port_ResolveRomData(0x082fdf14u);
+            p_sSpacePirateOam_CrawlingStopped = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdf44u);
+            p_sSpacePirateOam_TurningToAimWhileClimbing = (const struct FrameData(*)[4])Port_ResolveRomData(0x082fdf6cu);
+            p_sSpacePirateOam_AimingWhileClimbing = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdf8cu);
+            p_sSpacePirateOam_ClimbingChargingLaserForward = (const struct FrameData(*)[3])Port_ResolveRomData(0x082fdfb4u);
+            p_sSpacePirateOam_ClimbingShootingForward = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdfccu);
+            p_sSpacePirateOam_ClimbingRetractingAim = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fdff4u);
+            p_sSpacePirateOam_LaunchingFromWall = (const struct FrameData(*)[4])Port_ResolveRomData(0x082fe01cu);
+            p_sSpacePirateOam_JumpingFromWall = (const struct FrameData(*)[4])Port_ResolveRomData(0x082fe03cu);
+            p_sSpacePirateLaserOam_Diagonal = (const struct FrameData(*)[4])Port_ResolveRomData(0x082fe05cu);
+            p_sSpacePirateOam_Standing = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fe07cu);
+            p_sSpacePirateOam_StandingAlerted = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fe0a4u);
+            p_sSpacePirateOam_OnWallIdle_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fe0ccu);
+            p_sSpacePirateLaserOam_Exploding = (const struct FrameData(*)[8])Port_ResolveRomData(0x082fe0f4u);
+            p_sSpacePirateOam_LookingAtCamera_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fe134u);
+            p_sSpacePirateCarryingPowerBombOam = (const struct FrameData(*)[9])Port_ResolveRomData(0x082fe15cu);
+            break;
+        }
         default:
             break;
     }

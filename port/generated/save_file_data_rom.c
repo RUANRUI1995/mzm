@@ -92,6 +92,27 @@ void PortGen_save_file_data_Init(void) {
             p_sSectionInfo = (const struct SectionInfo*)Port_ResolveRomData(0x08411580u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMetZeroSramCheck_Text = (const u8(*)[SRAM_TEXT_SIZE])Port_ResolveRomData(0x08433f9cu);
+            p_sZERO_MISSION_010_Text = (const u8(*)[SRAM_TEXT_SIZE])Port_ResolveRomData(0x08433facu);
+            p_sPlanetZebes_Text = (const u8(*)[SRAM_TEXT_SIZE])Port_ResolveRomData(0x08433fbcu);
+            p_sSamusAran_Text = (const u8(*)[SRAM_TEXT_SIZE])Port_ResolveRomData(0x08433fccu);
+            p_sJpnVer_Text = (const u8(*)[20])Port_ResolveRomData(0x08433fdcu);
+            p_sEurVer_Text = (const u8(*)[20])Port_ResolveRomData(0x08433ff0u);
+            p_sUsaVer_Text = (const u8(*)[20])Port_ResolveRomData(0x08434004u);
+            p_sFileScreenOptionsUnlocked_Empty = (const struct FileScreenOptionsUnlocked*)Port_ResolveRomData(0x08434018u);
+            p_sMostRecentFileSave_Text = (const u8(*)[2][SRAM_TEXT_SIZE])Port_ResolveRomData(0x08434024u);
+            p_sSoundModeSave_Text = (const u8(*)[2][SRAM_TEXT_SIZE])Port_ResolveRomData(0x08434044u);
+            p_sLanguageSave_Text = (const u8(*)[2][SRAM_TEXT_SIZE])Port_ResolveRomData(0x08434064u);
+            p_sTimeAttackSave_Text = (const u8(*)[2][SRAM_TEXT_SIZE])Port_ResolveRomData(0x08434084u);
+            p_sATRUNED_Text = (const u8(*)[8])Port_ResolveRomData(0x084340a4u);
+            p_sDefaultButtonAssignments = (const struct ButtonAssignments*)Port_ResolveRomData(0x084340acu);
+            p_sInGameTimer_Empty = (const struct InGameTimer*)Port_ResolveRomData(0x084340b4u);
+            p_sBestCompletionTime_Empty = (const struct InGameTimer*)Port_ResolveRomData(0x084340b8u);
+            p_sUnk_411520 = (const u8(*)[4])Port_ResolveRomData(0x084340bcu);
+            p_sSectionInfo = (const struct SectionInfo*)Port_ResolveRomData(0x084340c0u);
+            break;
+        }
         default:
             break;
     }

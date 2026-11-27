@@ -91,6 +91,21 @@ void PortGen_io_transfer_data_Init(void) {
             p_sErrorString_SioStop = (const u8(*)[20])Port_ResolveRomData(0x085d92f8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sIoTransferInfo_Empty = (const struct IoTransferInfo*)Port_ResolveRomData(0x08600354u);
+            p_sPlayer4String = (const u8(*)[4])Port_ResolveRomData(0x0860036cu);
+            p_sPlayer3String = (const u8(*)[4])Port_ResolveRomData(0x08600370u);
+            p_sPlayer2String = (const u8(*)[4])Port_ResolveRomData(0x08600374u);
+            p_sPlayer1String = (const u8(*)[4])Port_ResolveRomData(0x08600378u);
+            p_sErrorString_IdOver = (const u8(*)[16])Port_ResolveRomData(0x0860037cu);
+            p_sErrorString_ChecksumError = (const u8(*)[20])Port_ResolveRomData(0x0860038cu);
+            p_sErrorString_HardwareError = (const u8(*)[20])Port_ResolveRomData(0x086003a0u);
+            p_sErrorString_SendOverflow = (const u8(*)[20])Port_ResolveRomData(0x086003b4u);
+            p_sErrorString_ReceiveOverflow = (const u8(*)[20])Port_ResolveRomData(0x086003c8u);
+            p_sErrorString_SioInternal = (const u8(*)[20])Port_ResolveRomData(0x086003dcu);
+            p_sErrorString_SioStop = (const u8(*)[20])Port_ResolveRomData(0x086003f0u);
+            break;
+        }
         default:
             break;
     }

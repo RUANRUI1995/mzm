@@ -255,6 +255,58 @@ void PortGen_kraid_Init(void) {
             p_sKraidSpikeOam = (const struct FrameData(*)[9])Port_ResolveRomData(0x082cb318u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sKraidMultiSpriteData_Rising = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x082df9dcu);
+            p_sKraidMultiSpriteData_Standing = (const struct MultiSpriteData(*)[4])Port_ResolveRomData(0x082df9ecu);
+            p_sKraidMultiSpriteData_StandingBetweenSteps = (const struct MultiSpriteData(*)[4])Port_ResolveRomData(0x082dfa0cu);
+            p_sKraidMultiSpriteData_MovingLeftFeetToRight = (const struct MultiSpriteData(*)[7])Port_ResolveRomData(0x082dfa2cu);
+            p_sKraidMultiSpriteData_MovingRightFeetToRight = (const struct MultiSpriteData(*)[7])Port_ResolveRomData(0x082dfa64u);
+            p_sKraidMultiSpriteData_MovingLeftFeetToLeft = (const struct MultiSpriteData(*)[7])Port_ResolveRomData(0x082dfa9cu);
+            p_sKraidMultiSpriteData_MovingRightFeetToLeft = (const struct MultiSpriteData(*)[7])Port_ResolveRomData(0x082dfad4u);
+            p_sKraidMultiSpriteData_Dying1 = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x082dfb0cu);
+            p_sKraidMultiSpriteData_Dying2 = (const struct MultiSpriteData(*)[2])Port_ResolveRomData(0x082dfb1cu);
+            p_sKraidGfx = (const u32(*)[2725])Port_ResolveRomData(0x082dfb2cu);
+            p_sKraidPal = (const u16(*)[128])Port_ResolveRomData(0x082e25c0u);
+            p_sKraidOam_MouthClosed = (const struct FrameData(*)[6])Port_ResolveRomData(0x082e4300u);
+            p_sKraidOam_MouthClosedBlink = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e4330u);
+            p_sKraidOam_OpeningMouth = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e4388u);
+            p_sKraidOam_MouthOpened = (const struct FrameData(*)[7])Port_ResolveRomData(0x082e43d0u);
+            p_sKraidOam_Rising = (const struct FrameData(*)[3])Port_ResolveRomData(0x082e4408u);
+            p_sKraidOam_ClosingMouth = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4420u);
+            p_sKraidPartOam_2cac5c = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e4448u);
+            p_sKraidPartOam_LeftArmIdle = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e4458u);
+            p_sKraidPartOam_LeftArmDying = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e44b0u);
+            p_sKraidPartOam_LeftArmThrowingNails = (const struct FrameData(*)[21])Port_ResolveRomData(0x082e4508u);
+            p_sKraidPartOam_2cadc4 = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e45b0u);
+            p_sKraidPartOam_RightArmIdle = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e45c0u);
+            p_sKraidPartOam_RightArmAttacking = (const struct FrameData(*)[13])Port_ResolveRomData(0x082e4618u);
+            p_sKraidPartOam_RightArmDying = (const struct FrameData(*)[13])Port_ResolveRomData(0x082e4680u);
+            p_sKraidPartOam_LeftFeetRising = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e46e8u);
+            p_sKraidPartOam_LeftFeetIdle1 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e46f8u);
+            p_sKraidPartOam_LeftFeetMovingRight = (const struct FrameData(*)[8])Port_ResolveRomData(0x082e4720u);
+            p_sKraidPartOam_LeftFeetIdle2 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4760u);
+            p_sKraidPartOam_LeftFeetMovedRight = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e4788u);
+            p_sKraidPartOam_LeftFeetMovingLeft = (const struct FrameData(*)[8])Port_ResolveRomData(0x082e47d0u);
+            p_sKraidPartOam_LeftFeetMovedLeft = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4810u);
+            p_sKraidPartOam_RightFeetRising = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e4838u);
+            p_sKraidPartOam_RightFeetIdle1 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4848u);
+            p_sKraidPartOam_RightFeetMovedRight = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e4870u);
+            p_sKraidPartOam_RightFeetIdle2 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e48b8u);
+            p_sKraidPartOam_RightFeetMovingRight = (const struct FrameData(*)[8])Port_ResolveRomData(0x082e48e0u);
+            p_sKraidPartOam_RightFeetMovedLeft = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4920u);
+            p_sKraidPartOam_RightFeetMovingLeft = (const struct FrameData(*)[8])Port_ResolveRomData(0x082e4948u);
+            p_sKraidPartOam_TopHoleLeft = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4988u);
+            p_sKraidPartOam_TopHoleRight = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e49b0u);
+            p_sKraidPartOam_MiddleHoleLeft = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e49d8u);
+            p_sKraidPartOam_MiddleHoleRight = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4a00u);
+            p_sKraidPartOam_BottomHoleLeft = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4a28u);
+            p_sKraidPartOam_BottomHoleRight = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e4a50u);
+            p_sKraidNailOam = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e4a78u);
+            p_sKraidOam_2cb29c = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e4a88u);
+            p_sKraidOam_2cb2ac = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e4a98u);
+            p_sKraidSpikeOam = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e4aa8u);
+            break;
+        }
         default:
             break;
     }

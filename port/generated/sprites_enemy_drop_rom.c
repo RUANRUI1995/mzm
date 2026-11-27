@@ -49,6 +49,17 @@ void PortGen_enemy_drop_Init(void) {
             p_sEnemyDropOam_MultipleLargeEnergySlot2 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082b286cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sEnemyDropOam_SmallEnergy = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cbf14u);
+            p_sEnemyDropOam_LargeEnergy = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cbf3cu);
+            p_sEnemyDropOam_Missile = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cbf64u);
+            p_sEnemyDropOam_SuperMissile = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cbf7cu);
+            p_sEnemyDropOam_PowerBomb = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cbf94u);
+            p_sEnemyDropOam_MultipleLargeEnergySlot1 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cbfacu);
+            p_sEnemyDropOam_MultipleLargeEnergySlot3 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cbfd4u);
+            p_sEnemyDropOam_MultipleLargeEnergySlot2 = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cbffcu);
+            break;
+        }
         default:
             break;
     }

@@ -93,6 +93,28 @@ void PortGen_deorem_Init(void) {
             p_sDeoremOam_Dying = (const struct FrameData(*)[5])Port_ResolveRomData(0x082d7b08u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sDeoremSegmentXVelocity = (const s16(*)[33])Port_ResolveRomData(0x082ef38cu);
+            p_sDeoremThornYVelocity = (const s16(*)[40])Port_ResolveRomData(0x082ef3ceu);
+            p_sDeoremGfx = (const u32(*)[1569])Port_ResolveRomData(0x082ef420u);
+            p_sDeoremPal = (const u16(*)[16*5])Port_ResolveRomData(0x082f0ca4u);
+            p_sDeoremSegmentOam_Middle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1080u);
+            p_sDeoremSegmentOam_Junction = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f10a8u);
+            p_sDeoremSegmentOam_Tail = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f10d0u);
+            p_sDeoremThornOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082f10f8u);
+            p_sDeoremEyeOam_Idle = (const struct FrameData(*)[2])Port_ResolveRomData(0x082f1108u);
+            p_sDeoremEyeOam_Pulsing = (const struct FrameData(*)[6])Port_ResolveRomData(0x082f1118u);
+            p_sDeoremOam_ClosedSlow = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1148u);
+            p_sDeoremOam_Opening = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1170u);
+            p_sDeoremOam_OpenedSlow = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1198u);
+            p_sDeoremOam_Closing = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f11c0u);
+            p_sDeoremOam_Warning = (const struct FrameData(*)[9])Port_ResolveRomData(0x082f11e8u);
+            p_sDeoremOam_GoingDown = (const struct FrameData(*)[3])Port_ResolveRomData(0x082f1230u);
+            p_sDeoremOam_OpenedFast = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1248u);
+            p_sDeoremOam_ClosedFast = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1270u);
+            p_sDeoremOam_Dying = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1298u);
+            break;
+        }
         default:
             break;
     }

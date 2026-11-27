@@ -40,6 +40,15 @@ void PortGen_default_background_data_Init(void) {
             p_sTest_Bg0_0 = (const u8(*)[504])Port_ResolveRomData(0x08365194u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sTileset_0_Bg_Gfx = (const u32(*)[949])Port_ResolveRomData(0x0837d4e4u);
+            p_sTest_Bg3 = (const u8(*)[896])Port_ResolveRomData(0x0837e3b8u);
+            p_sBackground_Empty = (const u8(*)[52])Port_ResolveRomData(0x0837e738u);
+            p_sDoorTransitionTilemap = (const u8(*)[184])Port_ResolveRomData(0x0837e76cu);
+            p_sBg3_Empty = (const u8(*)[256])Port_ResolveRomData(0x0837e824u);
+            p_sTest_Bg0_0 = (const u8(*)[504])Port_ResolveRomData(0x0837e924u);
+            break;
+        }
         default:
             break;
     }

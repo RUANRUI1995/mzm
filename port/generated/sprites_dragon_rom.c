@@ -61,6 +61,20 @@ void PortGen_dragon_Init(void) {
             p_sDragonFireballOam_Exploding = (const struct FrameData(*)[5])Port_ResolveRomData(0x082d5bd4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sDragonFireballYMovement = (const s16(*)[40])Port_ResolveRomData(0x082ee920u);
+            p_sDragonFireballOamRotation = (const s16(*)[40])Port_ResolveRomData(0x082ee970u);
+            p_sDragonGfx = (const u32(*)[512])Port_ResolveRomData(0x082ee9c0u);
+            p_sDragonPal = (const u16(*)[16*2])Port_ResolveRomData(0x082ef1c0u);
+            p_sDragonOam_Idle = (const struct FrameData(*)[4])Port_ResolveRomData(0x082ef2c4u);
+            p_sDragonOam_Warning = (const struct FrameData(*)[3])Port_ResolveRomData(0x082ef2e4u);
+            p_sDragonOam_Spitting = (const struct FrameData(*)[3])Port_ResolveRomData(0x082ef2fcu);
+            p_sDragonOam_TurningAround = (const struct FrameData(*)[3])Port_ResolveRomData(0x082ef314u);
+            p_sDragonOam_TurningAroundPart2 = (const struct FrameData(*)[3])Port_ResolveRomData(0x082ef32cu);
+            p_sDragonFireballOam_Moving = (const struct FrameData(*)[4])Port_ResolveRomData(0x082ef344u);
+            p_sDragonFireballOam_Exploding = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ef364u);
+            break;
+        }
         default:
             break;
     }

@@ -41,6 +41,15 @@ void PortGen_security_gate_Init(void) {
             p_sSecurityGateOam_Opening = (const struct FrameData(*)[18])Port_ResolveRomData(0x082e6c14u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSecurityGateGfx = (const u32(*)[122])Port_ResolveRomData(0x082fff3cu);
+            p_sSecurityGatePal = (const u16(*)[16])Port_ResolveRomData(0x08300124u);
+            p_sSecurityGateOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x083002e4u);
+            p_sSecurityGateOam_Closing = (const struct FrameData(*)[18])Port_ResolveRomData(0x083002f4u);
+            p_sSecurityGateOam_Closed = (const struct FrameData(*)[4])Port_ResolveRomData(0x08300384u);
+            p_sSecurityGateOam_Opening = (const struct FrameData(*)[18])Port_ResolveRomData(0x083003a4u);
+            break;
+        }
         default:
             break;
     }

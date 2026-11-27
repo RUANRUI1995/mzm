@@ -126,6 +126,36 @@ void PortGen_visual_effects_data_Init(void) {
             p_sParticleEscapeOam_Frame0 = (const u16(*)[OAM_DATA_SIZE(8)])Port_ResolveRomData(0x0833dff0u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sEnvEffectOam_RunningOnDustyGround = (const struct FrameData(*)[6])Port_ResolveRomData(0x08355f64u);
+            p_sEnvEffectOam_LandingOnDustyGround = (const struct FrameData(*)[8])Port_ResolveRomData(0x08355f94u);
+            p_sEnvEffectOam_TakingDamageInLava = (const struct FrameData(*)[9])Port_ResolveRomData(0x08355fd4u);
+            p_sEnvEffectOam_TakingDamageInAcid = (const struct FrameData(*)[9])Port_ResolveRomData(0x0835601cu);
+            p_sEnvEffectOam_RunningOnWetGround = (const struct FrameData(*)[6])Port_ResolveRomData(0x08356064u);
+            p_sEnvEffectOam_LandingOnWetGround = (const struct FrameData(*)[6])Port_ResolveRomData(0x08356094u);
+            p_sEnvEffectOam_GoingOutOfWater = (const struct FrameData(*)[10])Port_ResolveRomData(0x083560c4u);
+            p_sEnvEffectOam_RunningIntoWater = (const struct FrameData(*)[7])Port_ResolveRomData(0x08356114u);
+            p_sEnvEffectOam_GoingOutOfLava = (const struct FrameData(*)[10])Port_ResolveRomData(0x0835614cu);
+            p_sEnvEffectOam_RunningIntoLava = (const struct FrameData(*)[7])Port_ResolveRomData(0x0835619cu);
+            p_sEnvEffectOam_GoingOutOfAcid = (const struct FrameData(*)[11])Port_ResolveRomData(0x083561d4u);
+            p_sEnvEffectOam_RunningIntoAcid = (const struct FrameData(*)[7])Port_ResolveRomData(0x0835622cu);
+            p_sEnvEffectOam_LandingOnBubblyGround = (const struct FrameData(*)[7])Port_ResolveRomData(0x08356264u);
+            p_sEnvEffectOam_BreathingBubbles = (const struct FrameData(*)[8])Port_ResolveRomData(0x0835629cu);
+            p_sEnvEffectOam_RunningOnVeryDustyGround = (const struct FrameData(*)[12])Port_ResolveRomData(0x083562dcu);
+            p_sEnvEffectOam_LandingOnVeryDustyGround = (const struct FrameData(*)[18])Port_ResolveRomData(0x0835633cu);
+            p_sParticleSpriteSplashWaterBigOam = (const struct FrameData(*)[10])Port_ResolveRomData(0x08356cf8u);
+            p_sParticleSpriteSplashWaterHugeOam = (const struct FrameData(*)[10])Port_ResolveRomData(0x08356d48u);
+            p_sParticleSpriteSplashWaterSmallOam = (const struct FrameData(*)[7])Port_ResolveRomData(0x08356d98u);
+            p_sParticleSpriteSplashLavaBigOam = (const struct FrameData(*)[10])Port_ResolveRomData(0x08356dd0u);
+            p_sParticleSpriteSplashLavaHugeOam = (const struct FrameData(*)[10])Port_ResolveRomData(0x08356e20u);
+            p_sParticleSpriteSplashLavaSmallOam = (const struct FrameData(*)[7])Port_ResolveRomData(0x08356e70u);
+            p_sParticleSpriteSplashAcidBigOam = (const struct FrameData(*)[10])Port_ResolveRomData(0x08356ea8u);
+            p_sParticleSpriteSplashAcidHugeOam = (const struct FrameData(*)[10])Port_ResolveRomData(0x08356ef8u);
+            p_sParticleSpriteSplashAcidSmallOam = (const struct FrameData(*)[7])Port_ResolveRomData(0x08356f48u);
+            p_sEscapeTimerDigitsGfx = (const u8(*)[1024*2])Port_ResolveRomData(0x08356f80u);
+            p_sParticleEscapeOam_Frame0 = (const u16(*)[OAM_DATA_SIZE(8)])Port_ResolveRomData(0x08357780u);
+            break;
+        }
         default:
             break;
     }

@@ -51,6 +51,17 @@ void PortGen_pause_screen_sub_menus_data_Init(void) {
             p_sChozoStatueTargetPathCrateria = (const s8(*)[9][2])Port_ResolveRomData(0x0840e10cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sChozoStatueTargets = (const struct ChozoStatueTarget(*)[TARGET_COUNT])Port_ResolveRomData(0x0842fb14u);
+            p_sChozoStatueTargetConditions = (const u8(*)[TARGET_COUNT][2])Port_ResolveRomData(0x0842fbd4u);
+            p_sChozoStatueHintEvents = (const Event(*)[TARGET_COUNT])Port_ResolveRomData(0x0842fbf4u);
+            p_sChozoStatueTargetPathBrinstar = (const s8(*)[9][2])Port_ResolveRomData(0x0842fc04u);
+            p_sChozoStatueTargetPathKraid = (const s8(*)[9][2])Port_ResolveRomData(0x0842fc16u);
+            p_sChozoStatueTargetPathNorfair = (const s8(*)[9][2])Port_ResolveRomData(0x0842fc28u);
+            p_sChozoStatueTargetPathRidley = (const s8(*)[9][2])Port_ResolveRomData(0x0842fc3au);
+            p_sChozoStatueTargetPathCrateria = (const s8(*)[9][2])Port_ResolveRomData(0x0842fc4cu);
+            break;
+        }
         default:
             break;
     }

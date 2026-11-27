@@ -42,6 +42,14 @@ void PortGen_ripper2_Init(void) {
             p_sRipper2Oam_TurningAroundPart2 = (const struct FrameData(*)[3])Port_ResolveRomData(0x082cc4f4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sRipper2Gfx = (const u32(*)[212])Port_ResolveRomData(0x082e588cu);
+            p_sRipper2Pal = (const u16(*)[16])Port_ResolveRomData(0x082e5bdcu);
+            p_sRipper2Oam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e5c44u);
+            p_sRipper2Oam_TurningAround = (const struct FrameData(*)[3])Port_ResolveRomData(0x082e5c6cu);
+            p_sRipper2Oam_TurningAroundPart2 = (const struct FrameData(*)[3])Port_ResolveRomData(0x082e5c84u);
+            break;
+        }
         default:
             break;
     }

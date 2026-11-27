@@ -37,6 +37,14 @@ void PortGen_piston_Init(void) {
             p_sPistonOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e8dacu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sPistonGfx = (const u32(*)[179])Port_ResolveRomData(0x08301ddcu);
+            p_sPistonPal = (const u16(*)[16])Port_ResolveRomData(0x083020a8u);
+            p_sPistonOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x083024ccu);
+            p_sPistonOam_Opening = (const struct FrameData(*)[9])Port_ResolveRomData(0x083024f4u);
+            p_sPistonOam_Opened = (const struct FrameData(*)[2])Port_ResolveRomData(0x0830253cu);
+            break;
+        }
         default:
             break;
     }

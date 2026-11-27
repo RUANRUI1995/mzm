@@ -41,6 +41,15 @@ void PortGen_gamet_Init(void) {
             p_sGametOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e6784u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGametBlueGfx = (const u32(*)[168])Port_ResolveRomData(0x082ff8f4u);
+            p_sGametBluePal = (const u16(*)[16])Port_ResolveRomData(0x082ffb94u);
+            p_sGametRedGfx = (const u32(*)[168])Port_ResolveRomData(0x082ffbb4u);
+            p_sGametRedPal = (const u16(*)[16])Port_ResolveRomData(0x082ffe54u);
+            p_sGametOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082ffeecu);
+            p_sGametOam_Moving = (const struct FrameData(*)[5])Port_ResolveRomData(0x082fff14u);
+            break;
+        }
         default:
             break;
     }

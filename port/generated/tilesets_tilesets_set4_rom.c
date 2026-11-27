@@ -104,6 +104,31 @@ void PortGen_tilesets_set4_Init(void) {
             p_sTileset_64_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x0869afa8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sTileset_23_Gfx = (const u32(*)[2582])Port_ResolveRomData(0x086a874cu);
+            p_sTileset_24_Gfx = (const u32(*)[1770])Port_ResolveRomData(0x086aafa4u);
+            p_sTileset_25_Gfx = (const u32(*)[1744])Port_ResolveRomData(0x086acb4cu);
+            p_sTileset_76_Gfx = (const u32(*)[649])Port_ResolveRomData(0x086ae68cu);
+            p_sTileset_61_Gfx = (const u32(*)[3200])Port_ResolveRomData(0x086af0b0u);
+            p_sTileset_64_Gfx = (const u32(*)[2953])Port_ResolveRomData(0x086b22b0u);
+            p_sTileset_23_Bg_Gfx = (const u32(*)[1882])Port_ResolveRomData(0x086b50d4u);
+            p_sTileset_24_Bg_Gfx = (const u32(*)[1656])Port_ResolveRomData(0x086b6e3cu);
+            p_sTileset_25_Bg_Gfx = (const u32(*)[1893])Port_ResolveRomData(0x086b881cu);
+            p_sTileset_76_Bg_Gfx = (const u32(*)[1638])Port_ResolveRomData(0x086ba5b0u);
+            p_sTileset_23_Tilemap = (const u8(*)[3972])Port_ResolveRomData(0x086bbf48u);
+            p_sTileset_24_Tilemap = (const u8(*)[3844])Port_ResolveRomData(0x086bceccu);
+            p_sTileset_25_Tilemap = (const u8(*)[3332])Port_ResolveRomData(0x086bddd0u);
+            p_sTileset_76_Tilemap = (const u8(*)[1668])Port_ResolveRomData(0x086bead4u);
+            p_sTileset_61_Tilemap = (const u8(*)[4740])Port_ResolveRomData(0x086bf158u);
+            p_sTileset_64_Tilemap = (const u8(*)[4612])Port_ResolveRomData(0x086c03dcu);
+            p_sTileset_23_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x086c15e0u);
+            p_sTileset_24_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x086c17a0u);
+            p_sTileset_25_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x086c1960u);
+            p_sTileset_76_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x086c1b20u);
+            p_sTileset_61_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x086c1ce0u);
+            p_sTileset_64_Pal = (const u16(*)[14*16])Port_ResolveRomData(0x086c1ea0u);
+            break;
+        }
         default:
             break;
     }

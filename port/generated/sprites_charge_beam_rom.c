@@ -41,6 +41,15 @@ void PortGen_charge_beam_Init(void) {
             p_sChargeBeamGlowOam_Idle = (const struct FrameData(*)[15])Port_ResolveRomData(0x082b39e4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sChargeBeamIdleYMovement = (const s16(*)[66])Port_ResolveRomData(0x082cc998u);
+            p_sChargeBeamGfx = (const u32(*)[243])Port_ResolveRomData(0x082cca1cu);
+            p_sChargeBeamPal = (const u16(*)[16])Port_ResolveRomData(0x082ccde8u);
+            p_sChargeBeamOam_Visible = (const struct FrameData(*)[5])Port_ResolveRomData(0x082cd0e4u);
+            p_sChargeBeamOam_Spawning = (const struct FrameData(*)[13])Port_ResolveRomData(0x082cd10cu);
+            p_sChargeBeamGlowOam_Idle = (const struct FrameData(*)[15])Port_ResolveRomData(0x082cd174u);
+            break;
+        }
         default:
             break;
     }

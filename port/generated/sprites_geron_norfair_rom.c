@@ -29,6 +29,12 @@ void PortGen_geron_norfair_Init(void) {
             p_sGeronNorfairOam_Idle = (const struct FrameData(*)[11])Port_ResolveRomData(0x082fd51cu);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sGeronNorfairGfx = (const u32(*)[270])Port_ResolveRomData(0x0831649cu);
+            p_sGeronNorfairPal = (const u16(*)[16])Port_ResolveRomData(0x083168d4u);
+            p_sGeronNorfairOam_Idle = (const struct FrameData(*)[11])Port_ResolveRomData(0x08316cacu);
+            break;
+        }
         default:
             break;
     }

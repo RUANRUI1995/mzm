@@ -66,6 +66,21 @@ void PortGen_animated_graphics_data_Init(void) {
             p_sBackgroundEffectBehavior_AllBlackWhite = (const u16(*)[39][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x083600a2u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sAnimatedGraphicsEntries = (const struct AnimatedGraphicsData(*)[ANIMATED_GFX_ID_COUNT])Port_ResolveRomData(0x08379134u);
+            p_sAnimatedTilesetEntries = (const u8(*)[8][48])Port_ResolveRomData(0x08379264u);
+            p_sAnimatedPaletteTiming_Empty = (const struct AnimatedPaletteTiming*)Port_ResolveRomData(0x083793e4u);
+            p_sAnimatedPaletteEntries = (const struct AnimatedPaletteData(*)[ANIMATED_PALETTE_ID_COUNT])Port_ResolveRomData(0x083793e8u);
+            p_sBackgroundEffectColorData = (const struct BackgroundEffectColorData(*)[BACKGROUND_EFFECT_COUNT])Port_ResolveRomData(0x08379478u);
+            p_sBackgroundEffectBehavior_Lightning = (const u16(*)[34][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x083794c0u);
+            p_sBackgroundEffectBehavior_QuickFlash = (const u16(*)[12][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x0837958cu);
+            p_sBackgroundEffectBehavior_SlightYellow = (const u16(*)[21][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x083795d4u);
+            p_sBackgroundEffectBehavior_HeavyYellow = (const u16(*)[20][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x08379652u);
+            p_sBackgroundEffectBehavior_ExitZebes = (const u16(*)[30][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x083796cau);
+            p_sBackgroundEffectBehavior_IntroText = (const u16(*)[30][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x0837977eu);
+            p_sBackgroundEffectBehavior_AllBlackWhite = (const u16(*)[39][BACKGROUND_EFFECT_BEHAVIOR_FIELD_COUNT])Port_ResolveRomData(0x08379832u);
+            break;
+        }
         default:
             break;
     }

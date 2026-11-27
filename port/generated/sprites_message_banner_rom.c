@@ -53,6 +53,18 @@ void PortGen_message_banner_Init(void) {
             p_sMessageBannerOam_OneLineStatic = (const struct FrameData(*)[2])Port_ResolveRomData(0x082cbbb8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sMessageBannerGfx = (const u32(*)[139])Port_ResolveRomData(0x082e4af0u);
+            p_sMessageBannerPal = (const u16(*)[32])Port_ResolveRomData(0x082e4d1cu);
+            p_sSaveYesNoCursorOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082e51d0u);
+            p_sMessageBannerOam_TwoLinesSpawn = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e51f8u);
+            p_sMessageBannerOam_TwoLinesRemoving = (const struct FrameData(*)[11])Port_ResolveRomData(0x082e5250u);
+            p_sMessageBannerOam_TwoLinesStatic = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e52a8u);
+            p_sMessageBannerOam_OneLineSpawn = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e52b8u);
+            p_sMessageBannerOam_OneLineRemoving = (const struct FrameData(*)[9])Port_ResolveRomData(0x082e5300u);
+            p_sMessageBannerOam_OneLineStatic = (const struct FrameData(*)[2])Port_ResolveRomData(0x082e5348u);
+            break;
+        }
         default:
             break;
     }

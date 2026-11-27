@@ -34,6 +34,13 @@ void PortGen_story_text_cutscene_data_Init(void) {
             p_sStoryTextCutsceneTileTable = (const u32(*)[347])Port_ResolveRomData(0x083757b4u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sStoryTextCutscenePagesData = (const struct CutscenePageData(*)[1])Port_ResolveRomData(0x0838e508u);
+            p_sStoryTextCutsceneGfx_Unused = (const u32(*)[645])Port_ResolveRomData(0x0838e510u);
+            p_sStoryTextCutscenePal = (const u16(*)[1*16])Port_ResolveRomData(0x0838ef24u);
+            p_sStoryTextCutsceneTileTable = (const u32(*)[347])Port_ResolveRomData(0x0838ef44u);
+            break;
+        }
         default:
             break;
     }

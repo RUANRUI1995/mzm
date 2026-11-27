@@ -97,6 +97,29 @@ void PortGen_save_platform_chozodia_Init(void) {
             p_sSavePlatformChozodiaPartOam_RefillLight = (const struct FrameData(*)[9])Port_ResolveRomData(0x0830f550u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sSavePlatformChozodiaGfx = (const u32(*)[552])Port_ResolveRomData(0x08326e60u);
+            p_sSavePlatformChozodiaPal = (const u16(*)[64])Port_ResolveRomData(0x08327700u);
+            p_sSavePlatformChozodiaOam_Idle = (const struct FrameData(*)[7])Port_ResolveRomData(0x08328878u);
+            p_sSavePlatformChozodiaOam_Opening = (const struct FrameData(*)[7])Port_ResolveRomData(0x083288b0u);
+            p_sSavePlatformChozodiaOam_Opened = (const struct FrameData(*)[7])Port_ResolveRomData(0x083288e8u);
+            p_sSavePlatformChozodiaOam_Saving = (const struct FrameData(*)[7])Port_ResolveRomData(0x08328920u);
+            p_sSavePlatformChozodiaOam_IdleOff = (const struct FrameData(*)[2])Port_ResolveRomData(0x08328958u);
+            p_sSavePlatformChozodiaOam_Closing = (const struct FrameData(*)[7])Port_ResolveRomData(0x08328968u);
+            p_sSavePlatformChozodiaOam_OpenedOff = (const struct FrameData(*)[2])Port_ResolveRomData(0x083289a0u);
+            p_sSavePlatformChozodiaPartOam_TopIdle = (const struct FrameData(*)[2])Port_ResolveRomData(0x083289b0u);
+            p_sSavePlatformChozodiaPartOam_TopExtending = (const struct FrameData(*)[6])Port_ResolveRomData(0x083289c0u);
+            p_sSavePlatformChozodiaPartOam_TopExtended = (const struct FrameData(*)[2])Port_ResolveRomData(0x083289f0u);
+            p_sSavePlatformChozodiaPartOam_TopRetracting = (const struct FrameData(*)[6])Port_ResolveRomData(0x08328a00u);
+            p_sSavePlatformChozodiaPartOam_TubeSpawning = (const struct FrameData(*)[39])Port_ResolveRomData(0x08328a30u);
+            p_sSavePlatformChozodiaPartOam_TubeShadow = (const struct FrameData(*)[13])Port_ResolveRomData(0x08328b68u);
+            p_sSavePlatformChozodiaPartOam_TubeIdle = (const struct FrameData(*)[3])Port_ResolveRomData(0x08328bd0u);
+            p_sSavePlatformChozodiaPartOam_Tube_Unused = (const struct FrameData(*)[5])Port_ResolveRomData(0x08328be8u);
+            p_sSavePlatformChozodiaPartOam_TubeDespawning = (const struct FrameData(*)[17])Port_ResolveRomData(0x08328c10u);
+            p_sSavePlatformChozodiaPartOam_Ray = (const struct FrameData(*)[9])Port_ResolveRomData(0x08328c98u);
+            p_sSavePlatformChozodiaPartOam_RefillLight = (const struct FrameData(*)[9])Port_ResolveRomData(0x08328ce0u);
+            break;
+        }
         default:
             break;
     }

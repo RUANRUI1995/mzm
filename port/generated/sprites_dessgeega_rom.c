@@ -53,6 +53,18 @@ void PortGen_dessgeega_Init(void) {
             p_sDessGeegaOam_Landing = (const struct FrameData(*)[5])Port_ResolveRomData(0x082d83f8u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sDessgeegaHighJumpYVelocity = (const s16(*)[10])Port_ResolveRomData(0x082f12c0u);
+            p_sDessgeegaLowJumpYVelocity = (const s16(*)[10])Port_ResolveRomData(0x082f12d4u);
+            p_sDessgeegaGfx = (const u32(*)[270])Port_ResolveRomData(0x082f12e8u);
+            p_sDessgeegaPal = (const u16(*)[16])Port_ResolveRomData(0x082f1720u);
+            p_sDessGeegaOam_Idle = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1ac8u);
+            p_sDessGeegaOam_Screaming = (const struct FrameData(*)[12])Port_ResolveRomData(0x082f1af0u);
+            p_sDessGeegaOam_JumpWarning = (const struct FrameData(*)[4])Port_ResolveRomData(0x082f1b50u);
+            p_sDessGeegaOam_Jumping = (const struct FrameData(*)[3])Port_ResolveRomData(0x082f1b70u);
+            p_sDessGeegaOam_Landing = (const struct FrameData(*)[5])Port_ResolveRomData(0x082f1b88u);
+            break;
+        }
         default:
             break;
     }

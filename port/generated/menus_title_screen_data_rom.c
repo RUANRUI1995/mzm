@@ -111,6 +111,27 @@ void PortGen_title_screen_data_Init(void) {
             p_sTitleScreenRomInfoRegionJPN = (const u8(*)[4])Port_ResolveRomData(0x0844f104u);
             break;
         }
+        case PORT_ROM_REGION_CN: {
+            p_sTitleScreenPal = (const u16(*)[15*16])Port_ResolveRomData(0x08468a90u);
+            p_sTitleScreenPromptPal = (const u16(*)[5*16])Port_ResolveRomData(0x08468c70u);
+            p_sTitleScreenTitleGfx = (const u32(*)[1095])Port_ResolveRomData(0x08468e08u);
+            p_sTitleScreenSparklesGfx = (const u32(*)[256])Port_ResolveRomData(0x08469f98u);
+            p_sTitleScreenSpaceBackgroundGfx = (const u32(*)[3203])Port_ResolveRomData(0x0846a398u);
+            p_sTitleScreenSpaceBackgroundDecorationGfx = (const u32(*)[797])Port_ResolveRomData(0x0846d5a4u);
+            p_sTitleScreenSpaceAndGroundBackgroundGfx = (const u32(*)[1920])Port_ResolveRomData(0x0846e218u);
+            p_sTitleScreenTitleTileTable = (const u32*)Port_ResolveRomData(0x08470018u);
+            p_sTitleScreenSpaceBackgroundTileTable = (const u32(*)[702])Port_ResolveRomData(0x08470344u);
+            p_sTitleScreenRomInfoPosition = (const u8(*)[4])Port_ResolveRomData(0x08470e30u);
+            p_sTitleScreenRomInfoTime = (const u8(*)[12])Port_ResolveRomData(0x08470e34u);
+            p_sTitleScreenPageData = (const struct TitleScreenPageData(*)[2])Port_ResolveRomData(0x08470e4cu);
+            p_sTitleScreenTopSparkleBaseOam = (const struct MenuOamData*)Port_ResolveRomData(0x08470e64u);
+            p_sTitleScreenBottomSparkleBaseOam = (const struct MenuOamData*)Port_ResolveRomData(0x08470e74u);
+            p_sTitleScreenOam = (const struct OamArray(*)[TITLE_SCREEN_OAM_ID_COUNT])Port_ResolveRomData(0x08470e84u);
+            p_sTitleScreenRomInfoRegionUSA = (const u8(*)[4])Port_ResolveRomData(0x08470e40u);
+            p_sTitleScreenRomInfoRegionEUR = (const u8(*)[4])Port_ResolveRomData(0x08470e44u);
+            p_sTitleScreenRomInfoRegionJPN = (const u8(*)[4])Port_ResolveRomData(0x08470e48u);
+            break;
+        }
         default:
             break;
     }

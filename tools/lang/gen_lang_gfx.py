@@ -635,6 +635,10 @@ def main():
             return bytes(buf)
 
         sheets = {region: load(region, parts) for region in regions}
+        # spec['pad_to']: bytes; the patch also writes tiles past the end of
+        # the graphic (free VRAM the game leaves unused)
+        if "pad_to" in spec:
+            sheets = {r: d + bytes(max(0, spec["pad_to"] - len(d))) for r, d in sheets.items()}
         rspecs = {region: region_spec(spec, region, addrs) for region in regions}
         # one patch per distinct English graphic and set of words; regions
         # that have the same share it

@@ -128,13 +128,25 @@ static void RunOps(const PortLangGfxPatch* patch, u8* dst, const u8* const* shee
     }
 }
 
+static void ApplyPatch(PortLangGfxId id, void* dstAddr, bool onlyWhenActive);
+
 void Port_LangGfx_Apply(PortLangGfxId id, void* dstAddr)
+{
+    ApplyPatch(id, dstAddr, true);
+}
+
+void Port_LangGfx_ApplyAlways(PortLangGfxId id, void* dstAddr)
+{
+    ApplyPatch(id, dstAddr, false);
+}
+
+static void ApplyPatch(PortLangGfxId id, void* dstAddr, bool onlyWhenActive)
 {
     const PortLangGfxPatch* patch;
     u8* dst;
     u8* snap;
 
-    if (!Port_Lang_Active() || (u32)id >= PORT_LANG_GFX_COUNT)
+    if ((onlyWhenActive && !Port_Lang_Active()) || (u32)id >= PORT_LANG_GFX_COUNT)
         return;
     if (gRomRegion == PORT_ROM_REGION_EU)
         patch = &gPortLangGfxPtBr_EU[id];

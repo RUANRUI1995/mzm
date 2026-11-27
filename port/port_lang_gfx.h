@@ -29,6 +29,7 @@ typedef enum PortLangGfxId {
     PORT_LANG_GFX_NEW_RECORD,
     PORT_LANG_GFX_ERASE_QUESTION,
     PORT_LANG_GFX_ERASE_CONFIRM,
+    PORT_LANG_GFX_LANGUAGE_SELECT,
 
     PORT_LANG_GFX_COUNT
 } PortLangGfxId;
@@ -88,3 +89,7 @@ typedef struct PortLangGfxPatch {
 /* Patch the English graphic `id` the game just decompressed to `dst` (a GBA
  * address or host pointer), when a port language is active. */
 void Port_LangGfx_Apply(PortLangGfxId id, void* dst);
+
+/* The same whatever language is picked, for graphics that offer the port
+ * languages themselves (the language select's extra entry). */
+void Port_LangGfx_ApplyAlways(PortLangGfxId id, void* dst);

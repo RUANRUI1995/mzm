@@ -1136,6 +1136,52 @@ static void GetRoms_erase_confirm(const void** out)
     out[1] = (const void*)sEraseSramMenuQuestionGermanGfx;
 }
 
+static const PortLangGfxSlot sSlots_language_select[] = {
+    { 2, 6, 0, { 0, 32 } }, /* EN */
+    { 2, 7, 0, { 6, 38 } }, /* DE */
+    { 2, 7, 0, { 13, 45 } }, /* FR */
+    { 2, 6, 0, { 20, 52 } }, /* IT */
+    { 2, 6, 0, { 26, 58 } }, /* ES */
+    { 2, 8, 0, { 65, 73 } }, /* PT */
+};
+static const u8 sGlyphs_language_select[] = {
+    0xFF, 0xFF, 0x11, 0x11, 0x11, 0x11, 0xF1, 0xFF, 0xFF, 0xFF, 0x41, 0x44, 0x44, 0x44, 0xF1, 0xFF,
+    0xFF, 0xFF, 0x41, 0x11, 0x14, 0x11, 0xF1, 0xFF, 0xFF, 0xFF, 0x41, 0x11, 0x14, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0x41, 0x11, 0x14, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x41, 0x44, 0x14, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xFF, 0x11, 0x11, 0x11, 0xFF, 0xFF, 0xFF,
+};
+static const u16 sOps_language_select[] = {
+    PLG_FILL, 5, 0, 0, 47, 64, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_GLYPH, 5, 0, 0, 7, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 6, 3, 40, 7, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 12, 2, 8, 6, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 17, 1, 22, 6, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 22, 1, 15, 7, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 28, 0, 15, 7, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 34, 1, 15, 7, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 40, 1, 8, 7, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 42, 3, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 43, 3, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 44, 3, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 41, 4, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 42, 4, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 43, 4, 4, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 44, 4, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 45, 4, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 41, 5, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 42, 5, 4, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 43, 5, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 44, 5, 4, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 45, 5, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 41, 6, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 42, 6, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 43, 6, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 44, 6, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_PIXEL, 5, 45, 6, 1, 0, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_COPY, 5, 46, 0, 28, 7, 0xFFFF, 0xFFFF, 0xFFFF,
+    PLG_END
+};
+
 const PortLangGfxPatch gPortLangGfxPtBr_EU[PORT_LANG_GFX_COUNT] = {
     [PORT_LANG_GFX_EQUIPMENT_NAMES] = { 5120, sSlots_equipment_names, sGlyphs_equipment_names, NULL, sOps_equipment_names, 0, 0, NULL, NULL, NULL },
     [PORT_LANG_GFX_MENU_NAMES] = { 704, sSlots_menu_names, sGlyphs_menu_names, NULL, sOps_menu_names, 0, 0, NULL, NULL, NULL },
@@ -1150,4 +1196,5 @@ const PortLangGfxPatch gPortLangGfxPtBr_EU[PORT_LANG_GFX_COUNT] = {
     [PORT_LANG_GFX_NEW_RECORD] = { 3072, sSlots_new_record, NULL, NULL, sOps_new_record, 1, 1, sParts_new_record, sExtraSizes_new_record, GetRoms_new_record },
     [PORT_LANG_GFX_ERASE_QUESTION] = { 4096, sSlots_erase_question, sGlyphs_erase_question, NULL, sOps_erase_question, 2, 2, sParts_erase_question, sExtraSizes_erase_question, GetRoms_erase_question },
     [PORT_LANG_GFX_ERASE_CONFIRM] = { 4096, sSlots_erase_confirm, sGlyphs_erase_confirm, NULL, sOps_erase_confirm, 2, 2, sParts_erase_confirm, sExtraSizes_erase_confirm, GetRoms_erase_confirm },
+    [PORT_LANG_GFX_LANGUAGE_SELECT] = { 2592, sSlots_language_select, sGlyphs_language_select, NULL, sOps_language_select, 0, 0, NULL, NULL, NULL },
 };

@@ -201,6 +201,7 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_lang.c \
 	$(ROOT)/port/port_lang_gfx.c \
 	$(ROOT)/port/port_lang_ending.c \
+	$(ROOT)/port/port_lang_select.c \
 	$(ROOT)/port/ppu/src/virtuappu.c \
 	$(ROOT)/port/ppu/src/mode1.c \
 	$(filter-out %_selftest.c %_test.c, $(wildcard $(ROOT)/port/generated/*.c))

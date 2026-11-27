@@ -656,4 +656,38 @@ GRAPHICS = {
             "L2@a": ("er", "Sim", {"x0": 200, "x1": 256}),
         },
     },
+    # The EU language select (soft_reset.c): "Português" is added as a sixth
+    # entry. Its letters are composed into tiles 0x41-0x50, free VRAM after
+    # the 65 tiles of sLanguageSelectGfx, and port_lang_select.c puts them in
+    # the tilemap under Español. This patch is applied whatever the language.
+    "language_select": {
+        "id": "PORT_LANG_GFX_LANGUAGE_SELECT",
+        "symbol": "sLanguageSelectGfx",
+        "pad_to": 0x51 * 32,
+        "slots": {
+            "EN": ([0x00, 0x20], 6),
+            "DE": ([0x06, 0x26], 7),
+            "FR": ([0x0D, 0x2D], 7),
+            "IT": ([0x14, 0x34], 6),
+            "ES": ([0x1A, 0x3A], 6),
+            "PT": ([0x41, 0x49], 8),
+        },
+        "fonts": {
+            "lang": {
+                "sources": [("EN", "English", None, 0, 48), ("DE", "Deutsch", None, 0, 56),
+                            ("FR", "Français", None, 0, 56), ("IT", "Italiano", None, 0, 48),
+                            ("ES", "Español", None, 0, 48)],
+                "bg_from": ("EN", 47),
+                "ink": [4],
+                "pad": 1,
+                "gap": -1,
+                "auto_outline": 1,
+                "own_top": 5,
+                # a capital P after the E and D of the list
+                "own": {"P": ["44444", "4...4", "4...4", "44444", "4....", "4....", "4...."]},
+                "accents": {"ê": ("e", (2, 4, [".4.", "4.4"]))},
+            },
+        },
+        "words": {"PT": ("lang", "Português", {"x0": 0, "x1": 64})},
+    },
 }

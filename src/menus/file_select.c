@@ -5525,6 +5525,46 @@ static void FileSelectDrawSaveFileAreaCN(u16* dst, s32 palette, s32 nameIndex)
             dst[i + 32] = palette | (u16)(tile + 0x20 + i);
     }
 }
+
+/**
+ * @brief Draws a save file's difficulty word with the Chinese glyph set
+ *
+ * The Chinese release spells the difficulties out instead of using the abbreviations the other
+ * regions have. They are 16x16 glyphs, 容易 at tile 0x1D8 and 困难 at 0x1DC, and the release
+ * draws a single wide dash at 0x1D6 for the standard difficulty. The lower halves sit 0x20
+ * tiles later, as everywhere else in this font. The row has room for seven tiles, so whatever
+ * the word does not cover is cleared.
+ *
+ * @param dst Tilemap entry of the first character's upper half
+ * @param palette Palette bits to OR into every entry
+ * @param difficulty Difficulty index, negative to clear the two rows
+ */
+static void FileSelectDrawSaveFileDifficultyCN(u16* dst, s32 palette, s32 difficulty)
+{
+    static const u16 sDifficultyTiles[3] = { 0x1D8, 0x1D6, 0x1DC };
+    s32 i;
+    s32 width;
+    u16 tile;
+
+    for (i = 0; i < 7; i++)
+        dst[i] = 0;
+    for (i = 0; i < 7; i++)
+        dst[i + 32] = 0;
+
+    if (difficulty < 0 || difficulty >= ARRAY_SIZE(sDifficultyTiles))
+        return;
+
+    tile = sDifficultyTiles[difficulty];
+    if (difficulty == DIFF_NORMAL)
+        width = 2; // 0x1D6 is one 16 pixel wide dash, not a word
+    else
+        width = 4; // two 16x16 glyphs
+
+    for (i = 0; i < width; i++)
+        dst[i] = palette | (u16)(tile + i);
+    for (i = 0; i < width; i++)
+        dst[i + 32] = palette | (u16)(tile + 0x20 + i);
+}
 #endif // MZM_3DS || PORT_NATIVE
 /**
  * @brief 7cf98 | 118 | Displays the misc. info of a file (difficulty, area, time attack)
@@ -5568,6 +5608,13 @@ static void FileSelectDisplaySaveFileMiscInfo(struct SaveFileInfo* pFile, FileSe
     dst = FILE_SELECT_EWRAM.menuTilemap;
     dst = &dst[offset + 102];
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    if (REGION_IS_CN())
+        FileSelectDrawSaveFileDifficultyCN(dst, palette,
+            (pFile->timeAttack || !(pFile->exists || pFile->introPlayed) || pFile->corruptionFlag)
+                ? -1 : pFile->difficulty);
+    else
+#endif
     if ((pFile->exists || pFile->introPlayed) && pFile->corruptionFlag == 0)
     {
         if (pFile->timeAttack)

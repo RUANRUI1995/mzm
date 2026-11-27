@@ -32,7 +32,6 @@ void PortGen_generic_data_Init(void) {
         case PORT_ROM_REGION_CN: {
             p_sSineTable = (const s16(*)[2*PI+PI_2])Port_ResolveRomData(0x080a5f08u);
             p_sRandomNumberTable = (const u8(*)[256])Port_ResolveRomData(0x080a6188u);
-            p_sIntrTable = (const Func_T(*)[13])Port_ResolveRomData(0x080a6288u);
             break;
         }
         default:

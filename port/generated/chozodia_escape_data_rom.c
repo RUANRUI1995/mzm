@@ -147,7 +147,7 @@ void PortGen_chozodia_escape_data_Init(void) {
             p_sChozodiaEscapeOam_BlueShipAngledDown_Frame0 = (const u16(*)[OAM_DATA_SIZE(2)])Port_ResolveRomData(0x085f078au);
             p_sChozodiaEscapeOam_BlueShipAngledUp_Frame0 = (const u16(*)[OAM_DATA_SIZE(3)])Port_ResolveRomData(0x085f0798u);
             p_sChozodiaEscapeOam_MotherShipDoorClosed_Frame0 = (const u16(*)[OAM_DATA_SIZE(6)])Port_ResolveRomData(0x085f07acu);
-            p_sChozodiaEscapeOam_MotherShipDoorOpening = (const struct FrameData(*)[9])Port_ResolveRomData(0x085f0c2cu);
+            p_sChozodiaEscapeOam_MotherShipDoorOpening = (const struct FrameData(*)[9])Port_ResolveRomData(0x085f0ac8u);
             p_sChozodiaEscapeOam_BlueShipFarAway_Frame0 = (const u16(*)[OAM_DATA_SIZE(1)])Port_ResolveRomData(0x085f0bbcu);
             p_sChozodiaEscapeOam_BlueShipVeryClose_Frame0 = (const u16(*)[OAM_DATA_SIZE(4)])Port_ResolveRomData(0x085f0bc4u);
             p_sChozodiaEscapeOam_MissionAccomplishedEnglish_Frame0 = (const u16(*)[OAM_DATA_SIZE(20)])Port_ResolveRomData(0x085f0d42u);

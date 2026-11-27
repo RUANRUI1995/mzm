@@ -3243,18 +3243,18 @@ void PortGen_text_data_Init(void) {
             p_sEnglishText_FileScreen_TimeAttackRecordUnlock = (const u16*)Port_ResolveRomData(0x08468932u);
             p_sEnglishText_FileScreen_SoundTestUnlock = (const u16*)Port_ResolveRomData(0x084689aeu);
             p_sEnglishText_FileScreen_NesMetroidUnlock = (const u16*)Port_ResolveRomData(0x08468a18u);
-            p_sLocationTextPointers = (const u16**(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x08787764u);
-            p_sMessageTextPointers = (const u16**(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x08787780u);
-            p_sFileScreenTextPointers = (const u16**(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x0878779cu);
-            p_sJapaneseTextPointers_Description = (const u16*(*)[DESCRIPTION_TEXT_COUNT])Port_ResolveRomData(0x087877b8u);
-            p_sJapaneseTextPointers_Story = (const u16*(*)[STORY_TEXT_COUNT])Port_ResolveRomData(0x08787804u);
-            p_sJapaneseTextPointers_FileScreen = (const u16*(*)[FILE_SCREEN_TEXT_COUNT])Port_ResolveRomData(0x0878781cu);
-            p_sHiraganaTextPointers_Description = (const u16*(*)[DESCRIPTION_TEXT_COUNT])Port_ResolveRomData(0x087878b0u);
-            p_sHiraganaTextPointers_Story = (const u16*(*)[STORY_TEXT_COUNT])Port_ResolveRomData(0x087878fcu);
-            p_sHiraganaTextPointers_FileScreen = (const u16*(*)[FILE_SCREEN_TEXT_COUNT])Port_ResolveRomData(0x08787914u);
-            p_sEnglishTextPointers_Description = (const u16*(*)[DESCRIPTION_TEXT_COUNT])Port_ResolveRomData(0x087879a8u);
-            p_sEnglishTextPointers_Story = (const u16*(*)[STORY_TEXT_COUNT])Port_ResolveRomData(0x087879f4u);
-            p_sEnglishTextPointers_FileScreen = (const u16*(*)[FILE_SCREEN_TEXT_COUNT])Port_ResolveRomData(0x08787a0cu);
+            p_sLocationTextPointers = (const u16**(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x0879f964u);
+            p_sMessageTextPointers = (const u16**(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x0879f980u);
+            p_sFileScreenTextPointers = (const u16**(*)[LANGUAGE_COUNT])Port_ResolveRomData(0x0879f99cu);
+            p_sJapaneseTextPointers_Description = (const u16*(*)[DESCRIPTION_TEXT_COUNT])Port_ResolveRomData(0x0879f9b8u);
+            p_sJapaneseTextPointers_Story = (const u16*(*)[STORY_TEXT_COUNT])Port_ResolveRomData(0x0879fa04u);
+            p_sJapaneseTextPointers_FileScreen = (const u16*(*)[FILE_SCREEN_TEXT_COUNT])Port_ResolveRomData(0x0879fa1cu);
+            p_sHiraganaTextPointers_Description = (const u16*(*)[DESCRIPTION_TEXT_COUNT])Port_ResolveRomData(0x0879fab0u);
+            p_sHiraganaTextPointers_Story = (const u16*(*)[STORY_TEXT_COUNT])Port_ResolveRomData(0x0879fafcu);
+            p_sHiraganaTextPointers_FileScreen = (const u16*(*)[FILE_SCREEN_TEXT_COUNT])Port_ResolveRomData(0x0879fb14u);
+            p_sEnglishTextPointers_Description = (const u16*(*)[DESCRIPTION_TEXT_COUNT])Port_ResolveRomData(0x0879fba8u);
+            p_sEnglishTextPointers_Story = (const u16*(*)[STORY_TEXT_COUNT])Port_ResolveRomData(0x0879fbf4u);
+            p_sEnglishTextPointers_FileScreen = (const u16*(*)[FILE_SCREEN_TEXT_COUNT])Port_ResolveRomData(0x0879fc0cu);
             break;
         }
         default:

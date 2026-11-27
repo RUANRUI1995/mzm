@@ -335,13 +335,7 @@ void PortGen_ending_and_gallery_data_Init(void) {
             p_sEndingImageOam_FullLines_Hiragana = (const struct EndingImageOam(*)[ENDING_IMAGE_LINE_COUNT])Port_ResolveRomData(0x0856e18au);
             p_sEndingImageOam_ClearTime_Hiragana = (const struct EndingImageOam(*)[6])Port_ResolveRomData(0x0856e1d2u);
             p_sEndingImageOam_Collecting_Hiragana = (const struct EndingImageOam(*)[11])Port_ResolveRomData(0x0856e21au);
-            p_sEndingImagesTopGfxPointers = (const u32* const(*)[ENDING_IMAGE_COUNT])Port_ResolveRomData(0x0856e29eu);
-            p_sEndingImagesBottomGfxPointers = (const u32* const(*)[ENDING_IMAGE_COUNT])Port_ResolveRomData(0x0856e2beu);
-            p_sEndingImagesTopTileTablePointers = (const u32* const(*)[ENDING_IMAGE_COUNT])Port_ResolveRomData(0x0856e2deu);
-            p_sEndingImagesHalfTileTablePointers = (const u32* const(*)[ENDING_IMAGE_COUNT])Port_ResolveRomData(0x0856e2feu);
-            p_sEndingImagesPalPointers = (const u16* const(*)[ENDING_IMAGE_COUNT])Port_ResolveRomData(0x0856e31eu);
             p_sCredits = (const struct CreditsEntry*)Port_ResolveRomData(0x0856e33eu);
-            p_sEndingWhitePalPointers = (const u16* const(*)[4])Port_ResolveRomData(0x085704feu);
             p_sEndingImage_54e2dc = (const u8(*)[8])Port_ResolveRomData(0x0857050eu);
             p_sEndingImageNewRecordPalettes = (const u8(*)[12])Port_ResolveRomData(0x08570516u);
             p_sCreditsCharactersGfx = (const u32*)Port_ResolveRomData(0x08570522u);

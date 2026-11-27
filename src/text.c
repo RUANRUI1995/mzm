@@ -149,6 +149,23 @@ static u32 sArray_7603b8[8] = {
  * @param charId Character
  * @return u8 Width
  */
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+u32 TextGetCharacterWidth(u16 charId)
+{
+    if (charId >= ARRAY_SIZE(sCharacterWidths))
+    {
+        /* The iQue font is two tiles per glyph: its character ids step by two
+         * and the ink runs the full sixteen pixels. The width table only
+         * covers the first 1184 ids, so every Chinese character would fall
+         * back to the ten-pixel default and the next glyph would be drawn six
+         * pixels into it. */
+        if (REGION_IS_CN())
+            return 16;
+        return 10;
+    }
+    return sCharacterWidths[charId];
+}
+#else
 u32 TextGetCharacterWidth(u16 charId)
 {
     if (charId >= ARRAY_SIZE(sCharacterWidths))
@@ -156,6 +173,7 @@ u32 TextGetCharacterWidth(u16 charId)
     else
         return sCharacterWidths[charId];
 }
+#endif
 
 /**
  * @brief 6e484 | 4b8 | Draws a character in append mode

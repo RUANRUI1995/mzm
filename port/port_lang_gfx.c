@@ -153,7 +153,11 @@ void Port_LangGfx_Apply(PortLangGfxId id, void* dstAddr)
         return;
     }
     memcpy(snap, dst, patch->size);
-    sByteSwap = Port_HostIsBigEndian() ? 1 : 0;
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    sByteSwap = 1;
+#else
+    sByteSwap = 0;
+#endif
 
     /* sheet 0: the English graphic as decompressed; 1..: extra graphics */
     {

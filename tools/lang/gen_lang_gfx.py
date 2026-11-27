@@ -315,7 +315,7 @@ def layout(word, font, avail):
         if prev_letter:
             x += font.gap
         out.append((x, ch))
-        x += font.width(ch)
+        x += font.width(ch) + font.spec.get("after", {}).get(ch, 0)
         prev_letter = True
     return out, x
 
@@ -555,6 +555,27 @@ def c_ops(name, ops, glyphs, maps, slots, extra_names):
     return lines, bool(glyph_words), bool(maps)
 
 
+def region_spec(spec, region, addrs):
+    """The spec as one region sees it: extra graphics the ROM lacks are
+    dropped, with the slots and letters taken from them, and so are words
+    whose options name other regions ('regions': [...])."""
+    import copy
+    s = copy.deepcopy(spec)
+    extra = {k: v for k, v in s.get("extra", {}).items() if all(addrs[region].get(sym) for sym, _ in v)}
+    s["extra"] = extra
+    slots = {k: v for k, v in s["slots"].items() if len(v) < 3 or v[2] in extra}
+    s["slots"] = slots
+    for font in s["fonts"].values():
+        font["sources"] = [src for src in font["sources"] if src[0] in slots]
+    words = {}
+    for key, value in s["words"].items():
+        opts = value[2] if len(value) > 2 else {}
+        if key.split("@")[0] in slots and region in opts.get("regions", [region]):
+            words[key] = value
+    s["words"] = words
+    return s
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--lang", default="pt_br")
@@ -607,21 +628,23 @@ def main():
             return bytes(buf)
 
         sheets = {region: load(region, parts) for region in regions}
-        extra_names = list(spec.get("extra", {}))
-        extras = {region: {k: load(region, v) for k, v in spec.get("extra", {}).items()} for region in regions}
-        # one patch per distinct English graphic; regions whose graphic is
-        # the same share it
+        rspecs = {region: region_spec(spec, region, addrs) for region in regions}
+        # one patch per distinct English graphic and set of words; regions
+        # that have the same share it
         variants = []  # (variant name, sheet bytes, [regions])
         for region in regions:
             for v in variants:
-                if v[1] == sheets[region]:
+                if v[1] == sheets[region] and repr(rspecs[v[2][0]]) == repr(rspecs[region]):
                     v[2].append(region)
                     break
             else:
                 vname = name if not variants else f"{name}_{region}"
                 variants.append((vname, sheets[region], [region]))
         for vname, data, vregions in variants:
-            ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(data), extras[vregions[0]])
+            spec = rspecs[vregions[0]]
+            extra_names = list(spec.get("extra", {}))
+            extras = {k: load(vregions[0], v) for k, v in spec.get("extra", {}).items()}
+            ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(data), extras)
             problems.extend(f"{p} [{'/'.join(r.upper() for r in vregions)}]" for p in probs)
             if args.preview:
                 os.makedirs(args.preview, exist_ok=True)
@@ -635,7 +658,7 @@ def main():
                 part_lines = []
                 sizes = []
                 for i, k in enumerate(extra_names):
-                    sizes.append(len(extras[vregions[0]][k]))
+                    sizes.append(len(extras[k]))
                     for sym, off in spec["extra"][k]:
                         part_lines.append(f"    {{ {i}, {len(rom_syms)}, 0x{off:X} }},")
                         rom_syms.append(sym)
@@ -653,6 +676,7 @@ def main():
             for region in vregions:
                 table.append((region, spec["id"], vname, len(data), has_glyphs, has_maps, len(extra_names),
                               sum(len(v) for v in spec.get("extra", {}).values())))
+        spec = lang_gfx.GRAPHICS[name]
         for header in spec.get("headers", []):
             if f'#include "{header}"' not in out:
                 out.insert(3, f'#include "{header}"')

@@ -443,4 +443,64 @@ GRAPHICS = {
             "L3": ("go", "NÃO (SAIR)", {"x0": 48}),
         },
     },
+    # Ending statistics, the lines the game shows once the letters have
+    # dropped in (sEndingImageText*Gfx at OBJ tile 0x80; drawn by the
+    # sEndingImageOam_Line* sprites): CLEAR TIME, YOUR RATE FOR, COLLECTING
+    # ITEMS IS. Spelt with the alphabet the same graphic carries for the
+    # dropping letters (port_lang_ending.c spells those the same way).
+    "ending_text": {
+        "id": "PORT_LANG_GFX_ENDING_TEXT",
+        "symbol": "sEndingImageTextEnglishGfx",
+        "headers": ["data/ending_and_gallery_data.h"],
+        # EU only: the Spanish and Italian versions lend the letters of
+        # "See you next mission!" the English one lacks
+        "extra": {
+            "ES": [("sEndingImageTextSpanishGfx", 0)],
+            "IT": [("sEndingImageTextItalianGfx", 0)],
+        },
+        "slots": {
+            "NEXT": ([256, 288], 18),
+            "ES_NEXT": ([256, 288], 32, "ES"),
+            "IT_NEXT": ([320, 352], 32, "IT"),
+            "CT": ([0, 32], 12),
+            "YR": ([12, 44], 16),
+            "COL": ([64, 96], 21),
+            "A1": ([128, 160], 32),
+            "A2": ([192, 224], 32),
+        },
+        "fonts": {
+            "end": {
+                "sources": [("A1", "ABCDEFGHIJLMNOPR", None, 0, 256), ("A2", "STVUXY", None, 0, 96)],
+                "bg_from": ("CT", 94),
+                "gap": -1,
+                "space": 6,
+                # the I is a single stroke: the next letter's outline would
+                # cover its right edge
+                "after": {"I": 1},
+            },
+            # "See you next mission!": a cursive font, ink 1/2 in outline 3
+            "cursive": {
+                "sources": [("NEXT", "See you next mission!", None, 0, 144),
+                            ("ES_NEXT", "¡Hasta la próxima misión!", None, 0, 170),
+                            ("IT_NEXT", "A", [(0, 10)])],
+                "bg_from": ("NEXT", 143),
+                "ink": [1, 2],
+                "pad": 1,
+                "gap": -1,
+                "space": 4,
+                "auto_outline": 3,
+                "accents": {
+                    "é": ("e", (2, 3, [".1", "1."])),
+                    "ã": ("a", (1, 3, ["11.1", "1.11"])),
+                },
+            },
+        },
+        "words": {
+            "CT": ("end", "TEMPO FINAL", {"x0": 0, "x1": 96, "align": "center"}),
+            # no YOUR RATE FOR line, as in the game's Spanish
+            "YR": ("end", "", {"x0": 0, "x1": 128}),
+            "COL": ("end", "ITENS COLETADOS", {"x0": 0, "x1": 168, "align": "center"}),
+            "NEXT": ("cursive", "Até a próxima missão!", {"x0": 0, "x1": 144, "align": "center", "regions": ["eu"]}),
+        },
+    },
 }

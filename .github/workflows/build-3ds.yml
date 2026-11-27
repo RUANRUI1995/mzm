@@ -65,3 +65,11 @@ jobs:
         run: |
           ls -l platform/3ds/mzm-3ds.cia
           test -s platform/3ds/mzm-3ds.cia
+
+      # So a change can be tried on hardware without a local devkitPro install.
+      - name: Upload the CIA
+        uses: actions/upload-artifact@v4
+        with:
+          name: mzm-3ds-cia
+          path: platform/3ds/mzm-3ds.cia
+          retention-days: 14

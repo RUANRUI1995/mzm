@@ -119,9 +119,14 @@ class Slot:
     """A rectangle of tiles: `rows` tile runs of `width` tiles each, given by
     the first tile of every run (the runs need not be adjacent in the sheet)."""
 
-    def __init__(self, firsts, width):
+    def __init__(self, firsts, width, sheet=None):
         self.firsts = list(firsts)
         self.width = width
+        # None: the graphic being patched; otherwise the name of one of the
+        # spec's 'extra' graphics (other languages' versions, read from the
+        # ROM at run time)
+        self.sheet_name = sheet
+        self.src = None
 
     @property
     def px(self):
@@ -132,6 +137,8 @@ class Slot:
         return len(self.firsts) * 8
 
     def column(self, sheet, x):
+        if self.src is not None:
+            sheet = self.src
         tile_off, cx = divmod(x, 8)
         col = []
         for first in self.firsts:
@@ -364,10 +371,13 @@ def derive_map(font, sheet, slots, src, dst, problems, name):
     return result
 
 
-def build_graphic(name, spec, sheets, fonts_spec):
+def build_graphic(name, spec, sheets, extras):
     """Return (ops, glyphs, maps, slots, pt_sheet, problems) for one graphic."""
     sheet = sheets
     slots = {k: Slot(*v) for k, v in spec["slots"].items()}
+    for slot in slots.values():
+        if slot.sheet_name is not None:
+            slot.src = Sheet(extras[slot.sheet_name])
     fonts = {k: Font(k, v, sheet, slots) for k, v in spec["fonts"].items()}
     out = Sheet(sheet.data)
     ops = []
@@ -396,13 +406,15 @@ def build_graphic(name, spec, sheets, fonts_spec):
         else:
             right = slot.px - border
         placed, width = layout(word, font, right - x0)
+        fill_x0 = x0  # the whole area is cleared, whatever the alignment
         if opts.get("align") == "center":
             x0 = max(0, x0 + (right - x0 - width) // 2)
         if x0 + width > right:
-            problems.append(f"{name}: '{word}' is {width} px, {slot_name} has {right - x0}")
+            problems.append(f"{name}: '{word}' is {width} px, {slot_name} has {right - fill_x0}")
         # background over the text area, then the letters
-        ops.append((OP_FILL, slot_name, x0, font.spec["bg_from"][0], font.spec["bg_from"][1], right - x0, mask, None))
-        for x in range(x0, right):
+        ops.append((OP_FILL, slot_name, fill_x0, font.spec["bg_from"][0], font.spec["bg_from"][1], right - fill_x0,
+                    mask, None))
+        for x in range(fill_x0, right):
             slot.put_column(out, x, font.bg, mask)
         if border:
             # the English word may run into the border: put back a clean one
@@ -493,12 +505,13 @@ def render_png(sheet, path, tiles_wide=16, scale=4):
     img.resize((img.width * scale, img.height * scale), Image.NEAREST).save(path)
 
 
-def c_ops(name, ops, glyphs, maps, slots):
+def c_ops(name, ops, glyphs, maps, slots, extra_names):
     slot_ids = {k: i for i, k in enumerate(slots)}
     lines = [f"static const PortLangGfxSlot sSlots_{name}[] = {{"]
     for k, s in slots.items():
         firsts = ", ".join(str(f) for f in s.firsts)
-        lines.append(f"    {{ {len(s.firsts)}, {s.width}, {{ {firsts} }} }}, /* {k} */")
+        sheet = 0 if s.sheet_name is None else 1 + extra_names.index(s.sheet_name)
+        lines.append(f"    {{ {len(s.firsts)}, {s.width}, {sheet}, {{ {firsts} }} }}, /* {k} */")
     lines.append("};")
     glyph_words = []
     offsets = []
@@ -574,12 +587,25 @@ def main():
         # spec['regions']: the ROMs that load this graphic (the US file
         # select, for one, draws its words from another graphic)
         regions = list(spec.get("regions", ["eu", "us"]))
-        sheets = {}
-        for region in regions:
-            addr = addrs[region].get(spec["symbol"])
-            if addr is None:
-                sys.exit(f"gen_lang_gfx: {spec['symbol']} has no {region.upper()} address")
-            sheets[region] = lz77(roms[region], addr - 0x08000000)
+        # spec['parts'] [(symbol, byte offset)]: graphics the game loads next
+        # to each other and the patch treats as one (default: 'symbol')
+        parts = spec.get("parts", [(spec.get("symbol"), 0)])
+
+        def load(region, part_list):
+            buf = bytearray()
+            for sym, off in part_list:
+                addr = addrs[region].get(sym)
+                if addr is None:
+                    sys.exit(f"gen_lang_gfx: {sym} has no {region.upper()} address")
+                data = lz77(roms[region], addr - 0x08000000)
+                if len(buf) < off + len(data):
+                    buf.extend(bytes(off + len(data) - len(buf)))
+                buf[off:off + len(data)] = data
+            return bytes(buf)
+
+        sheets = {region: load(region, parts) for region in regions}
+        extra_names = list(spec.get("extra", {}))
+        extras = {region: {k: load(region, v) for k, v in spec.get("extra", {}).items()} for region in regions}
         # one patch per distinct English graphic; regions whose graphic is
         # the same share it
         variants = []  # (variant name, sheet bytes, [regions])
@@ -592,28 +618,53 @@ def main():
                 vname = name if not variants else f"{name}_{region}"
                 variants.append((vname, sheets[region], [region]))
         for vname, data, vregions in variants:
-            ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(data), None)
+            ops, glyphs, maps, slots, result, probs = build_graphic(name, spec, Sheet(data), extras[vregions[0]])
             problems.extend(f"{p} [{'/'.join(r.upper() for r in vregions)}]" for p in probs)
             if args.preview:
                 os.makedirs(args.preview, exist_ok=True)
                 render_png(Sheet(data), os.path.join(args.preview, f"{vname}_en.png"), spec.get("preview_wide", 16))
                 render_png(result, os.path.join(args.preview, f"{vname}_{args.lang}.png"),
                            spec.get("preview_wide", 16))
-            lines, has_glyphs, has_maps = c_ops(vname, ops, glyphs, maps, slots)
+            lines, has_glyphs, has_maps = c_ops(vname, ops, glyphs, maps, slots, extra_names)
+            if extra_names:
+                # the extra graphics: their parts, sizes and ROM pointers
+                rom_syms = []
+                part_lines = []
+                sizes = []
+                for i, k in enumerate(extra_names):
+                    sizes.append(len(extras[vregions[0]][k]))
+                    for sym, off in spec["extra"][k]:
+                        part_lines.append(f"    {{ {i}, {len(rom_syms)}, 0x{off:X} }},")
+                        rom_syms.append(sym)
+                lines.append(f"static const PortLangGfxPart sParts_{vname}[] = {{")
+                lines.extend(part_lines)
+                lines.append("};")
+                lines.append(f"static const u32 sExtraSizes_{vname}[] = {{ " + ", ".join(map(str, sizes)) + " };")
+                lines.append(f"static void GetRoms_{vname}(const void** out)")
+                lines.append("{")
+                for i, sym in enumerate(rom_syms):
+                    lines.append(f"    out[{i}] = (const void*){sym};")
+                lines.append("}")
             out.extend(lines)
             out.append("")
             for region in vregions:
-                table.append((region, spec["id"], vname, len(data), has_glyphs, has_maps))
+                table.append((region, spec["id"], vname, len(data), has_glyphs, has_maps, len(extra_names),
+                              sum(len(v) for v in spec.get("extra", {}).values())))
+        for header in spec.get("headers", []):
+            if f'#include "{header}"' not in out:
+                out.insert(3, f'#include "{header}"')
 
     prefix = "gPortLangGfx" + args.lang.title().replace("_", "")
     for region in REGIONS:
         out.append(f"const PortLangGfxPatch {prefix}_{region.upper()}[PORT_LANG_GFX_COUNT] = {{")
-        for treg, gid, vname, size, has_glyphs, has_maps in table:
+        for treg, gid, vname, size, has_glyphs, has_maps, n_extra, n_parts in table:
             if treg != region:
                 continue
             glyphs = f"sGlyphs_{vname}" if has_glyphs else "NULL"
             maps = f"sMaps_{vname}" if has_maps else "NULL"
-            out.append(f"    [{gid}] = {{ {size}, sSlots_{vname}, {glyphs}, {maps}, sOps_{vname} }},")
+            extra = (f"{n_extra}, {n_parts}, sParts_{vname}, sExtraSizes_{vname}, GetRoms_{vname}" if n_extra
+                     else "0, 0, NULL, NULL, NULL")
+            out.append(f"    [{gid}] = {{ {size}, sSlots_{vname}, {glyphs}, {maps}, sOps_{vname}, {extra} }},")
         out.append("};")
         out.append("")
 

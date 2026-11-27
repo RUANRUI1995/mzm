@@ -350,4 +350,43 @@ GRAPHICS = {
             "ORIGINAL": ("opt", "METROID ORIGINAL", {"x0": 0}),
         },
     },
+    # Title screen menu: "START GAME" and "Language" (title_screen.c,
+    # sTitleScreenMenuGfxPointers; EU only). The top and bottom halves of the
+    # letters are two graphics, loaded at VRAM 0xE800 and 0xEC00. The EU ROM
+    # has the other languages' versions, so JOGAR takes its J and O from the
+    # French JOUER, and Idioma is the Spanish word as it is.
+    "title_menu": {
+        "id": "PORT_LANG_GFX_TITLE_MENU",
+        "parts": [("sTitleScreenEnglishMenuGfx_Top", 0), ("sTitleScreenEnglishMenuGfx_Bottom", 0x400)],
+        "regions": ["eu"],
+        "headers": ["data/menus/title_screen_data.h"],
+        "extra": {
+            "ES": [("sTitleScreenSpanishMenuGfx_Top", 0), ("sTitleScreenSpanishMenuGfx_Bottom", 0x400)],
+            "FR": [("sTitleScreenFrenchMenuGfx_Top", 0), ("sTitleScreenFrenchMenuGfx_Bottom", 0x400)],
+        },
+        "slots": {
+            "MENU": ([0, 32], 20),
+            "ES_MENU": ([0, 32], 20, "ES"),
+            "FR_MENU": ([0, 32], 20, "FR"),
+        },
+        "fonts": {
+            "menu": {
+                # letters: 6 columns of ink (6, 7, 1) between shared shading
+                # columns; in START the T and A touch, so it is given by hand
+                "sources": [("MENU", "START GAME", [(12, 8), (19, 8), (25, 8), (32, 8), (39, 8), (53, 8), (60, 8),
+                                                    (67, 9), (75, 8)]),
+                            ("FR_MENU", "JOUER", None, 0, 95),
+                            # the whole Spanish word Idioma, as one "letter"
+                            ("ES_MENU", "W", [(109, 38)])],
+                "bg_from": ("MENU", 90),
+                "ink": [6, 7, 1],
+                "pad": 1,
+                "gap": -1,
+            },
+        },
+        "words": {
+            "MENU@start": ("menu", "JOGAR", {"x0": 12, "x1": 84, "align": "center"}),
+            "MENU@language": ("menu", "W", {"x0": 96, "x1": 160, "align": "center"}),
+        },
+    },
 }

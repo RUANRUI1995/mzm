@@ -22,17 +22,29 @@ typedef enum PortLangGfxId {
     PORT_LANG_GFX_FILE_SELECT_LARGE,
     PORT_LANG_GFX_FILE_SELECT_DIFFICULTY,
     PORT_LANG_GFX_FILE_SELECT_OPTIONS,
+    PORT_LANG_GFX_TITLE_MENU,
 
     PORT_LANG_GFX_COUNT
 } PortLangGfxId;
 
 /* A rectangle of tiles: `rows` runs of `width` tiles, each starting at
- * first[row] (tile index in the graphic). */
+ * first[row] (tile index in the graphic). `sheet` 0 is the graphic being
+ * patched (as the game decompressed it); 1.. are the patch's extra
+ * graphics (another language's version, decompressed from the ROM). */
 typedef struct PortLangGfxSlot {
     u16 rows;
     u16 width;
+    u16 sheet;
     u16 first[4];
 } PortLangGfxSlot;
+
+/* One LZ77 graphic of the ROM making up (part of) an extra graphic:
+ * decompressed to byte `offset` of extra graphic `extra` (0-based). */
+typedef struct PortLangGfxPart {
+    u8 extra;
+    u8 rom;      /* index into what getRoms returns */
+    u16 offset;
+} PortLangGfxPart;
 
 /* Ops, eight u16 each (the stream ends with PLG_END):
  *   PLG_COPY  dst slot, dst x, src slot, src x, count, row mask, map: copy
@@ -59,6 +71,11 @@ typedef struct PortLangGfxPatch {
     const u8* glyphs;
     const u8 (*maps)[16][16];
     const u16* ops;
+    u16 extraCount;
+    u16 partCount;
+    const PortLangGfxPart* parts;
+    const u32* extraSizes;
+    void (*getRoms)(const void** out);  /* ROM pointers of the parts */
 } PortLangGfxPatch;
 
 /* Patch the English graphic `id` the game just decompressed to `dst` (a GBA

@@ -170,11 +170,11 @@ void PortGen_file_select_data_Init(void) {
             p_sFileSelectOam_SamusHeadSuitlessIdle = (const struct FrameData(*)[5])Port_ResolveRomData(0x08477a3cu);
             p_sFileSelectOam_SamusHeadSuitlessTurning = (const struct FrameData(*)[8])Port_ResolveRomData(0x08477a64u);
             p_sFileSelectChozoBackgroundGfx = (const u32(*)[2985])Port_ResolveRomData(0x08477fb8u);
-            p_sFileSelectOptionsTextEnglishGfx = (const u32(*)[345])Port_ResolveRomData(0x0847c648u);
-            p_sFileSelectOptionsTextGermanGfx = (const u32*)Port_ResolveRomData(0x0847cbacu);
-            p_sFileSelectOptionsTextFrenchGfx = (const u32*)Port_ResolveRomData(0x0847d110u);
-            p_sFileSelectOptionsTextItalianGfx = (const u32*)Port_ResolveRomData(0x0847d674u);
-            p_sFileSelectOptionsTextSpanishGfx = (const u32*)Port_ResolveRomData(0x0847dbd8u);
+            p_sFileSelectOptionsTextEnglishGfx = (const u32(*)[345])Port_ResolveRomData(0x0847c8e0u);
+            p_sFileSelectOptionsTextGermanGfx = (const u32*)Port_ResolveRomData(0x0847ce44u);
+            p_sFileSelectOptionsTextFrenchGfx = (const u32*)Port_ResolveRomData(0x0847d3a8u);
+            p_sFileSelectOptionsTextItalianGfx = (const u32*)Port_ResolveRomData(0x0847d90cu);
+            p_sFileSelectOptionsTextSpanishGfx = (const u32*)Port_ResolveRomData(0x0847de70u);
             p_sFileSelectObjIconsGfx = (const u32(*)[1722])Port_ResolveRomData(0x0847e3d4u);
             p_sFileSelectChozoBackgroundTileTable = (const u32(*)[368])Port_ResolveRomData(0x0847febcu);
             p_sFileSelectMenuTileTable = (const u32*)Port_ResolveRomData(0x0848047cu);

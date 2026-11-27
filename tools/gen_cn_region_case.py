@@ -311,6 +311,108 @@ def propagate(us, cn, us_off, cn_off, sym_by_us, out):
     return got
 
 
+def lz77_stream(buf, off, decode=False):
+    """(uncompressed length, bytes consumed) if a GBA LZ77 stream starts here.
+
+    The localisation re-drew every menu that carries words, so those graphics
+    share no bytes with the US build. What survives is the stream's own header:
+    byte 0 is 0x10 and bytes 1..3 hold the uncompressed size, which the
+    re-draw did not change (the picture is the same size, only its pixels
+    differ). Decoding the stream is what makes the header trustworthy; a
+    random 0x10 byte almost never runs to exactly the declared length.
+    """
+    if off + 4 > len(buf) or buf[off] != 0x10:
+        return None
+    n = buf[off + 1] | (buf[off + 2] << 8) | (buf[off + 3] << 16)
+    if n < 0x20 or n > 0x40000:
+        return None
+    p = off + 4
+    out = bytearray() if decode else None
+    done = 0
+    while done < n:
+        if p >= len(buf):
+            return None
+        flags = buf[p]
+        p += 1
+        for i in range(7, -1, -1):
+            if done >= n:
+                break
+            if (flags >> i) & 1:
+                if p + 1 >= len(buf):
+                    return None
+                b0, b1 = buf[p], buf[p + 1]
+                p += 2
+                length = (b0 >> 4) + 3
+                dist = (((b0 & 0xF) << 8) | b1) + 1
+                if dist > done:
+                    return None
+                if decode:
+                    for _ in range(length):
+                        out.append(out[-dist])
+                        if len(out) >= n:
+                            break
+                done += length
+            else:
+                if decode:
+                    out.append(buf[p])
+                p += 1
+                done += 1
+    return (bytes(out) if decode else n), p - off
+
+
+def lz77_index(cn, lengths):
+    """Every valid stream in the CN ROM whose output length is in `lengths`."""
+    offs = []
+    sizes = {}
+    pos = cn.find(b"\x10")
+    while pos != -1:
+        if pos + 3 < len(cn):
+            n = cn[pos + 1] | (cn[pos + 2] << 8) | (cn[pos + 3] << 16)
+            if n in lengths:
+                got = lz77_stream(cn, pos)
+                if got is not None:
+                    offs.append(pos)
+                    sizes[pos] = n
+        pos = cn.find(b"\x10", pos + 1)
+    return offs, sizes
+
+
+def place_lz77_chains(us, cn, symbols, placements, index, sizes, min_run=3):
+    """Recover the CN address of every compressed block from its neighbours.
+
+    The blocks sit back to back in the ROM, in the same order as in the US
+    build. A file's blocks therefore form one run whose sequence of output
+    sizes is a fingerprint: 47 pause-screen blocks share only seven distinct
+    sizes, yet the sequence occurs exactly once in 8 MiB.
+
+    Only a unique match is taken. Two or more means the run is not distinctive
+    enough to override a byte match, and nothing is changed.
+    """
+    by_file = {}
+    for path, _i, name, _t, off, _s in symbols:
+        got = lz77_stream(us, off)
+        if got is not None:
+            by_file.setdefault(path, []).append((off, got[0], name))
+
+    won = 0
+    for path, rows in by_file.items():
+        rows.sort()
+        if len(rows) < min_run:
+            continue
+        lens = [r[1] for r in rows]
+        hits = [i for i in range(len(index) - len(lens) + 1)
+                if all(sizes[index[i + k]] == lens[k] for k in range(len(lens)))]
+        if len(hits) != 1:
+            continue
+        base = hits[0]
+        for k, (off, _n, _name) in enumerate(rows):
+            if placements.get(off, (None, None))[1] == "table":
+                continue
+            placements[off] = (index[base + k], "lz77")
+            won += 1
+    return won
+
+
 def place_all(us, cn, items, starts, symbols, rounds=4):
     """Decide every symbol's CN offset, letting exact matches feed back."""
     sym_by_us = dict((off, name) for _p, _i, name, _t, off, _s in symbols)
@@ -368,6 +470,19 @@ def place_all(us, cn, items, starts, symbols, rounds=4):
         hit = unique_match(us, cn, off)
         if hit is not None:
             placements[off] = (hit, "unique")
+
+    # Compressed graphics last, because they are the one family no byte match
+    # can help with: the localisation re-drew every menu that carries words.
+    lengths = set()
+    for _p, _i, _n, _t, off, _s in symbols:
+        got = lz77_stream(us, off)
+        if got is not None:
+            lengths.add(got[0])
+    if lengths:
+        index, sizes = lz77_index(cn, lengths)
+        print(f"lz77 streams in the CN ROM: {len(index)}")
+        n = place_lz77_chains(us, cn, symbols, placements, index, sizes)
+        print(f"blocks located by size chain: {n}")
 
     return placements, verified
 

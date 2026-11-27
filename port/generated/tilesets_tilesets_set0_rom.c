@@ -62,7 +62,7 @@ void PortGen_tilesets_set0_Init(void) {
         }
         case PORT_ROM_REGION_CN: {
             p_sTileset_42_Gfx = (const u32(*)[736])Port_ResolveRomData(0x08602614u);
-            p_sTileset_78_Gfx = (const u32(*)[736])Port_ResolveRomData(0x08602614u);
+            p_sTileset_78_Gfx = (const u32(*)[736])Port_ResolveRomData(0x08603194u);
             p_sTileset_27_Gfx = (const u32(*)[807])Port_ResolveRomData(0x08603d14u);
             p_sTileset_42_Bg_Gfx = (const u32(*)[591])Port_ResolveRomData(0x086049b0u);
             p_sTileset_27_Bg_Gfx = (const u32(*)[1487])Port_ResolveRomData(0x086052ecu);

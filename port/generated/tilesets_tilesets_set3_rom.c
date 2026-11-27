@@ -194,7 +194,7 @@ void PortGen_tilesets_set3_Init(void) {
             p_sTileset_19_Gfx = (const u32(*)[1640])Port_ResolveRomData(0x08677a00u);
             p_sTileset_7_Bg_Gfx = (const u32(*)[1761])Port_ResolveRomData(0x086793a0u);
             p_sTileset_1_Bg_Gfx = (const u32(*)[2190])Port_ResolveRomData(0x0867af24u);
-            p_sTileset_30_Bg_Gfx = (const u32(*)[2190])Port_ResolveRomData(0x0867af24u);
+            p_sTileset_30_Bg_Gfx = (const u32(*)[2190])Port_ResolveRomData(0x0867d15cu);
             p_sTileset_15_Bg_Gfx = (const u32(*)[1196])Port_ResolveRomData(0x0867f394u);
             p_sTileset_14_Bg_Gfx = (const u32(*)[1296])Port_ResolveRomData(0x08680644u);
             p_sTileset_16_Bg_Gfx = (const u32(*)[1850])Port_ResolveRomData(0x08681a84u);

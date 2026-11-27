@@ -88,12 +88,12 @@ void PortGen_game_over_data_Init(void) {
         case PORT_ROM_REGION_CN: {
             p_sGameOverMenuPal = (const u16(*)[16*5])Port_ResolveRomData(0x08470ebcu);
             p_sGameOverTextAndBackgroundGfx = (const u32(*)[2738])Port_ResolveRomData(0x08470f5cu);
-            p_sGameOverTextPromptEnglishGfx = (const u32(*)[333])Port_ResolveRomData(0x08473a24u);
-            p_sGameOverTextPromptHiraganaGfx = (const u32(*)[428])Port_ResolveRomData(0x08473f58u);
-            p_sGameOverTextPromptGermanGfx = (const u32*)Port_ResolveRomData(0x08474608u);
-            p_sGameOverTextPromptFrenchGfx = (const u32*)Port_ResolveRomData(0x08474b50u);
-            p_sGameOverTextPromptItalianGfx = (const u32*)Port_ResolveRomData(0x08475094u);
-            p_sGameOverTextPromptSpanishGfx = (const u32*)Port_ResolveRomData(0x084755dcu);
+            p_sGameOverTextPromptEnglishGfx = (const u32(*)[333])Port_ResolveRomData(0x08473a44u);
+            p_sGameOverTextPromptHiraganaGfx = (const u32(*)[428])Port_ResolveRomData(0x08474090u);
+            p_sGameOverTextPromptGermanGfx = (const u32*)Port_ResolveRomData(0x08474814u);
+            p_sGameOverTextPromptFrenchGfx = (const u32*)Port_ResolveRomData(0x08474d64u);
+            p_sGameOverTextPromptItalianGfx = (const u32*)Port_ResolveRomData(0x0847523cu);
+            p_sGameOverTextPromptSpanishGfx = (const u32*)Port_ResolveRomData(0x084757e0u);
             p_sGameOverBackgroundTileTable = (const u32(*)[370])Port_ResolveRomData(0x08475d50u);
             p_sGameOverTextTileTable = (const u32(*)[116])Port_ResolveRomData(0x08476318u);
             p_sGameOver_454520 = (const u32(*)[160])Port_ResolveRomData(0x084764e4u);

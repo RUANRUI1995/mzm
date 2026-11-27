@@ -67,9 +67,14 @@ jobs:
           test -s platform/3ds/mzm-3ds.cia
 
       # So a change can be tried on hardware without a local devkitPro install.
+      # The ELF and map go with it: an exception screen prints a PC, and
+      # without the symbols there is no way to say which function that is.
       - name: Upload the CIA
         uses: actions/upload-artifact@v4
         with:
           name: mzm-3ds-cia
-          path: platform/3ds/mzm-3ds.cia
+          path: |
+            platform/3ds/mzm-3ds.cia
+            platform/3ds/mzm-3ds.elf
+            platform/3ds/build/mzm-3ds.lst
           retention-days: 14

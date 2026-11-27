@@ -111,7 +111,6 @@ static s8 sSaveFileAreasId[12] = {
     [10] = AREA_NONE,
     [11] = AREA_BRINSTAR
 };
-
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 // The Chinese release stores the area names in a different order than the other regions, so it
 // ships its own mapping table (CN ROM 0x0879FE40). Note these are indices into the Chinese
@@ -5404,14 +5403,13 @@ static void FileSelectDisplaySaveFileTimer(u8 file)
         number = 3;
 
     // Get destination
-    //
-    // NOTE: The Chinese release reworked this screen with one extra row per save slot, so its
-    // tilemap stride is 128 entries instead of 96. Its own menu tilemap has the three "sample"
-    // times baked in at rows 3, 7 and 11 (01:23:45 / 67:89:01 / --:--:--), and the ROM's
-    // Chinese drawing routine reaches them with `((n - 1) << 8) + 0xDC` bytes, i.e. 128 entries
-    // per slot. Writing at the stock stride left the baked text of slots B and C on screen,
-    // which showed up as an extra "67:89:01"-style row plus a stray "--:--:--" row.
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
+    // The Chinese release reworked this screen with one extra row per save slot, so its tilemap
+    // stride is 128 entries instead of 96. Its own menu tilemap has the three "sample" times
+    // baked in at rows 3, 7 and 11 (01:23:45 / 67:89:01 / --:--:--), and the ROM's Chinese
+    // drawing routine reaches them with `((n - 1) << 8) + 0xDC` bytes, i.e. 128 entries per slot.
+    // Writing at the stock stride left the baked text of slots B and C on screen, which showed
+    // up as an extra "67:89:01"-style row plus a stray "--:--:--" row.
     dst = &dst[(number - 1) * (REGION_IS_CN() ? 128 : 96) + 0x6E];
 #else
     dst = &dst[(number - 1) * 96 + 0x6E];
@@ -5491,6 +5489,43 @@ static void FileSelectDisplaySaveFileTimer(u8 file)
     }
 }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+/**
+ * @brief Draws a save file's area name with the Chinese glyph set
+ *
+ * The Chinese release keeps its area names as 8x16 glyphs instead of the single row of 8 pixel
+ * tall text the other regions use: the five tiles at the name's base hold the upper halves and
+ * the four tiles at +0x20 hold the lower halves. The names start at tile 0x140 and are five
+ * tiles apart, which is what the ROM's own routine for this screen does (0x080803BE). The
+ * index is a position in that glyph order, see sSaveFileAreasIdCN.
+ *
+ * @param dst Tilemap entry of the first character's upper half
+ * @param palette Palette bits to OR into every entry
+ * @param nameIndex Chinese area name index, negative to clear the two rows
+ */
+static void FileSelectDrawSaveFileAreaCN(u16* dst, s32 palette, s32 nameIndex)
+{
+    s32 i;
+    u16 tile;
+
+    if (nameIndex < 0)
+    {
+        for (i = 0; i < 5; i++)
+            dst[i] = 0;
+        for (i = 0; i < 4; i++)
+            dst[i + 32] = 0;
+    }
+    else
+    {
+        tile = 0x140 + nameIndex * 5;
+
+        for (i = 0; i < 5; i++)
+            dst[i] = palette | (u16)(tile + i);
+        for (i = 0; i < 4; i++)
+            dst[i + 32] = palette | (u16)(tile + 0x20 + i);
+    }
+}
+#endif // MZM_3DS || PORT_NATIVE
 /**
  * @brief 7cf98 | 118 | Displays the misc. info of a file (difficulty, area, time attack)
  * 
@@ -5509,23 +5544,21 @@ static void FileSelectDisplaySaveFileMiscInfo(struct SaveFileInfo* pFile, FileSe
     u16* dst;
     u16 tile;
     s32 i;
-#if defined(MZM_3DS) || defined(PORT_NATIVE)
-    // See FileSelectDisplaySaveFileTimer: the Chinese build uses 4 rows per save slot.
-    s32 slotStride = REGION_IS_CN() ? 128 : 96;
-    s32 n;
-#else
-    s32 slotStride = 96;
-#endif
 
     if (file == FILE_SELECT_CURSOR_POSITION_FILE_C)
-        offset = 2 * slotStride;
+        offset = 2 * 96;
     else if (file == FILE_SELECT_CURSOR_POSITION_FILE_B)
-        offset = 1 * slotStride;
+        offset = 1 * 96;
     else if (file == FILE_SELECT_CURSOR_POSITION_FILE_A)
-        offset = 0 * slotStride;
+        offset = 0 * 96;
     else
         return;
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    // See FileSelectDisplaySaveFileTimer: the Chinese build uses 4 rows per save slot.
+    if (REGION_IS_CN())
+        offset = (offset / 96) * 128;
+#endif
     if (pFile->timeAttack)
         temp = 6 << 12;
     else
@@ -5591,90 +5624,63 @@ static void FileSelectDisplaySaveFileMiscInfo(struct SaveFileInfo* pFile, FileSe
     }
 
     dst = FILE_SELECT_EWRAM.menuTilemap;
-#if defined(MZM_3DS) || defined(PORT_NATIVE)
-    // The Chinese build draws the area name over two rows starting on the slot's first row
-    // (0xEC bytes past the tilemap base in the ROM), instead of on the second row like the
-    // other regions do for their 8 pixel tall text.
-    dst = &dst[offset + (REGION_IS_CN() ? 118 : 150)];
-#else
     dst = &dst[offset + 150];
-#endif
 
     if (pFile->currentArea >= ARRAY_SIZE(sSaveFileAreasId))
         i = -1;
-#if defined(MZM_3DS) || defined(PORT_NATIVE)
-    else if (REGION_IS_CN())
-        i = sSaveFileAreasIdCN[pFile->currentArea];
-#endif
     else
         i = sSaveFileAreasId[pFile->currentArea];
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    if (REGION_IS_CN())
+    {
+        s32 name = -1;
+
+        // The Chinese release draws the area name over two rows, one row higher than the other
+        // regions draw their single row of 8 pixel tall text, so it needs its own path. It also
+        // orders its area names differently, hence the separate table.
+        if ((pFile->exists || pFile->introPlayed) && pFile->corruptionFlag == 0 &&
+            pFile->currentArea < ARRAY_SIZE(sSaveFileAreasIdCN))
+            name = sSaveFileAreasIdCN[pFile->currentArea];
+
+        FileSelectDrawSaveFileAreaCN(&FILE_SELECT_EWRAM.menuTilemap[offset + 118], palette, name);
+        return;
+    }
+#endif
     if ((pFile->exists || pFile->introPlayed) && i >= 0 && pFile->corruptionFlag == 0)
     {
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
-        if (REGION_IS_CN())
-        {
-            // The Chinese font stores its area names as 8x16 glyphs: the five tiles at the name's
-            // base hold the upper halves and the four tiles at +0x20 hold the lower halves, one
-            // tile per character. The names start at tile 0x140 and are five tiles apart, which
-            // is what the CN ROM's own drawing routine uses (0x080803BE: (idx * 5) + 0x140,
-            // upper row of five tiles, then +0x20 tiles for the four lower ones).
-            tile = 0x140 + i * 5;
-            for (n = 0; n < 5; n++)
-                dst[n] = palette | (u16)(tile + n);
-            for (n = 0; n < 4; n++)
-                dst[n + 32] = palette | (u16)(tile + 0x20 + n);
-        }
-        else
-#endif // MZM_3DS || PORT_NATIVE
-        {
-#if defined(MZM_3DS) || defined(PORT_NATIVE)
 #if defined(REGION_LANGUAGE_RUNTIME) || defined(REGION_JP)
-            tile = i * 6;
-            if (pFile->language == LANGUAGE_HIRAGANA)
-                tile += 0x14C;
-            else
-                tile += 0x176;
+        tile = i * 6;
+        if (pFile->language == LANGUAGE_HIRAGANA)
+            tile += 0x14C;
+        else
+            tile += 0x176;
 #else // retail JAP-less behaviour
-            tile = i * 6 + 0x176;
+        tile = i * 6 + 0x176;
 #endif // REGION_LANGUAGE_RUNTIME || REGION_JP
 #else
 #if defined(DEBUG) || defined(REGION_JP)
-            tile = i * 6;
-            if (pFile->language == LANGUAGE_HIRAGANA)
-                tile += 0x14C;
-            else
-                tile += 0x176;
+        tile = i * 6;
+        if (pFile->language == LANGUAGE_HIRAGANA)
+            tile += 0x14C;
+        else
+            tile += 0x176;
 #else // !(DEBUG || REGION_JP)
-            tile = i * 6 + 0x176;
+        tile = i * 6 + 0x176;
 #endif // DEBUG || REGION_JP
 #endif
 
-            for (i = 0; i < 6; i++)
-            {
-                *dst++ = palette | tile++;
-            }
+        for (i = 0; i < 6; i++)
+        {
+            *dst++ = palette | tile++;
         }
     }
     else
     {
-#if defined(MZM_3DS) || defined(PORT_NATIVE)
-        if (REGION_IS_CN())
+        for (i = 0; i < 6; i++)
         {
-            // The Chinese area names occupy two rows, clear both so an empty slot cannot keep
-            // the glyphs of a previous file.
-            for (n = 0; n < 5; n++)
-                dst[n] = 0;
-            for (n = 0; n < 4; n++)
-                dst[n + 32] = 0;
-        }
-        else
-#endif // MZM_3DS || PORT_NATIVE
-        {
-            for (i = 0; i < 6; i++)
-            {
-                *dst++ = 0;
-            }
+            *dst++ = 0;
         }
     }
 }

@@ -9,6 +9,7 @@
 #include "platform_gpu_3ds.h"
 #include "port_debug_tools.h"
 #include "port_debug_log.h"
+#include "port_lang.h"
 #include "port_save_state.h"
 #include "port_state_thumb.h"
 #include "port_updater_3ds.h"
@@ -977,6 +978,13 @@ static const uint8_t* GetGlyph(char c) {
     static const uint8_t o_umlaut[7]= { 0x0A, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E }; /* Ö */
     static const uint8_t u_umlaut[7]= { 0x0A, 0x00, 0x11, 0x11, 0x11, 0x11, 0x0E }; /* Ü */
     static const uint8_t eszett[7]  = { 0x1E, 0x11, 0x1E, 0x11, 0x11, 0x11, 0x1C }; /* ß */
+    /* Portuguese: the tilde is drawn like the one on Ñ, the circumflex as a
+     * small caret over the letter. */
+    static const uint8_t a_tilde[7] = { 0x1A, 0x00, 0x0E, 0x11, 0x1F, 0x11, 0x11 }; /* Ã */
+    static const uint8_t o_tilde[7] = { 0x1A, 0x00, 0x0E, 0x11, 0x11, 0x11, 0x0E }; /* Õ */
+    static const uint8_t a_circ[7]  = { 0x04, 0x0A, 0x0E, 0x11, 0x1F, 0x11, 0x11 }; /* Â */
+    static const uint8_t e_circ[7]  = { 0x04, 0x0A, 0x1F, 0x10, 0x1E, 0x10, 0x1F }; /* Ê */
+    static const uint8_t o_circ[7]  = { 0x04, 0x0A, 0x0E, 0x11, 0x11, 0x11, 0x0E }; /* Ô */
 
     if (c >= '0' && c <= '9') return digits[c - '0'];
     if (c >= 'A' && c <= 'Z') return letters[c - 'A'];
@@ -1003,7 +1011,12 @@ static const uint8_t* GetGlyph(char c) {
         case 0xD1: case 0xF1: return n_tilde; /* Ñ, ñ */
         case 0xC7: case 0xE7: return c_cedil; /* Ç, ç */
         case 0xC1: case 0xE1: case 0xC0: case 0xE0: return a_acute; /* Á, á, À, à */
-        case 0xC9: case 0xE9: case 0xC8: case 0xE8: case 0xCA: case 0xEA: return e_acute; /* É, é, È, è, Ê, ê */
+        case 0xC9: case 0xE9: case 0xC8: case 0xE8: return e_acute; /* É, é, È, è */
+        case 0xC3: case 0xE3: return a_tilde; /* Ã, ã */
+        case 0xD5: case 0xF5: return o_tilde; /* Õ, õ */
+        case 0xC2: case 0xE2: return a_circ; /* Â, â */
+        case 0xCA: case 0xEA: return e_circ; /* Ê, ê */
+        case 0xD4: case 0xF4: return o_circ; /* Ô, ô */
         case 0xCD: case 0xED: case 0xCC: case 0xEC: return i_acute; /* Í, í, Ì, ì */
         case 0xD3: case 0xF3: case 0xD2: case 0xF2: return o_acute; /* Ó, ó, Ò, ò */
         case 0xDA: case 0xFA: case 0xD9: case 0xF9: return u_acute; /* Ú, ú, Ù, ù */
@@ -2572,13 +2585,28 @@ static const char* Port_Config_GetLanguageDisplayName(int lang) {
         case 4: return "4: FRANÇAIS";
         case 5: return "5: ITALIANO";
         case 6: return "6: ESPAÑOL";
+        case 7: return "7: PORTUGUÊS (BR)";
         default: return "2: ENGLISH";
     }
 }
 
+/* The option's position: the game's language, or 7 for Brazilian Portuguese,
+ * which the port draws over English (port_lang.h). */
+static int Port_Config_GetLanguageOption(void) {
+    return Port_Lang_Get() == PORT_TEXT_LANGUAGE_PT_BR ? 7 : (int)gLanguage;
+}
+
 static void Port_Config_CycleLanguage(void) {
     extern void SramWrite_Language(void);
-    gLanguage = (gLanguage + 1) % LANGUAGE_COUNT;
+    if (Port_Lang_Get() != PORT_TEXT_LANGUAGE_GAME) {
+        Port_Lang_Set(PORT_TEXT_LANGUAGE_GAME);
+        gLanguage = 0;
+    } else if (gLanguage == LANGUAGE_COUNT - 1 && Port_Lang_Available()) {
+        Port_Lang_Set(PORT_TEXT_LANGUAGE_PT_BR);
+        gLanguage = 2; /* LANGUAGE_ENGLISH */
+    } else {
+        gLanguage = (gLanguage + 1) % LANGUAGE_COUNT;
+    }
     SramWrite_Language();
     Port_Config_Save();
 }
@@ -3477,7 +3505,7 @@ static void RenderDisplayModal(int lang) {
     static const char* const hudL[7]   = { "AUTO-HIDE HUD","AUTO-HIDE HUD","AUTO-HIDE HUD","HUD AUTO-AUS","MASQUER HUD","NASCONDI HUD","AUTOOCULTAR HUD" };
     static const char* const spoL[7]   = { "HIDE SPOILERS","HIDE SPOILERS","HIDE SPOILERS","SPOILER AUS","MASQ. SPOILERS","NASC. SPOILER","OCULTAR SPOILERS" };
 
-    DispCell(0, langL[lang], Port_Config_GetLanguageDisplayName(lang), valCol);
+    DispCell(0, langL[lang], Port_Config_GetLanguageDisplayName(Port_Config_GetLanguageOption()), valCol);
     bool wideOn = (Port_Config_Get3DSAspectRatio() == 3);
     DispCell(1, aspL[lang], GetAspectRatioDisplayName(lang), wideOn ? onCol : valCol);
     DispCell(2, styL[lang], GetDisplayStyleDisplayName(lang), valCol);

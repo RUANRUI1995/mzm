@@ -7,6 +7,7 @@
 #include "virtuappu.h"
 #include "cpu/mode1.h"
 #include "port_gba_mem.h"
+#include "port_lang.h"
 #include "platform_gpu_3ds.h"
 #include "structs/samus.h"
 #include "constants/samus.h"
@@ -267,6 +268,7 @@ void Port_Config_Save(void) {
     fprintf(file, "bottom_area=%d\n", Port_BottomUI_GetViewArea());
     fprintf(file, "bottom_follow=%u\n", Port_BottomUI_GetFollowSamus() ? 1u : 0u);
     fprintf(file, "language=%d\n", (int)gLanguage);
+    fprintf(file, "text_language=%d\n", (int)Port_Lang_Get());
     extern bool Port_RA_IsEnabled(void);
     extern bool Port_RA_IsHardcore(void);
     extern bool Port_RA_GetNotificationSound(void);
@@ -351,6 +353,9 @@ void Port_Config_Load(void) {
         } else if (strcmp(key, "ra_notify_top") == 0) {
             extern void Port_RA_SetNotifyOnTopScreen(bool);
             Port_RA_SetNotifyOnTopScreen(val != 0);
+        } else if (strcmp(key, "text_language") == 0) {
+            /* A port language (port_lang.h) drawn over the game's English. */
+            Port_Lang_Set((PortTextLanguage)val);
         } else if (strcmp(key, "language") == 0) {
             if (val >= 0 && val < LANGUAGE_COUNT) {
                 extern void SramWrite_Language(void);

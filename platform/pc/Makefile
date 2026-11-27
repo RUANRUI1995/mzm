@@ -198,6 +198,7 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_debug_log.c \
 	$(ROOT)/port/port_debug_files.c \
 	$(ROOT)/port/port_constructor_init.c \
+	$(ROOT)/port/port_lang.c \
 	$(ROOT)/port/ppu/src/virtuappu.c \
 	$(ROOT)/port/ppu/src/mode1.c \
 	$(filter-out %_selftest.c %_test.c, $(wildcard $(ROOT)/port/generated/*.c))

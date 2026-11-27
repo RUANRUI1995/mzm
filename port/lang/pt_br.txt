@@ -1,0 +1,502 @@
+# Brazilian Portuguese (PT-BR) text for the port.
+#
+# The game itself never shipped in Portuguese, so this text is the port's own:
+# it is drawn instead of the English text while the game runs in English, and
+# neither the ROM nor gLanguage change (RetroAchievements identify the game by
+# the ROM's hash and read its RAM; both stay those of an English game).
+#
+# tools/lang/gen_lang.py turns this file into port/generated/lang_pt_br.c.
+# Run it after every edit (it also checks that each line fits on screen):
+#
+#     python tools/lang/gen_lang.py
+#
+# Format
+#   [ENUM_NAME]          starts an entry; the name is the game's own constant
+#                        (MESSAGE_*, LT_*, DESCRIPTION_TEXT_*, STORY_TEXT_*,
+#                        FILE_SCREEN_TEXT_*). An entry that is missing here
+#                        keeps the English text.
+#   following lines      the text, one screen line per line, in the same
+#                        escapes as src/data/text_data.c ({COLOR(5)},
+#                        {B_button}, ...). Blank lines inside an entry are
+#                        dropped; a line that is just "{GAP(110)}" is the
+#                        empty second line single-line messages have.
+#   {CENTER}             at the start of a line: centred the way the English
+#                        text centres that line in the same ROM region (the
+#                        GAP is worked out from that region's font widths).
+#                        Emits nothing where the English line is not centred.
+#   {RGAP(n)}            GAP(n) only where the English text of that region
+#                        starts its lines with a GAP (the EU story text is
+#                        indented by 8 pixels, the US one is not).
+#   {IFEU}a{ELSE}b{ENDIF}  a in the EU ROM, b in the others (the EU font has
+#                        glyphs the US one lacks, such as {hundred_percent}).
+#   # ...                a comment line.
+#
+# Glossary (kept the same in the text and in the graphics):
+#   Energy Tank = Tanque de Energia      Missile = Míssil
+#   Super Missile = Supermíssil          Power Bomb = Bomba de Poder
+#   Long Beam = Raio Longo               Charge Beam = Raio Carregado
+#   Ice Beam = Raio de Gelo              Wave Beam = Raio de Ondas
+#   Plasma Beam = Raio de Plasma         Bomb = Bomba
+#   Varia Suit = Traje Varia             Gravity Suit = Traje Gravitacional
+#   Morph Ball = Bola Morfo              Speed Booster = Acelerador
+#   Hi-Jump = Supersalto                 Screw Attack = Ataque Giratório
+#   Space Jump = Salto Espacial          Power Grip = Pegada Firme
+#   Power Suit = Traje de Poder          Mother Ship = Nave-Mãe
+#   Space Pirates = Piratas Espaciais    Time Attack = Contrarrelógio
+#   Save = Salvar                        hatch = escotilha
+#   Area and boss names (Brinstar, Kraid, Mother Brain, Chozo...) stay as they are.
+
+# ---------------------------------------------------------------- messages
+
+[MESSAGE_ENERGY_TANK_ACQUIRED]
+{CENTER}{COLOR(5)}Tanque de Energia obtido.
+{CENTER}{COLOR(0)}Limite de energia ampliado.
+
+[MESSAGE_MISSILE_TANK_ACQUIRED]
+{CENTER}{COLOR(5)}Tanque de Mísseis obtido.
+{CENTER}{COLOR(0)}Limite de mísseis ampliado.
+
+[MESSAGE_FIRST_MISSILE_TANK]
+{CENTER}{COLOR(5)}Tanque de Mísseis
+{GAP(110)}
+
+[MESSAGE_SUPER_MISSILE_TANK_ACQUIRED]
+{CENTER}{COLOR(5)}Tanque de Supermísseis obtido.
+{CENTER}{COLOR(0)}Limite de supermísseis ampliado.
+
+[MESSAGE_FIRST_SUPER_MISSILE_TANK]
+{CENTER}{COLOR(5)}Tanque de Supermísseis
+{GAP(110)}
+
+[MESSAGE_POWER_BOMB_TANK_ACQUIRED]
+{CENTER}{COLOR(5)}Tanque de Bomba de Poder obtido.
+{CENTER}{COLOR(0)}Limite de Bomba de Poder ampliado.
+
+[MESSAGE_FIRST_POWER_BOMB_TANK]
+{CENTER}{COLOR(5)}Tanque de Bomba de Poder
+{GAP(110)}
+
+[MESSAGE_LONG_BEAM]
+{CENTER}{COLOR(5)}Raio Longo
+{GAP(110)}
+
+[MESSAGE_CHARGE_BEAM]
+{CENTER}{COLOR(5)}Raio Carregado
+{GAP(110)}
+
+[MESSAGE_ICE_BEAM]
+{CENTER}{COLOR(5)}Raio de Gelo
+{GAP(110)}
+
+[MESSAGE_WAVE_BEAM]
+{CENTER}{COLOR(5)}Raio de Ondas
+{GAP(110)}
+
+[MESSAGE_UKNOWN_ITEM_PLASMA]
+{CENTER}{COLOR(5)}Item Desconhecido
+{GAP(110)}
+
+[MESSAGE_BOMB]
+{CENTER}{COLOR(5)}Bomba
+{GAP(110)}
+
+[MESSAGE_VARIA_SUIT]
+{CENTER}{COLOR(5)}Traje Varia
+{GAP(110)}
+
+[MESSAGE_UNKNOWN_ITEM_GRAVITY]
+{CENTER}{COLOR(5)}Item Desconhecido
+{GAP(110)}
+
+[MESSAGE_MORPH_BALL]
+{CENTER}{COLOR(5)}Bola Morfo
+{GAP(110)}
+
+[MESSAGE_SPEED_BOOSTER]
+{CENTER}{COLOR(5)}Acelerador
+{GAP(110)}
+
+[MESSAGE_HIGH_JUMP]
+{CENTER}{COLOR(5)}Supersalto
+{GAP(110)}
+
+[MESSAGE_SCREW_ATTACK]
+{CENTER}{COLOR(5)}Ataque Giratório
+{GAP(110)}
+
+[MESSAGE_UNKNOWN_ITEM_SPACE_JUMP]
+{CENTER}{COLOR(5)}Item Desconhecido
+{GAP(110)}
+
+[MESSAGE_POWER_GRIP]
+{CENTER}{COLOR(5)}Pegada Firme
+{GAP(110)}
+
+[MESSAGE_SAVE_PROMPT]
+{CENTER}Salvar？
+{GAP(95)}{INDENT(64)}Sim{INDENT(160)}Não
+
+[MESSAGE_SAVE_COMPLETE]
+{CENTER}Dados salvos.
+{GAP(110)}
+
+[MESSAGE_WEAPON_RESUPPLY_COMPLETE]
+{CENTER}Sistema de armas
+{CENTER}totalmente reabastecido.
+
+[MESSAGE_ENERGY_TANK_RECHARGE_COMPLETE]
+{CENTER}Tanques de Energia
+{CENTER}totalmente recarregados.
+
+[MESSAGE_WEAPONS_AND_ENERGY_RESTORED]
+{CENTER}Armas e energia
+{CENTER}totalmente restauradas.
+
+[MESSAGE_BRINSTAR_MAP_ACQUIRED]
+{CENTER}{COLOR(5)}Mapa{COLOR(0)} de {COLOR(9)}Brinstar{COLOR(0)} obtido.
+{GAP(110)}
+
+[MESSAGE_KRAID_MAP_ACQUIRED]
+{CENTER}{COLOR(5)}Mapa{COLOR(0)} de {COLOR(8)}Kraid{COLOR(0)} obtido.
+{GAP(110)}
+
+[MESSAGE_NORFAIR_MAP_ACQUIRED]
+{CENTER}{COLOR(5)}Mapa{COLOR(0)} de {COLOR(6)}Norfair{COLOR(0)} obtido.
+{GAP(110)}
+
+[MESSAGE_RIDLEY_MAP_ACQUIRED]
+{CENTER}{COLOR(5)}Mapa{COLOR(0)} de {COLOR(7)}Ridley{COLOR(0)} obtido.
+{GAP(110)}
+
+[MESSAGE_MOTHER_SHIP_MAP_ACQUIRED]
+{CENTER}{COLOR(5)}Mapa{COLOR(0)} da {COLOR(10)}Nave-Mãe{COLOR(0)} obtido.
+{GAP(110)}
+
+[MESSAGE_FULLY_POWERED_SUIT]
+{CENTER}{COLOR(5)}Traje com poder total{COLOR(0)} obtido.
+{GAP(110)}
+
+[MESSAGE_ZEBES_ESCAPE]
+{CENTER}Autodestruição ativada!
+{CENTER}Evacue imediatamente!
+
+[MESSAGE_CHOZODIA_ESCAPE]
+{CENTER}Autodestruição ativada!
+{CENTER}Evacue imediatamente!
+
+[MESSAGE_ENEMY_LOCATION_ABNORMAL]
+{CENTER}Posição de inimigo anormal.
+{CENTER}Verifique a posição da mensagem.
+
+[MESSAGE_ACTIVATE_EASY_SLEEP]
+{CENTER}Ativar o modo de espera？
+{CENTER}Para sair do modo de espera,
+
+[MESSAGE_PRESS_SELECT_L_AND_R]
+{CENTER}pressione {Select_button}, {L_button} e {R_button}
+{CENTER}ao mesmo tempo.
+
+[MESSAGE_EASY_SLEEP_PROMPT]
+{CENTER}Sim
+{CENTER}Não
+
+# ---------------------------------------------------------------- area names
+
+[LT_MOTHERSHIP]
+{CENTER}NAVE-MÃE PIRATA
+
+[LT_PLANET_ZEBES]
+{CENTER}PLANETA ZEBES
+
+[LT_SAVE_ROOM]
+{CENTER}SALA DE SALVAMENTO
+
+[LT_RESEARCH_ROOM]
+{CENTER}SALA DE PESQUISA
+
+[LT_MAP_ROOM]
+{CENTER}SALA DO MAPA
+
+[LT_CHOZO_RUINS]
+{CENTER}RUÍNAS CHOZO
+
+[LT_STARSHIP]
+{CENTER}NAVE ESTELAR
+
+# ---------------------------------------------------------------- pause screen descriptions
+
+[DESCRIPTION_TEXT_LONG_BEAM]
+Dispara tiros de longo alcance.
+Use {L_button} + {B_button} para atirar na diagonal.
+
+[DESCRIPTION_TEXT_CHARGE_BEAM]
+Segure {B_button} e solte: tiro carregado.
+Ataque Carregado: pule com carga total.
+
+[DESCRIPTION_TEXT_ICE_BEAM]
+Este raio congela os inimigos no lugar.
+Dá para pisar em inimigos congelados.
+
+[DESCRIPTION_TEXT_WAVE_BEAM]
+Este raio, feito de ondas de energia,
+atravessa objetos sólidos.
+
+[DESCRIPTION_TEXT_PLASMA_BEAM]
+Este raio poderoso atravessa
+vários inimigos de uma vez.
+
+[DESCRIPTION_TEXT_MISSILES]
+Use {R_button} + {B_button} para disparar.
+Abre {COLOR(6)}escotilhas vermelhas{COLOR(0)}.
+
+[DESCRIPTION_TEXT_SUPER_MISSILES]
+Arme com {Select_button}. Dispare com {R_button} + {B_button}.
+Abre {COLOR(8)}escotilhas verdes{COLOR(0)}.
+
+[DESCRIPTION_TEXT_BOMBS]
+Use {B_button} na forma de Bola Morfo
+para soltar uma bomba.
+
+[DESCRIPTION_TEXT_POWER_BOMBS]
+Solte com {R_button} + {B_button} como Bola Morfo.
+Abre {COLOR(5)}escotilhas amarelas{COLOR(0)}.
+
+[DESCRIPTION_TEXT_VARIA_SUIT]
+Reduz o dano causado pelos inimigos.
+Protege contra ácido e calor.
+
+[DESCRIPTION_TEXT_GRAVITY_SUIT]
+Reduz o dano dos inimigos. Permite
+andar na água e anula o dano da lava.
+
+[DESCRIPTION_TEXT_MORPH_BALL]
+Toque {Down_button} duas vezes para virar bola
+e passar por passagens estreitas.
+
+[DESCRIPTION_TEXT_POWER_GRIP]
+Agarre-se a {COLOR(5)}bordas e quinas{COLOR(0)}.
+
+[DESCRIPTION_TEXT_SPEEDBOOSTER]
+Corra até ganhar velocidade para
+quebrar blocos e ferir inimigos.
+
+[DESCRIPTION_TEXT_HIGH_JUMP]
+Aumenta a altura máxima do salto.
+Permite pular na forma de Bola Morfo.
+
+[DESCRIPTION_TEXT_SCREW_ATTACK]
+Fere os inimigos ao dar cambalhotas.
+
+[DESCRIPTION_TEXT_SPACE_JUMP]
+Dê cambalhotas sem parar no ar.
+Use {A_button} no giro para saltar de novo.
+
+[DESCRIPTION_TEXT_UNKNOWN_ITEM]
+{COLOR(6)}Análise inconclusiva.{COLOR(0)}
+Item incompatível com o traje atual.
+
+[DESCRIPTION_TEXT_PISTOL]
+Uma pistola de {COLOR(5)}carga automática{COLOR(0)}.
+{COLOR(6)}Atordoe{COLOR(0)} inimigos com {COLOR(5)}tiros carregados{COLOR(0)}.
+
+# ---------------------------------------------------------------- story
+
+[STORY_TEXT_PLANET_ZEBES]
+{RGAP(8)}Planeta Zebes... Já chamei este lugar
+{RGAP(8)}de lar, em tempos de paz, muito antes
+{RGAP(8)}de o mal assombrar as cavernas. Agora
+{RGAP(8)}vou enfim contar a história da minha
+{RGAP(8)}primeira batalha... A Missão Zero.
+{GAP(138)}-Samus Aran-
+
+[STORY_TEXT_THE_TIMING]
+Minha fuga não podia ter vindo em pior
+hora. Fui atacada por Piratas Espaciais
+e fiquei quase indefesa, sem meu Traje
+de Poder. Para me proteger, só tinha
+minha pistola de emergência, quase
+inútil. Infiltrar-me assim armada na
+Nave-Mãe dos Piratas talvez fosse
+loucura, mas eu não tinha escolha...
+
+[STORY_TEXT_COULD_I_SURVIVE]
+Será que eu sobreviveria o bastante
+para escapar？
+
+[STORY_TEXT_EMERGENCY]
+{CENTER}Ordem de Emergência
+
+[STORY_TEXT_EXTERMINATE]
+{CENTER}Exterminar todos os organismos
+{CENTER}Metroid do Planeta Zebes...
+
+[STORY_TEXT_DEFEAT]
+{CENTER}E derrotar a forma de vida mecânica,
+{CENTER}Mother Brain.
+
+# ---------------------------------------------------------------- file select
+
+[FILE_SCREEN_TEXT_START_GAME]
+Iniciar jogo
+Iniciar jogo (Link)
+
+[FILE_SCREEN_TEXT_COPY_SOURCE_CHOOSE]
+Escolha o arquivo
+que deseja copiar.
+
+[FILE_SCREEN_TEXT_COPY_DESTINATION_CHOOSE]
+Escolha o arquivo
+de destino.
+
+[FILE_SCREEN_TEXT_COPY_CONFIRM]
+Quer sobrescrever
+este arquivo？
+{GAP(30)}Sim{GAP(24)}Não
+
+[FILE_SCREEN_TEXT_ERASE_CHOOSE]
+Escolha o arquivo
+que deseja apagar.
+
+[FILE_SCREEN_TEXT_ERASE_CONFIRM]
+Quer apagar
+este arquivo？
+{GAP(30)}Sim{GAP(24)}Não
+
+[FILE_SCREEN_TEXT_FILE_A_CORRUPT_REVERT]
+Arquivo A com erro.
+Restaurando dados
+anteriores.
+
+[FILE_SCREEN_TEXT_FILE_B_CORRUPT_REVERT]
+Arquivo B com erro.
+Restaurando dados
+anteriores.
+
+[FILE_SCREEN_TEXT_FILE_C_CORRUPT_REVERT]
+Arquivo C com erro.
+Restaurando dados
+anteriores.
+
+[FILE_SCREEN_TEXT_FILE_A_CORRUPT_ERASE]
+Erro no arquivo A.
+Apagando-o...
+
+[FILE_SCREEN_TEXT_FILE_B_CORRUPT_ERASE]
+Erro no arquivo B.
+Apagando-o...
+
+[FILE_SCREEN_TEXT_FILE_C_CORRUPT_ERASE]
+Erro no arquivo C.
+Apagando-o...
+
+[FILE_SCREEN_TEXT_ERASE_ALL_REFORMAT]
+Apagar todos os dados
+e reformatar os arquivos？
+
+[FILE_SCREEN_TEXT_ERASE_ALL]
+Apagar todos os
+dados salvos？
+
+[FILE_SCREEN_TEXT_CONTINUE_NEW]
+Continuar
+Novo
+
+[FILE_SCREEN_TEXT_CONTINUE_NEW_TIME_ATTACK]
+Continuar
+Novo
+Novo Contrarrelógio
+
+[FILE_SCREEN_TEXT_MESSAGE_OPTION]
+Mensagens
+  Kanji
+  Hiragana
+
+[FILE_SCREEN_TEXT_DIFFICULTY]
+Dificuldade
+  FÁCIL
+  NORMAL
+
+[FILE_SCREEN_TEXT_DIFFICULTY_HARD]
+Nível de dificuldade
+  FÁCIL
+  NORMAL
+  DIFÍCIL
+
+[FILE_SCREEN_TEXT_ERASE_FILE_CONFIRM]
+Apagar todos os
+dados salvos？
+(　　　será mantido.)
+{GAP(24)}Sim{GAP(30)}Não
+
+[FILE_SCREEN_TEXT_LINKING_PLEASE_WAIT]
+Conectando...
+Aguarde um momento.
+
+[FILE_SCREEN_TEXT_UNABLE_TO_DETECT_FUSION]
+Cartucho de
+Metroid Fusion
+não detectado.
+
+[FILE_SCREEN_TEXT_LINKING_ERROR]
+Erro de conexão.
+
+[FILE_SCREEN_TEXT_TURN_OFF_CONFIRM_LINK]
+Desligue o console e
+verifique se o cabo
+Game Link está bem
+conectado.
+
+[FILE_SCREEN_TEXT_DO_NOT_TURN_POWER_OFF]
+Não desligue
+o console.
+
+[FILE_SCREEN_TEXT_DATA_UPLOAD_COMPLETE]
+Envio de dados
+concluído.
+
+[FILE_SCREEN_TEXT_LINK_COMPLETE]
+Conexão concluída.
+Já pode desligar o console (OFF).
+
+[FILE_SCREEN_TEXT_BEST_TIME]
+{CENTER}Recorde
+
+[FILE_SCREEN_TEXT_BEST_TIME_100]
+{IFEU}{CENTER}Recorde{hundred_percent}{ELSE}{CENTER}Recorde (100%){ENDIF}
+
+[FILE_SCREEN_TEXT_ID_PASSWORD]
+ID
+Senha
+
+[FILE_SCREEN_TEXT_CANT_COPY_TIME_ATTACK]
+Contrarrelógio não
+pode ser copiado.
+
+[FILE_SCREEN_TEXT_LINKING_ERROR_TRY_AGAIN]
+Erro de conexão. Tente de novo.
+
+[FILE_SCREEN_TEXT_LINKING_ERROR_CHECK_CONNECTION]
+Ocorreu um erro de
+conexão. Verifique
+o cabo e tente
+novamente.
+
+[FILE_SCREEN_TEXT_GALLERY_UNLOCK]
+A {COLOR(5)}Galeria{COLOR(0)} foi
+adicionada à tela
+{COLOR(6)}OPÇÕES{COLOR(0)}.
+
+[FILE_SCREEN_TEXT_TIME_ATTACK_RECORD_UNLOCK]
+{COLOR(5)}Recordes{COLOR(0)} foram
+adicionados à tela
+{COLOR(6)}OPÇÕES{COLOR(0)}.
+
+[FILE_SCREEN_TEXT_SOUND_TEST_UNLOCK]
+O {COLOR(5)}Teste de som{COLOR(0)} foi
+adicionado à tela
+{COLOR(6)}OPÇÕES{COLOR(0)}.
+
+[FILE_SCREEN_TEXT_NES_METROID_UNLOCK]
+{COLOR(5)}Metroid original{COLOR(0)}
+foi adicionado à
+tela {COLOR(6)}OPÇÕES{COLOR(0)}.

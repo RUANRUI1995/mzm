@@ -15,6 +15,7 @@
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_texts.h"
 #endif
 
 #include "data/shortcut_pointers.h"
@@ -1143,7 +1144,13 @@ static void FileScreenProcessText(void)
 
                 while (i != 0)
                 {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                    var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                        Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                            sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                     var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                     switch (var_0)
                     {
@@ -1196,7 +1203,13 @@ static void FileScreenProcessText(void)
 
             while (TRUE)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                        sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                 var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                 if (var_0 == TEXT_STATE_ENDED)
                 {
@@ -1244,7 +1257,13 @@ static void FileScreenProcessText(void)
 
             while (i != 0)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                        sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                 var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                 switch (var_0)
                 {
@@ -1294,7 +1313,13 @@ static void FileScreenProcessText(void)
 
             while (TRUE)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                        sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                 var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                 if (var_0 == TEXT_STATE_ENDED)
                 {

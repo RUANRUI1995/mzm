@@ -5973,8 +5973,9 @@ static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned numb
     DrawRectClipped(8.0f, y, 0.51f, 296.0f, 1.0f, C2D_Color32(60, 80, 110, 255), c0, c1);
 
     char head[48];
-    snprintf(head, sizeof(head), es ? "#%u  %s  SALA %u" : "#%u  %s  ROOM %u",
-             number, Port_SaveState_AreaName(info->area), (unsigned)info->room);
+    snprintf(head, sizeof(head), "#%u  %s  %s %u",
+             number, Port_SaveState_AreaName(info->area),
+             Port_BottomUi_Zh(es ? "SALA" : "ROOM"), (unsigned)info->room);
     DrawTextClipped(14.0f, y + 4.0f, 1.0f, head, C2D_Color32(170, 210, 245, 255), c0, c1);
 
     char when[40];
@@ -6025,7 +6026,7 @@ static void RenderStateModal(bool es, bool avail) {
     char line[40];
     snprintf(line, sizeof(line), "%s", Port_SaveState_AreaName(info->area));
     DrawText(tx, 46.0f, 1.0f, line, C2D_Color32(170, 210, 245, 255));
-    snprintf(line, sizeof(line), es ? "SALA %u" : "ROOM %u", (unsigned)info->room);
+    snprintf(line, sizeof(line), "%s %u", Port_BottomUi_Zh(es ? "SALA" : "ROOM"), (unsigned)info->room);
     DrawText(tx, 56.0f, 1.0f, line, C2D_Color32(170, 210, 245, 255));
     if (info->savedAt) {
         char when[40];
@@ -6038,7 +6039,7 @@ static void RenderStateModal(bool es, bool avail) {
         }
     }
     if (info->hasPlayTime) {
-        snprintf(line, sizeof(line), es ? "JUEGO %u:%02u:%02u" : "TIME %u:%02u:%02u", (unsigned)info->playHours,
+        snprintf(line, sizeof(line), "%s %u:%02u:%02u", Port_BottomUi_Zh(es ? "JUEGO" : "TIME"), (unsigned)info->playHours,
                  (unsigned)info->playMinutes, (unsigned)info->playSeconds);
         DrawText(tx, 92.0f, 1.0f, line, C2D_Color32(150, 170, 200, 255));
     }

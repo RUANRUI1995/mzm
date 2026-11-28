@@ -1,5 +1,7 @@
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "region.h"
+#include "port_lang_ending.h"
+#include "port_lang_gfx.h"
 #endif
 #include "ending_and_gallery.h"
 #include "callbacks.h"
@@ -76,6 +78,30 @@ static void EndingImageLoadTextOam(EndingImageTextSet set)
     s32 i;
 
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
+    /* A port language spells these with its own letters (port_lang_ending.c). */
+    {
+        const PortEndingLetter* letters;
+        u32 count;
+
+        if (Port_LangEnding_TextOam(set, &letters, &count))
+        {
+            if (count != 0)
+            {
+                ENDING_DATA.oamLength = count + 6;
+                for (i = 0; i < (s32)count; i++)
+                {
+                    ENDING_DATA.oamTypes[i + 6] = ENDING_OAM_TYPE_CHAR;
+                    ENDING_DATA.endingLettersSpawnDelay[i + 6] = 1 + 4 * i;
+                    ENDING_DATA.unk_160[i + 6] = 0;
+                    ENDING_DATA.oamXPositions[i + 6] = BLOCK_SIZE * 2 - 8;
+                    ENDING_DATA.oamYPositions[i + 6] = letters[i].y;
+                    ENDING_DATA.oamFramePointers[i + 6] = letters[i].frame;
+                }
+            }
+            return;
+        }
+    }
+
     /* EUR's table also covers hiragana and falls back to English, so it is
      * right for every region: German..Spanish can only be reached with an
      * EUR ROM. */
@@ -1619,7 +1645,9 @@ static void EndingImageInit(void)
 
                 default:
                     LZ77UncompVram(sEndingImageNumbersMiscEnglishGfx, VRAM_OBJ);
+                    Port_LangGfx_Apply(PORT_LANG_GFX_NEW_RECORD, (void*)VRAM_OBJ);
                     LZ77UncompVram(sEndingImageTextEnglishGfx, VRAM_BASE + 0x11000);
+                    Port_LangGfx_Apply(PORT_LANG_GFX_ENDING_TEXT, (void*)(VRAM_BASE + 0x11000));
                     break;
             }
     }
@@ -1635,7 +1663,10 @@ static void EndingImageInit(void)
         if (ENDING_DATA.language == LANGUAGE_HIRAGANA)
             LZ77UncompVram(sEndingImageTextHiraganaGfx, VRAM_BASE + 0x11000);
         else
+        {
             LZ77UncompVram(sEndingImageTextEnglishGfx, VRAM_BASE + 0x11000);
+            Port_LangGfx_Apply(PORT_LANG_GFX_ENDING_TEXT, (void*)(VRAM_BASE + 0x11000));
+        }
     }
 #else
 #ifdef REGION_EU
@@ -1766,6 +1797,10 @@ static void EndingImageDisplayText(void)
         }
 
         src = ENDING_DATA.oamFramePointers[i];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        // Copied from the ROM's ending OAM tables: GBA addresses.
+        src = GBA_RESOLVE(src);
+#endif
         part = *src++;
         nextSlot += MOD_AND(part, 0x100);
 
@@ -1799,6 +1834,9 @@ static void EndingImageDisplayText(void)
         src = REGION_IS_EU()
             ? sEndingImageOamPointers_NewRecord[ENDING_DATA.language]
             : sEndingImageOam_NewRecordEnglish;
+        /* A port language lays the sign out itself (port_lang_ending.c). */
+        if (Port_LangNewRecord_Frame() != NULL)
+            src = Port_LangNewRecord_Frame();
 #else
 #ifdef REGION_EU
         src = sEndingImageOamPointers_NewRecord[ENDING_DATA.language];

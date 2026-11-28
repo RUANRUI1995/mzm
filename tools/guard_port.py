@@ -25,7 +25,7 @@ import re
 import subprocess
 import sys
 
-PORT_MACROS = {"MZM_3DS", "PORT_NATIVE", "__3DS__", "PLATFORM_LINUX", "PORT_LINUX_DIAG_WARP_TO_DEOREM",
+PORT_MACROS = {"MZM_3DS", "PORT_NATIVE", "__3DS__", "PLATFORM_PC", "PORT_LINUX_DIAG_WARP_TO_DEOREM",
                "PORT_VERBOSE_FRAME_LOG", "PLATFORM_3DS", "PORT_HOST_TEST", "PORT_DEBUG_TOOLS_ACTIVE"}
 PORT_ON = {"MZM_3DS", "PORT_NATIVE", "__3DS__"}  # defined in the port build(s) we care about
 GUARD = "#if defined(MZM_3DS) || defined(PORT_NATIVE)"

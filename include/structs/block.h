@@ -26,6 +26,21 @@ struct ClipdataBlockData {
     u8 blockBehavior;
 };
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct BombChain {
+    u8 currentOffset;
+    u8 srcXPosition; 
+    u8 srcYPosition;
+    u8 unk:1;
+    u8 flipped:1;
+    u8 padding:3;
+    BombChainType type:3;
+};
+#else
 struct BombChain {
     u8 currentOffset;
     u8 srcXPosition; 
@@ -35,6 +50,18 @@ struct BombChain {
     u8 flipped:1;
     u8 unk:1;
 };
+#endif
+#else
+struct BombChain {
+    u8 currentOffset;
+    u8 srcXPosition; 
+    u8 srcYPosition;
+    BombChainType type:3;
+    u8 padding:3;
+    u8 flipped:1;
+    u8 unk:1;
+};
+#endif
 
 struct TankList {
     u8 energy;
@@ -43,6 +70,19 @@ struct TankList {
     u8 powerBomb;
 };
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct BlockBehavior {
+    BlockLifeType lifeType;
+    BlockSubType subType;
+    BlockType type;
+    u8 isBombChain:4;
+    u8 isSpeedboost:4;
+};
+#else
 struct BlockBehavior {
     BlockLifeType lifeType;
     BlockSubType subType;
@@ -50,6 +90,16 @@ struct BlockBehavior {
     u8 isSpeedboost:4;
     u8 isBombChain:4;
 };
+#endif
+#else
+struct BlockBehavior {
+    BlockLifeType lifeType;
+    BlockSubType subType;
+    BlockType type;
+    u8 isSpeedboost:4;
+    u8 isBombChain:4;
+};
+#endif
 
 struct BombChainReverseData {
     u8 typeFlag;

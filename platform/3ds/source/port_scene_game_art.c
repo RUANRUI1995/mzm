@@ -1,6 +1,7 @@
 #include "port_scene_pictures.h"
 #include "port_scene_sprites.h"
 
+#include <stdlib.h>
 #include <string.h>
 
 /* The game's own pictures for the WIDE scene pictures (PortScenePic_FillGameArt), read from
@@ -15,7 +16,8 @@ extern uint8_t* sNonGameplayRamPointer;
 
 extern int16_t gSubGameMode1; /* include/structs/game_state.h */
 
-enum { GM_INTRO = 1, GM_TITLE = 2, GM_INGAME = 4 }; /* include/constants/game_state.h */
+enum { GM_INTRO = 1, GM_TITLE = 2, GM_INGAME = 4, GM_CUTSCENE = 10 }; /* include/constants/game_state.h */
+extern signed char gCurrentCutscene; /* include/constants/cutscene.h */
 
 /* No picture matches this key. */
 enum { SCENE_NOT_READY = -2 };
@@ -28,6 +30,9 @@ int PortScenePic_SceneKey(int gameMode) {
      * has not run yet (sub mode 0): memory and VRAM are still the previous
      * scene's, and the picture would be built from them and kept. */
     if (gameMode == GM_TITLE && gSubGameMode1 == 0) return SCENE_NOT_READY;
+    /* A cutscene: which one and its stage (struct CutsceneData's timeInfo.stage, the first byte of
+     * the same union, include/structs/cutscene.h). */
+    if (gameMode == GM_CUTSCENE && sNonGameplayRamPointer) return gCurrentCutscene * 16 + sNonGameplayRamPointer[0];
     /* In game, 1 while Samus's close-up is on screen (the cutscene when she lands, issue #35):
      * its picture is the only one that belongs to a room. */
     if (gameMode == GM_INGAME) {
@@ -99,6 +104,14 @@ const PortScenePictureDef* PortScenePic_FindFuzz(int gameMode) {
     return gameMode == GM_INTRO && PortScenePic_SceneKey(GM_INTRO) == FUZZ_STAGE ? &sFuzzDef : NULL;
 }
 
+/* Stages whose starfield wraps seamlessly: Ridley in space (cutscene 7), the view of the
+ * mothership (stage 1) and the ship leaving (stage 4), both on BG3 (src/cutscenes/ridley_in_space.c). */
+int PortScenePic_RepeatBgs(int gameMode) {
+    if (gameMode != GM_CUTSCENE) return 0;
+    const int key = PortScenePic_SceneKey(gameMode);
+    return key == 7 * 16 + 1 || key == 7 * 16 + 4 ? 1 << 3 : 0;
+}
+
 bool PortScenePic_UsesObjPalette(const PortScenePictureDef* def) { return def == &sFuzzDef; }
 
 static bool FuzzArt(const PortScenePictureDef* def, uint8_t* codes) {
@@ -148,13 +161,67 @@ static bool FuzzArt(const PortScenePictureDef* def, uint8_t* codes) {
     return true;
 }
 
+/* Cutscene 11, stage 2 (src/cutscenes/before_ruins_test.c, BeforeRuinsTestWallAndGreyVoice): the
+ * view travels down a 240x320 picture. The Chozo wall is BG3, a 256x256 map with its tiles at
+ * char 0; once the scroll reaches 96 px the game loads young Samus and Grey Voice's tiles over
+ * the start of char 0 and turns on BG2 (same scroll), whose map's first rows are the floor
+ * below the wall, where BG3 wraps to its top. So rows 0..255 are the wall with its own tiles,
+ * rows 256..319 BG2 over the wrapped BG3, both with the new tiles (rows 96..255 come out the
+ * same either way: the tiles replaced are only the top's). Built from the game's data, not
+ * VRAM, which holds only one of the two at a time. */
+extern const unsigned int (*p_sBeforeRuinsTestChozoWallBackgroundGfx)[6446]; /* port/generated/cutscenes_before_ruins_test_data_rom.c */
+extern const unsigned int (*p_sBeforeRuinsTestYoungSamusAndGreyVoiceGfx)[1792];
+extern const unsigned int (*p_sBeforeRuinsTestChozoWallBackgroundTileTable)[551];
+extern const unsigned int (*p_sBeforeRuinsTestYoungSamusAndGreyVoiceTileTable)[185];
+void LZ77UncompWram(const void* src, void* dst); /* port/port_bios.c */
+
+static uint32_t Lz77Size(const void* src) { const uint8_t* s = (const uint8_t*)src; return (uint32_t)s[1] | ((uint32_t)s[2] << 8) | ((uint32_t)s[3] << 16); }
+
+static uint8_t MapCode(const uint8_t* chars, const uint8_t* map, int x, int y) {
+    const int at = (((y >> 3) & 31) * 32 + ((x >> 3) & 31)) * 2;
+    const uint16_t entry = (uint16_t)(map[at] | (map[at + 1] << 8));
+    return TileCode(chars + (entry & 0x3FFu) * 32u, entry, x & 7, y & 7);
+}
+
+static bool RuinsWallArt(const PortScenePictureDef* def, uint8_t* codes) {
+    enum { CHARS = 0x8000, MAP = 0x800, FLOOR_ROW = 256 };
+    if (!p_sBeforeRuinsTestChozoWallBackgroundGfx || !p_sBeforeRuinsTestYoungSamusAndGreyVoiceGfx ||
+        !p_sBeforeRuinsTestChozoWallBackgroundTileTable || !p_sBeforeRuinsTestYoungSamusAndGreyVoiceTileTable)
+        return false;
+    const void* src[4] = { *p_sBeforeRuinsTestChozoWallBackgroundGfx, *p_sBeforeRuinsTestYoungSamusAndGreyVoiceGfx,
+                           *p_sBeforeRuinsTestChozoWallBackgroundTileTable, *p_sBeforeRuinsTestYoungSamusAndGreyVoiceTileTable };
+    if (Lz77Size(src[0]) > CHARS || Lz77Size(src[1]) > CHARS || Lz77Size(src[2]) > MAP || Lz77Size(src[3]) > MAP) return false;
+    uint8_t* buf = (uint8_t*)calloc(1, 2 * CHARS + 2 * MAP);
+    if (!buf) return false;
+    uint8_t *wallChars = buf, *floorChars = buf + CHARS, *wallMap = buf + 2 * CHARS, *floorMap = wallMap + MAP;
+    LZ77UncompWram(src[0], wallChars);
+    memcpy(floorChars, wallChars, CHARS);
+    LZ77UncompWram(src[1], floorChars);
+    LZ77UncompWram(src[2], wallMap);
+    LZ77UncompWram(src[3], floorMap);
+    for (int by = def->pictureY0; by < def->pictureY1; ++by)
+        for (int bx = def->pictureX0; bx < def->pictureX1; ++bx) {
+            uint8_t c;
+            if (by < FLOOR_ROW) {
+                c = MapCode(wallChars, wallMap, bx, by);
+            } else {
+                c = MapCode(floorChars, floorMap, bx, by);
+                if (c == 16) c = MapCode(floorChars, wallMap, bx, by);
+            }
+            codes[Swizzle(bx - def->canvasX, by - def->canvasY, def->texWidth)] = c;
+        }
+    free(buf);
+    return true;
+}
+
 bool PortScenePic_HasGameArtSource(const PortScenePictureDef* def) {
-    return strcmp(def->name, "title") == 0 || def == &sFuzzDef;
+    return strcmp(def->name, "title") == 0 || def == &sFuzzDef || strcmp(def->name, "ruins-wall-rise") == 0;
 }
 
 bool PortScenePic_FillGameArt(const PortScenePictureDef* def, uint8_t* codes) {
     if (strcmp(def->name, "title") == 0) return TitleArt(def, codes);
     if (def == &sFuzzDef) return FuzzArt(def, codes);
+    if (strcmp(def->name, "ruins-wall-rise") == 0) return RuinsWallArt(def, codes);
     return false;
 }
 
@@ -162,11 +229,15 @@ bool PortScenePic_FillGameArt(const PortScenePictureDef* def, uint8_t* codes) {
  * is sIntroViewOfZebesHeatOam_1, B sIntroViewOfZebesHeatOam_2 (make_sprite_package.py). */
 extern const uint16_t (*p_sIntroViewOfZebesHeatOam_1)[73]; /* port/generated/intro_data_rom.h */
 extern const uint16_t (*p_sIntroViewOfZebesHeatOam_2)[37];
+/* Ridley in space's mother ship coming down (cutscene 7, stage 1): src/data/cutscenes/ridley_in_space_data.c. */
+extern const uint16_t (*p_sRidleyInSpaceOam_MotherShip_Frame0)[25]; /* port/generated/cutscenes_ridley_in_space_data_rom.c */
 
 const uint16_t* PortSceneSprite_GameOam(const PortSceneSpriteDef* def, int frame) {
     if (strcmp(def->name, "intro-zebes-flame") == 0)
         return frame == 0 && p_sIntroViewOfZebesHeatOam_1   ? *p_sIntroViewOfZebesHeatOam_1
                : frame == 1 && p_sIntroViewOfZebesHeatOam_2 ? *p_sIntroViewOfZebesHeatOam_2
                                                             : NULL;
+    if (strcmp(def->name, "ridley-mothership") == 0)
+        return frame == 0 && p_sRidleyInSpaceOam_MotherShip_Frame0 ? *p_sRidleyInSpaceOam_MotherShip_Frame0 : NULL;
     return NULL;
 }

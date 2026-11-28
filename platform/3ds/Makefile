@@ -74,6 +74,10 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_debug_log.c \
 	$(ROOT)/port/port_debug_files.c \
 	$(ROOT)/port/port_constructor_init.c \
+	$(ROOT)/port/port_lang.c \
+	$(ROOT)/port/port_lang_gfx.c \
+	$(ROOT)/port/port_lang_ending.c \
+	$(ROOT)/port/port_lang_select.c \
 	$(ROOT)/port/port_mzm_audio_glue.c \
 	$(ROOT)/port/port_psg_synth.c \
 	$(ROOT)/port/ppu/src/virtuappu.c \
@@ -101,7 +105,7 @@ SRCS_3DS := \
 	$(CURDIR)/source/platform_3ds_minimal.c \
 	$(CURDIR)/source/port_oam_census.c \
 	$(CURDIR)/source/platform_gpu_3ds.c \
-	$(CURDIR)/source/port_bottom_ui_3ds.c \
+	$(CURDIR)/source/port_ui_platform_3ds.c \
 	$(CURDIR)/source/port_ppu_mzm.c \
 	$(CURDIR)/source/port_gpu_renderer.c \
 	$(CURDIR)/source/port_save_state.c \
@@ -156,6 +160,14 @@ OBJS_ASM  := $(patsubst $(ROOT)/%.s, $(BUILD)/root/%.o, $(SRCS_ASM))
 OBJS_3DS  := $(patsubst $(CURDIR)/%.c, $(BUILD)/3ds/%.o, $(SRCS_3DS))
 OBJS_RC   := $(patsubst $(RCHEEVOS)/%.c, $(BUILD)/rcheevos/%.o, $(SRCS_RCHEEVOS))
 
+# Port code shared with the other platforms (port/ui: the bottom-screen UI).
+# Hand-written like platform/3ds/source, so it gets CFLAGS, not CFLAGS_DECOMP.
+SRCS_UI := $(ROOT)/port/ui/port_bottom_ui.c $(ROOT)/port/ui/port_ui_game.c
+ifeq ($(AUDIO_LOCKSTEP),1)
+SRCS_UI += $(ROOT)/port/audio/port_audio_engine.c $(ROOT)/port/audio/port_audio_lockstep.c
+endif
+OBJS_UI := $(patsubst $(ROOT)/%.c, $(BUILD)/ui/%.o, $(SRCS_UI))
+
 # PICA200 vertex shaders: picasso assembles each into a .shbin, bin2s turns
 # that into an object plus a header (<name>_shbin / <name>_shbin_size) the C
 # side includes.
@@ -164,19 +176,21 @@ SHADER_OBJS := $(patsubst $(CURDIR)/source/%.v.pica, $(BUILD)/shaders/%.shbin.o,
 PICASSO     := $(DEVKITPRO)/tools/bin/picasso
 BIN2S       := $(DEVKITPRO)/tools/bin/bin2s
 
-C_OBJS    := $(OBJS_ROOT) $(OBJS_ASM) $(OBJS_3DS) $(OBJS_RC) $(SHADER_OBJS)
+C_OBJS    := $(OBJS_ROOT) $(OBJS_ASM) $(OBJS_3DS) $(OBJS_UI) $(OBJS_RC) $(SHADER_OBJS)
 DEPS      := $(C_OBJS:.o=.d)
 
 # Asegurar que existan todos los directorios de salida y tmp antes de compilar en paralelo
 $(shell mkdir -p $(BUILD)/tmp $(sort $(dir $(C_OBJS))))
 
 GIT_BRANCH  := $(shell git rev-parse --abbrev-ref HEAD 2>/dev/null)
-EXACT_TAG   := $(shell git describe --tags --exact-match 2>/dev/null)
 # Rama release/* más reciente que contiene HEAD (local u origin): permite
 # que ramas laterales (p.ej. PRs basados en release) hereden su versión
 REL_MERGED := $(shell git for-each-ref --format='%(refname:short)' --merged HEAD refs/heads/'release/*' refs/remotes/'origin/release/*' 2>/dev/null | sort -V | tail -1)
 REL_BASE    := $(shell git rev-parse --verify -q refs/remotes/origin/main >/dev/null && echo refs/remotes/origin/main || echo main)
 
+# Release tags: vX.Y.Z (every platform), 3ds-vX.Y.Z (this one), wiiu-vX.Y.Z (not this one);
+# one version counter for all (docs/release-notes/README.md). The build calls itself vX.Y.Z.
+EXACT_TAG   := $(patsubst 3ds-%,%,$(firstword $(filter v% 3ds-v%,$(shell git tag --points-at HEAD 2>/dev/null))))
 ifneq ($(strip $(EXACT_TAG)),)
   GIT_VERSION := $(EXACT_TAG)
 else
@@ -200,6 +214,14 @@ else
 endif
 endif
 VERSION ?= $(GIT_VERSION)
+
+# The CIA's title version (what FBI and the HOME Menu's data management show),
+# from VERSION: vX.Y.Z[-dev...] -> -major X -minor Y -micro Z. makerom takes it
+# over the RSF's RemasterVersion. The fields are 6/6/4 bits, so major and minor
+# stop at 63 and micro at 15 (a v0.8.16 would be packaged as 0.8.15). A VERSION
+# with no X.Y in it (a bare hash) gives 0.0.0 instead of a failed build. The
+# updater compares MZM_PORT_VERSION, never the title version.
+CIA_VERSION = $(shell echo '$(VERSION)' | awk '{ M = m = u = 0; if (match($$0, /[0-9]+\.[0-9]+(\.[0-9]+)?/)) { n = split(substr($$0, RSTART, RLENGTH), v, "."); M = v[1] + 0; m = v[2] + 0; if (n > 2) u = v[3] + 0 } if (M > 63) M = 63; if (m > 63) m = 63; if (u > 15) u = 15; printf "-major %d -minor %d -micro %d", M, m, u }')
 
 # CHANNEL=beta marks the build as a beta (the console shows BETA, and the
 # updater offers the stable build of the same X.Y.Z once it exists). Only the CI
@@ -303,6 +325,20 @@ else ifneq ($(DEBUG_TOOLS),0)
   $(error Unknown DEBUG_TOOLS '$(DEBUG_TOOLS)' -- expected '0' or '1')
 endif
 
+# AUDIO_LOCKSTEP=1: also build the C sound engine (port/audio) and check it
+# against the assembly on every call (port/audio/port_audio_lockstep.c); the
+# results go to debug/audio-lockstep.txt. The game keeps playing the
+# assembly's sound. Test builds only: it roughly doubles the engine's cost.
+#   make clean && make DEBUG_TOOLS=1 AUDIO_LOCKSTEP=1
+AUDIO_LOCKSTEP ?= 0
+AUDIO_WRAPPED := InitTrack StopMusicOrSound ResetTrack unk_4cfc unk_4d1c UpdateAudio unk_4e10 \
+                 unk_4eb4 unk_4f10 unk_4f8c AudioCommand_Goto AudioCommand_PatternPlay \
+                 UploadSampleToWaveRam unk_5104 CallSoundCodeA CallSoundCodeB CallSoundCodeC \
+                 CallGetNoteFrequency
+ifeq ($(AUDIO_LOCKSTEP),1)
+  CFLAGS += -DPORT_AUDIO_LOCKSTEP
+endif
+
 # Extra flags from the command line, for one-off experiments. The debug
 # tooling no longer needs any (see DEBUG_TOOLS above); this stays for things
 # like -DPORT_VERBOSE_FRAME_LOG when bisecting a boot hang.
@@ -333,6 +369,7 @@ INCLUDES := \
 	-I$(ROOT)/port \
 	-I$(ROOT)/port/generated \
 	-I$(ROOT)/port/ppu/include \
+	-I$(ROOT)/port/ui \
 	-I$(CURDIR)/source \
 	-I$(BUILD)/shaders \
 	-I$(ROOT)/third_party/rcheevos/include \
@@ -345,6 +382,9 @@ INCLUDES := \
 # vendored copy in this directory (3dsx.ld), which adds the save-state section
 # brackets. ewram_symbols.ld stays a pure symbol-assignment augmenter.
 LDFLAGS  := -specs=3dsx.specs -B$(CURDIR) -g $(ARCH) -Wl,-Map,$(BUILD)/mzm-3ds.map -Wl,--gc-sections -T $(CURDIR)/ewram_symbols.ld
+ifeq ($(AUDIO_LOCKSTEP),1)
+LDFLAGS  += $(foreach f,$(AUDIO_WRAPPED),-Wl,--wrap=$(f))
+endif
 LIBS     := -L$(CTRULIB)/lib -L$(PORTLIBS)/lib -lcitro2d -lcitro3d -lcurl -lmbedtls -lmbedx509 -lmbedcrypto -lz -lctru -lm
 
 
@@ -353,15 +393,26 @@ LIBS     := -L$(CTRULIB)/lib -L$(PORTLIBS)/lib -lcitro2d -lcitro3d -lcurl -lmbed
 # error" (make Error 126), so there we must skip them and use the .exe that
 # ships with devkitPro instead. devkitPro's Windows make is an Msys build and
 # scrubs $(OS), so detect via `uname -o` (Msys / Cygwin) rather than $(OS).
+# makerom is the exception: devkitPro's makerom.exe 0.19.0 drops the title
+# version's minor number (3DSGuy/Project_CTR#169), so take the fixed build
+# tools/fetch-makerom.sh prints, and stop if it cannot (no fallback). Recursive
+# on purpose: the script only runs when the CIA is packaged.
 ifneq (,$(filter Msys Cygwin,$(shell uname -o 2>/dev/null)))
-MAKEROM    ?= $(firstword $(wildcard $(DEVKITPRO)/tools/bin/makerom.exe) $(shell which makerom.exe 2>/dev/null))
+MAKEROM    ?= $(or $(shell sh $(ROOT)/tools/fetch-makerom.sh),$(error tools/fetch-makerom.sh gave no makerom))
 BANNERTOOL ?= $(firstword $(wildcard $(DEVKITPRO)/tools/bin/bannertool.exe) $(shell which bannertool.exe 2>/dev/null))
+# devkitPro's MSYS2 has no Python and its PATH leaves out the Windows one, so
+# take a Python 3 from PATH or else the py launcher (in C:\Windows, always on
+# PATH). A Windows Python does not read MSYS paths: hand it Windows ones.
+PYTHON     ?= $(or $(shell for p in python3 python; do $$p -c 'import sys; sys.exit(sys.version_info[0] != 3)' >/dev/null 2>&1 && { echo $$p; break; }; done),$(if $(shell which py 2>/dev/null),py -3),$(error no Python 3 found: install one or pass PYTHON=...))
+HOSTPATH    = $(shell cygpath -m $(1))
 else
 MAKEROM    ?= $(firstword $(wildcard $(ROOT)/tools/bin/makerom $(HOME)/tools/bin/makerom $(DEVKITPRO)/tools/bin/makerom $(shell which makerom 2>/dev/null)))
 BANNERTOOL ?= $(firstword $(wildcard $(ROOT)/tools/bin/bannertool $(HOME)/tools/bin/bannertool $(DEVKITPRO)/tools/bin/bannertool $(shell which bannertool 2>/dev/null)))
+PYTHON     ?= python3
+HOSTPATH    = $(1)
 endif
 
-.PHONY: all clean cia elf 3dsx print-version ftp test
+.PHONY: all clean cia elf 3dsx print-version print-cia-version ftp test
 
 # `all` must be the default goal. Keep it as the first real target rule in the
 # file: an explicit-target rule placed above it (with no recipe, e.g. an extra
@@ -409,6 +460,9 @@ elf: $(TARGET).elf
 print-version:
 	@echo $(VERSION)
 
+print-cia-version:
+	@echo $(CIA_VERSION)
+
 # Host-side tests. No devkitARM, no 3DS, no ROM -- these cover logic that is
 # a pure function of GBA register state, which is where every stereo-depth
 # bug so far has actually lived. Run them before deploying:
@@ -434,6 +488,8 @@ test: test-state
 		-o $(BUILD)/updater_parse_test \
 		$(CURDIR)/tests/updater_parse_test.c $(CURDIR)/source/port_updater_parse.c
 	@$(BUILD)/updater_parse_test
+	@$(TEST_CC) -std=c11 -O1 -Wall -Wextra -Werror -I$(CURDIR)/source 		-DUPDATER_PLATFORM='"wiiu"' -DUPDATER_ASSET_SUFFIX='".wuhb"' 		-o $(BUILD)/updater_parse_test_wiiu 		$(CURDIR)/tests/updater_parse_test.c $(CURDIR)/source/port_updater_parse.c
+	@$(BUILD)/updater_parse_test_wiiu
 
 # Save state pointer relocation, on its own so it runs without the rest.
 .PHONY: test-state
@@ -473,7 +529,7 @@ ftp: $(TARGET).cia
 
 $(TARGET).cia: $(TARGET).elf $(BUILD)/mzm-3ds.smdh $(BUILD)/banner.bnr
 	@echo "Creating CIA: $(notdir $@)"
-	@$(MAKEROM) -f cia -o $@ -elf $(TARGET).elf -rsf $(CURDIR)/cia/mzm3ds.rsf \
+	@$(MAKEROM) -f cia -o $@ -elf $(TARGET).elf -rsf $(CURDIR)/cia/mzm3ds.rsf $(CIA_VERSION) \
 		-icon $(BUILD)/mzm-3ds.smdh -banner $(BUILD)/banner.bnr -DAPP_ROMFS=$(CURDIR)/romfs
 	@echo "CIA build successful: $@"
 
@@ -499,7 +555,7 @@ $(TARGET).elf: $(C_OBJS)
 	@echo "Linking ELF: $(notdir $@)"
 	@for f in $(C_OBJS); do cygpath -m "$$f" 2>/dev/null || echo "$$f"; done > $(BUILD)/objects.rsp
 	@$(LD) $(LDFLAGS) @$(BUILD)/objects.rsp $(LIBS) -o $@
-	@python3 $(ROOT)/tools/gen_state_vars.py $@ --nm $(NM) --objcopy $(OBJCOPY) --readelf $(READELF)
+	@$(PYTHON) $(call HOSTPATH,$(ROOT)/tools/gen_state_vars.py $@) --nm $(call HOSTPATH,$(NM)) --objcopy $(call HOSTPATH,$(OBJCOPY)) --readelf $(call HOSTPATH,$(READELF))
 	@$(NM) -CSn $@ > $(BUILD)/mzm-3ds.lst
 	@echo "Build successful: $(TARGET).elf"
 
@@ -542,6 +598,12 @@ $(BUILD)/root/port/asm/%.o: $(ROOT)/port/asm/%.s
 	@mkdir -p $(dir $@)
 	@echo "AS $<"
 	@$(CC) -x assembler-with-cpp -Wa,-I$(ROOT) -march=armv6k -mfloat-abi=hard -mtp=soft -I$(ROOT) -c $< -o $@
+
+# Shared port UI code (port/ui)
+$(BUILD)/ui/%.o: $(ROOT)/%.c
+	@mkdir -p $(dir $@)
+	@echo "CC $<"
+	@$(CC) -MMD -MP -MF $(@:.o=.d) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 # Compilación de archivos C bajo platform/3ds
 $(BUILD)/3ds/%.o: $(CURDIR)/%.c

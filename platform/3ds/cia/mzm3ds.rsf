@@ -120,9 +120,11 @@ AccessControlInfo:
 
 SystemControlInfo:
   SaveDataSize: 0KB
-  # Bump on any change the HOME Menu should notice (icon, banner): a reinstall
-  # with the same version can leave the HOME Menu serving its cached icon and
-  # banner for this title ID. A higher version marks the entry stale.
+  # Only a fallback: the Makefile passes the port's version (vX.Y.Z) to makerom
+  # as -major/-minor/-micro, which wins over this. A reinstall with the same
+  # title version can leave the HOME Menu serving its cached icon and banner
+  # for this title ID; each release has a new title version, which marks the
+  # entry stale.
   RemasterVersion: 2
   StackSize: 0x40000
   Dependency:

@@ -1948,7 +1948,12 @@ void SramLoad_DemoRamValues(u8 loadSamusData, u8 demoNumber)
 
         DmaTransfer(3, pDemo->visitedMinimapTiles, gVisitedMinimapTiles[gCurrentArea], sizeof(pDemo->visitedMinimapTiles), 16);
         DmaTransfer(3, pDemo->hatchesOpened, gHatchesOpened[gCurrentArea], sizeof(pDemo->hatchesOpened), 16);
-    } 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        /* Both are u8 arrays in the demo data and u32 bit sets in RAM. */
+        Port_SwapWordBytes(gVisitedMinimapTiles[gCurrentArea], sizeof(pDemo->visitedMinimapTiles) / 4);
+        Port_SwapWordBytes(gHatchesOpened[gCurrentArea], sizeof(pDemo->hatchesOpened) / 4);
+#endif
+    }
     else if (loadSamusData == TRUE)
     {
         gSamusData = pDemo->samusData;

@@ -19,6 +19,7 @@
 
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_select.h"
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 
@@ -228,7 +229,9 @@ static void LanguageSelectChangeHighlight(u8 highlight, u8 language)
     u16* dst2;
 
     dst2 = VRAM_BASE + 0xF800;
-    dst1 = dst2 + sLanguageSelectLanguageTileTableOffsets[language - LANGUAGE_ENGLISH];
+    /* Index LANGUAGE_COUNT is the port's Português entry (port_lang_select.c). */
+    dst1 = dst2 + (language >= LANGUAGE_COUNT ? Port_LangSelect_RowOffset()
+        : sLanguageSelectLanguageTileTableOffsets[language - LANGUAGE_ENGLISH]);
     dst2 = dst1 + 0x20;
 
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
@@ -302,6 +305,23 @@ static u32 LanguageSelectHandler(void)
 
     if (gChangedInput & (KEY_A | KEY_START))
     {
+        /* Português: the game runs in English under it (port_lang.h). */
+        if (LANGUAGE_SELECT_DATA.selectedLanguage == LANGUAGE_COUNT && Port_Lang_Available())
+        {
+            extern void Port_Config_Save(void);
+
+            if (gLanguage != LANGUAGE_ENGLISH)
+            {
+                gLanguage = LANGUAGE_ENGLISH;
+                SramWrite_Language();
+            }
+            Port_Lang_Set(PORT_TEXT_LANGUAGE_PT_BR);
+            Port_Config_Save();
+            SoundPlay(SOUND_ACCEPT_CONFIRM_MENU);
+            FadeMusic(CONVERT_SECONDS(1.f));
+            return TRUE;
+        }
+
         if (INVALID_EU_LANGUAGE(LANGUAGE_SELECT_DATA.selectedLanguage))
         {
             // Select English by default
@@ -322,6 +342,14 @@ static u32 LanguageSelectHandler(void)
             SramWrite_Language();
         }
 
+        if (Port_Lang_Get() != PORT_TEXT_LANGUAGE_GAME)
+        {
+            extern void Port_Config_Save(void);
+
+            Port_Lang_Set(PORT_TEXT_LANGUAGE_GAME);
+            Port_Config_Save();
+        }
+
         SoundPlay(SOUND_ACCEPT_CONFIRM_MENU);
         FadeMusic(CONVERT_SECONDS(1.f));
         return TRUE;
@@ -339,19 +367,19 @@ static u32 LanguageSelectHandler(void)
         else
         {
             language = LANGUAGE_ENGLISH;
-            LANGUAGE_SELECT_DATA.selectedLanguage = LANGUAGE_COUNT - 1;
+            LANGUAGE_SELECT_DATA.selectedLanguage = Port_Lang_Available() ? LANGUAGE_COUNT : LANGUAGE_COUNT - 1;
         }
     }
     else if (gChangedInput & KEY_DOWN)
     {
-        if (LANGUAGE_SELECT_DATA.selectedLanguage < LANGUAGE_COUNT - 1)
+        if (LANGUAGE_SELECT_DATA.selectedLanguage < (Port_Lang_Available() ? LANGUAGE_COUNT : LANGUAGE_COUNT - 1))
         {
             language = LANGUAGE_SELECT_DATA.selectedLanguage;
             LANGUAGE_SELECT_DATA.selectedLanguage = language + 1;
         }
         else
         {
-            language = LANGUAGE_COUNT - 1;
+            language = Port_Lang_Available() ? LANGUAGE_COUNT : LANGUAGE_COUNT - 1;
             LANGUAGE_SELECT_DATA.selectedLanguage = LANGUAGE_ENGLISH;
         }
     }
@@ -621,6 +649,10 @@ void SoftResetInit(void)
         LANGUAGE_SELECT_DATA.loadLanguageSelect = gSubGameMode1 == 7;
     }
 
+    /* Português is listed after the ROM's languages (port_lang_select.c). */
+    if (Port_Lang_Active())
+        LANGUAGE_SELECT_DATA.selectedLanguage = LANGUAGE_COUNT;
+
     if (LANGUAGE_SELECT_DATA.loadLanguageSelect)
     {
         LANGUAGE_SELECT_DATA.languageAnimation = sInitialLanguageColorAnimation;
@@ -630,6 +662,7 @@ void SoftResetInit(void)
 
         LZ77UncompVram(sLanguageSelectGfx, VRAM_BASE);
         LZ77UncompVram(sLanguageSelectTileTable, VRAM_BASE + 0xF800);
+        Port_LangSelect_Setup();
 
         LanguageSelectChangeHighlight(TRUE, LANGUAGE_SELECT_DATA.selectedLanguage);
 

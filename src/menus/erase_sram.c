@@ -1,5 +1,6 @@
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "region.h"
+#include "port_lang_gfx.h"
 #endif
 #include "menus/erase_sram.h"
 #include "macros.h"
@@ -454,6 +455,11 @@ static void EraseSramInit(void)
     LZ77UncompVram(sEraseSramTextGfxPointers[ERASE_SRAM_DATA.language][0], VRAM_BASE);
     LZ77UncompVram(sEraseSramTextGfxPointers[ERASE_SRAM_DATA.language][1], VRAM_BASE + 0x11000);
     LZ77UncompVram(sEraseSramTextGfxPointers[ERASE_SRAM_DATA.language][0], VRAM_OBJ);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    Port_LangGfx_Apply(PORT_LANG_GFX_ERASE_QUESTION, (void*)VRAM_BASE);
+    Port_LangGfx_Apply(PORT_LANG_GFX_ERASE_CONFIRM, (void*)(VRAM_BASE + 0x11000));
+    Port_LangGfx_Apply(PORT_LANG_GFX_ERASE_QUESTION, (void*)VRAM_OBJ);
+#endif
 
     LZ77UncompVram(sEraseSramMenuBoxTileTable, VRAM_BASE + 0xD000);
     LZ77UncompVram(sEraseSramMenuBackgroundTileTable, VRAM_BASE + 0xF000);

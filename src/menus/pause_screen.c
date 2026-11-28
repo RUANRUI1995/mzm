@@ -11,6 +11,7 @@
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_gfx.h"
 #endif
 #include "minimap.h"
 #include "oam_id.h"
@@ -1960,6 +1961,15 @@ void ProcessCutsceneOam(u8 length, struct CutsceneOamData* pOam, const struct Oa
     nextSlot = gNextOamSlot;
     currSlot = nextSlot;
     dst = (u16*)(&gOamData[nextSlot]);
+#ifdef __3DS__
+    /* The cutscenes build their OAM from slot 0 each frame: start the frame's position tags
+     * (Port_Wide_NoteSlots below) from nothing, as SpriteDrawAll does in play. */
+    if (nextSlot == 0)
+    {
+        extern void Port_Wide_BeginFrame(void);
+        Port_Wide_BeginFrame();
+    }
+#endif
 
     for (i = 0; i < length; i++, pOam++)
     {
@@ -2210,6 +2220,16 @@ void ProcessCutsceneOam(u8 length, struct CutsceneOamData* pOam, const struct Oa
         if (nextSlot + *src > 0x7F)
             break;
 
+#ifdef __3DS__
+        {
+            /* OAM keeps Y in 8 bits and X in 9, and nothing here leaves out the parts past
+             * the frame: a big object (Ridley in space's mother ship) has parts far enough
+             * above it that their Y reads as below it. Hand the WIDE renderer the object's
+             * true position, which undoes the wrap (as sprite.c does in play). */
+            extern void Port_Wide_NoteSlots(int firstSlot, int endSlot, int originY, int originX);
+            Port_Wide_NoteSlots(nextSlot, nextSlot + *src, yPosition, xPosition);
+        }
+#endif
         // Add part count
         nextSlot += *src++;
 
@@ -2501,6 +2521,9 @@ void PauseScreenInit(void)
     CallLZ77UncompVram(sTankIconsGfx, VRAM_BASE + 0x13000);
     CallLZ77UncompVram(sMapScreenAreaNamesGfxPointers[gLanguage], VRAM_BASE + 0x10800);
     CallLZ77UncompVram(sMapScreenUnknownItemsNamesGfxPointers[gLanguage], VRAM_BASE + 0x11400);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    Port_LangGfx_Apply(PORT_LANG_GFX_UNKNOWN_ITEMS, (void*)(VRAM_BASE + 0x11400));
+#endif
     CallLZ77UncompVram(sMapScreenChozoStatueAreaNamesGfxPointers[gLanguage], VRAM_BASE + 0x11800);
 
     if (PAUSE_SCREEN_DATA.typeFlags & PAUSE_SCREEN_TYPE_CHOZO_STATUE_HINT)
@@ -2533,7 +2556,13 @@ void PauseScreenInit(void)
         CallLZ77UncompVram(sPauseScreenHudGfx, VRAM_BASE + 0x1000);
         CallLZ77UncompVram(sMinimapLettersGfx, VRAM_BASE + 0x7400);
         CallLZ77UncompVram(sMapScreenEquipmentNamesGfxPointers[gLanguage], VRAM_BASE + 0x6000);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        Port_LangGfx_Apply(PORT_LANG_GFX_EQUIPMENT_NAMES, (void*)(VRAM_BASE + 0x6000));
+#endif
         CallLZ77UncompVram(sMapScreenMenuNamesGfxPointers[gLanguage], VRAM_BASE + 0xC00);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        Port_LangGfx_Apply(PORT_LANG_GFX_MENU_NAMES, (void*)(VRAM_BASE + 0xC00));
+#endif
         DmaTransfer(3, VRAM_BASE + 0x6000, VRAM_OBJ, 0x800, 32);
     }
 

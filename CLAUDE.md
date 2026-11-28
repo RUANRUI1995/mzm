@@ -39,6 +39,20 @@ variable name and their host pointers are rebuilt on load, so a global that
 holds a pointer or a runtime handle may need a rule in
 `platform/3ds/source/port_state_ptrs.c`.
 
+## PC reference build (`platform/pc/`)
+
+A deterministic Linux/Windows build of the same game code (SDL2 window, no audio), built from WSL:
+`make` / `make OS_TARGET=windows` in `platform/pc`. It replays input files and writes a per-frame
+trace; `compare_traces.py` finds the first frame two builds differ. Use it to check a change to
+shared code (`src/`, `port/`) without the console: `make replay-check`, and compare a trace from
+before and after the change. It is the yardstick for the Wii U port (issue #39). See
+`platform/pc/README.md`.
+
+The bottom-screen UI lives in `port/ui/` and is built by both the 3DS and the PC. It draws only
+through `port_draw2d.h` (citro2d on the 3DS, software elsewhere) and reaches the system only
+through `port_ui_platform.h` and the service headers in `platform/3ds/source`; the PC answers for
+those in `platform/pc/source/port_services_pc.c`. A UI change has to build in both.
+
 ## Git remotes: `origin` is the one that matters
 
 `origin` is `tinaut1986/mzm` (this project). `upstream` is `metroidret/mzm`, the
@@ -56,7 +70,16 @@ checked in — if a fresh clone starts resolving to `metroidret/mzm` again, run:
 gh repo set-default tinaut1986/mzm
 ```
 
-## Release process (3DS port)
+## Release process (3DS and Wii U)
+
+**Three kinds of tag, one version counter** (`docs/release-notes/README.md`):
+`vX.Y.Z` ships both platforms (one release page with the CIA and the WUHB),
+`3ds-vX.Y.Z` the 3DS only, `wiiu-vX.Y.Z` the Wii U only. A number is used once,
+by whichever kind needs it; each console's updater takes the general tags and
+its own and never offers the other platform's. Tag only what changed: a fix
+that touches one platform gets that platform's tag. The examples below use
+`vX.Y.Z`; the other two kinds follow the same steps (notes file named after the
+full tag, the release branch renamed to the next number afterwards).
 
 Version numbers are meaningful, not sequential: a **minor** bump marks a
 milestone (v0.4.0 followed v0.3.4 because the port became playable start to

@@ -1,6 +1,7 @@
 #include "menus/game_over.h"
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "region.h"
+#include "port_lang_gfx.h"
 #endif
 #include "dma.h"
 #include "macros.h"
@@ -355,6 +356,9 @@ static void GameOverInit(void)
     LZ77UncompVram(sGameOverTextAndBackgroundGfx, VRAM_BASE + 0x4000);
     LZ77UncompVram(sFileSelectObjIconsGfx, VRAM_OBJ);
     LZ77UncompVram(sGameOverTextPromptGfxPointers[gLanguage], VRAM_BASE + 0xA800);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    Port_LangGfx_Apply(PORT_LANG_GFX_GAME_OVER, (void*)(VRAM_BASE + 0xA800));
+#endif
 
     WRITE_16(REG_BG0CNT, CREATE_BGCNT(1, 0, BGCNT_HIGH_PRIORITY, BGCNT_SIZE_256x256));
     WRITE_16(REG_BG1CNT, CREATE_BGCNT(1, 1, BGCNT_HIGH_MID_PRIORITY, BGCNT_SIZE_256x256));

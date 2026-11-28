@@ -546,7 +546,7 @@ void agbmain(void)
 #if defined(MZM_3DS) && defined(PORT_VERBOSE_FRAME_LOG)
         Port_DebugLog("agbmain: switch done, before Halt wait");
 #endif
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
         extern void Port_RA_EvaluateTriggers(void);
         Port_RA_EvaluateTriggers();
 #endif

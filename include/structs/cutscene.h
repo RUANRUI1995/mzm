@@ -73,6 +73,24 @@ struct CutsceneScrollingInfo {
 #endif
 };
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct CutsceneInfo {
+    CutsceneType gameplayType;
+    boolu8 skippable:2;
+    boolu8 isElevator:2;
+    boolu8 playRoomMusic:4;
+    StoryTextId storyText;
+    CutsceneFunc_T pFunction;
+    u8 preBgFading;
+    u16 fadingTimer;
+    u8 bgFading;
+    Event event;
+};
+#else
 struct CutsceneInfo {
     CutsceneType gameplayType;
     boolu8 playRoomMusic:4;
@@ -85,6 +103,21 @@ struct CutsceneInfo {
     u8 bgFading;
     Event event;
 };
+#endif
+#else
+struct CutsceneInfo {
+    CutsceneType gameplayType;
+    boolu8 playRoomMusic:4;
+    boolu8 isElevator:2;
+    boolu8 skippable:2;
+    StoryTextId storyText;
+    CutsceneFunc_T pFunction;
+    u8 preBgFading;
+    u16 fadingTimer;
+    u8 bgFading;
+    Event event;
+};
+#endif
 
 struct CutsceneStageData {
     CutsceneFunc_T pFunction;
@@ -138,6 +171,38 @@ struct CutsceneSpecialEffect {
     s8 bg_Timer;
 };
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+/* Big-endian GCC fills a bitfield unit from its most significant bit: the
+ * fields of each byte are declared in reverse, so every byte holds the same
+ * bits as on the GBA (ROM data, raw copies and mzm.sav read alike). */
+struct CutsceneOamData {
+    s16 yPosition;
+    s16 xPosition;
+    u8 padding_4[4];
+    u8 animationDurationCounter;
+    u8 currentAnimationFrame;
+    u8 oamId;
+    u8 exists:2;
+    u8 notDrawn:1;
+    u8 ended:1;
+    u8 objMode:2;
+    u8 priority:2;
+    u8 :3;
+    u8 rotationScaling:1;
+    u8 boundBackground:4;
+    u8 actions;
+    s16 xVelocity;
+    s16 yVelocity;
+    s16 unk_12; // used as timer and random number
+    u16 timer;
+    u16 unk_16; // used for scaling and timer and random number
+    u16 unk_18; // used for timer and velocity
+    u16 unk_1A; // used as counter
+    u8 padding_1C[2];
+    u8 unk_1E; // only holds the value 2 for unk_1A
+};
+#else
 struct CutsceneOamData {
     s16 yPosition;
     s16 xPosition;
@@ -163,6 +228,34 @@ struct CutsceneOamData {
     u8 padding_1C[2];
     u8 unk_1E; // only holds the value 2 for unk_1A
 };
+#endif
+#else
+struct CutsceneOamData {
+    s16 yPosition;
+    s16 xPosition;
+    u8 padding_4[4];
+    u8 animationDurationCounter;
+    u8 currentAnimationFrame;
+    u8 oamId;
+    u16 priority:2;
+    u16 objMode:2;
+    u16 ended:1;
+    u16 notDrawn:1;
+    u16 exists:2;
+    u8 boundBackground:4;
+    u8 rotationScaling:1;
+    u8 actions;
+    s16 xVelocity;
+    s16 yVelocity;
+    s16 unk_12; // used as timer and random number
+    u16 timer;
+    u16 unk_16; // used for scaling and timer and random number
+    u16 unk_18; // used for timer and velocity
+    u16 unk_1A; // used as counter
+    u8 padding_1C[2];
+    u8 unk_1E; // only holds the value 2 for unk_1A
+};
+#endif
 
 struct CutsceneTimeInfo {
     u8 stage;

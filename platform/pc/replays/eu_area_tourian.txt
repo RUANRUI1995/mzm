@@ -1,0 +1,65 @@
+# Resumes file A of saves/eu_tourian.sav (EU ROM): Tourian, through door 1, every item
+# (made with tools/mzm_save.py warp). A taps through the title and file select
+# until the game starts, around frame 400; then walk, jump, shoot, morph and
+# bomb, turn, aim, missiles.
+save saves/eu_tourian.sav
+
+# frame keys
+0 -
+40 A
+44 -
+80 A
+84 -
+120 A
+124 -
+160 A
+164 -
+200 A
+204 -
+240 A
+244 -
+280 A
+284 -
+320 A
+324 -
+360 A
+364 -
+440 -
+480 RIGHT
+600 RIGHT+A
+640 RIGHT
+700 RIGHT+B
+704 RIGHT
+720 RIGHT+B
+724 RIGHT
+780 -
+800 DOWN
+806 -
+812 DOWN
+818 -
+830 B
+834 -
+870 B
+874 -
+930 RIGHT
+1000 UP
+1006 -
+1012 UP
+1018 -
+1040 LEFT
+1160 LEFT+A
+1220 LEFT
+1300 R
+1310 R+B
+1314 R
+1340 -
+1360 UP+B
+1364 -
+1400 A
+1430 RIGHT+A
+1500 RIGHT
+1600 -
+1700 L+B
+1704 -
+1760 -
+1800 -

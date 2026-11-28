@@ -1,0 +1,4 @@
+# SDL2 MinGW development packages (SDL2-devel-<version>-mingw.tar.gz) known to
+# fetch_sdl2_mingw.sh: "<version> <sha256>". Recorded from the official release
+# download; the size matched the GitHub release asset.
+2.30.12 dddafbf0705a8cbe1f97c69680886ce147ed4d38f1d04e03523681298e081b0f

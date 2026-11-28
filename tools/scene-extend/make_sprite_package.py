@@ -70,6 +70,31 @@ SPRITES = {
              "direction, with the same width, colour bands and streaks, so that it leaves the canvas "
              "the way it used to leave the GBA screen. Nothing else changes."),
 }
+SPRITES['ridley-mothership'] = dict(
+    name="Ridley in space: the Space Pirate mother ship",
+    dump='c07/s1/1', anchor=(120, -9), canvas=(-80, -105, 320, 23), blended=False,
+    # sRidleyInSpaceOam_MotherShip_Frame0 (src/data/cutscenes/ridley_in_space_data.c)
+    frames={
+        'A': [(-120, -64, '64x64', 0x2, 0), (-56, -64, '64x64', 0xa, 0), (8, -64, '64x64', 0x12, 0),
+              (72, -64, '32x64', 0x1a, 0), (104, -64, '16x32', 0x1e, 0), (104, -32, '16x32', 0x9e, 0),
+              (-48, 0, '64x32', 0x10b, 0), (16, 0, '32x32', 0x113, 0)],
+    },
+    others=[],
+    background=('c07/s1-bg3.png', (0, 0)),
+    thing='the ship', over='a starfield', style='outlines, panel lines and shading bands',
+    seen='', past='', semi='', others_file='',
+    about="The Space Pirate mother ship, a huge purple craft seen from below, slowly comes down into "
+          "view from the top of the screen while two small blue fighters fly ahead of it. The game "
+          "only drew the part of the hull the GBA's 240x160 screen could show: its left and right "
+          "sides stop in straight vertical cuts at the old screen's edges, and the hull above the "
+          "old screen's top is missing too. The wider 3DS screen now shows those cuts.",
+    task="Continue the hull past its straight cuts: to the left of x={left} and to the right of "
+         "x={right} of the canvas the ship's wide body goes on (it is much wider than the screen: "
+         "let it run off both sides of the canvas, following the curve its outline already has), "
+         "and above the art's top edge (y={top}) the upper hull continues up to the canvas's top. "
+         "Same panels, lights and purple shading as the part that is there. Below the ship, and "
+         "anywhere that is not the ship, stays transparent.",
+)
 
 README = """# Extend a Game Boy Advance sprite: {name}
 
@@ -80,27 +105,24 @@ now shown on a wider screen and this sprite, which the old screen cut off, must 
 
 ## Files
 {files}
-- `3-final-composite.png`: the 400x240 screen as the player sees it now, with the cut trail
-  (frame A, see-through as the game draws it). The canvas's top-left corner is at x={cx0},
-  y={cy0} of it; the canvas goes {past} px past the screen's right edge on purpose (the screen
-  shifts a little during the scene). Context only.
-- `4-do-not-paint.png`: the ship (another sprite drawn over the trail), at its place in the
-  canvas. Context only: do not paint it, do not change the trail under it.
+- `3-final-composite.png`: the 400x240 screen as the player sees it now, with
+  {thing} cut as it is (frame A{seen}). The canvas's top-left corner is at x={cx0}, y={cy0} of it{past}.
+  Context only.
+{others_file}
 
 ## What to do
 {task}
 
 ## Rules
-1. Do not change a single existing pixel of the trail. It is the game's own art.
-2. Use only the colours the trail already uses ({colours} colours). No anti-aliasing, gradients,
+1. Do not change a single existing pixel of {thing}. It is the game's own art.
+2. Use only the colours {thing} already uses ({colours} colours). No anti-aliasing, gradients,
    blur, dithering it does not use, or new hues.
-3. Same pixel scale and style: hard 1-pixel edges, the same streaks and shading bands.
-4. **The background stays transparent.** This is a sprite drawn over the planet: every pixel that
-   is not trail must be fully transparent (or pure magenta 255,0,255 if your tool cannot keep
-   transparency). No semi-transparent pixels: the game makes the trail see-through by itself.
-5. Frames A and B must match each other where they overlap now, and be extended the same way.
-6. Output: for each frame a PNG exactly {W}x{H} (the template's size), no scaling, no smoothing.
-   Give 2 or 3 variants of each, as separate files named so that A and B of a variant pair up.
+3. Same pixel scale and style: hard 1-pixel edges, the same {style}.
+4. **The background stays transparent.** This is a sprite drawn over {over}: every pixel that
+   is not {thing} must be fully transparent (or pure magenta 255,0,255 if your tool cannot keep
+   transparency). No semi-transparent pixels{semi}.
+{frames_rule}{n_out}. Output: for each frame a PNG exactly {W}x{H} (the template's size), no scaling, no smoothing.
+   Give 2 or 3 variants{of_each}, as separate files{pair}.
 """
 
 
@@ -134,36 +156,41 @@ def build(key, sp, dumps_dir, out_dir):
     os.makedirs(folder, exist_ok=True)
     colours = set()
     files = []
-    tops, rights = [], []
+    tops, rights, lefts = [], [], []
     for name, entries in sp['frames'].items():
         img = draw(entries, sp['anchor'], d, (W, H), (-cx0, -cy0))
         colours |= {c for c in img.get_flattened_data() if c[3]}
         bbox = img.getbbox()
         tops.append(bbox[1])
         rights.append(bbox[2])
+        lefts.append(bbox[0])
         img.save(os.path.join(folder, f'1-template-{name}-{W}x{H}.png'))
         mag = Image.new('RGBA', (W, H), (255, 0, 255, 255))
         mag.alpha_composite(img)
         mag.convert('RGB').save(os.path.join(folder, f'1-template-{name}-{W}x{H}-magenta.png'))
         img.crop(bbox).save(os.path.join(folder, f'2-original-{name}.png'))
-        files.append(f"- `1-template-{name}-{W}x{H}.png`: **the canvas for frame {name}.** The trail as "
+        files.append(f"- `1-template-{name}-{W}x{H}.png`: **the canvas for frame {name}.** {sp.get('thing', 'the trail').capitalize()} as "
                      f"the game draws it, at its place; the rest is transparent. `...-magenta.png` is "
                      f"the same with magenta for empty, if your tool prefers it.")
         files.append(f"- `2-original-{name}.png`: frame {name} alone, at its own size.")
-    others = draw(sp['others'], sp['anchor'], d, (W, H), (-cx0, -cy0))
-    others.save(os.path.join(folder, '4-do-not-paint.png'))
+    if sp['others']:
+        others = draw(sp['others'], sp['anchor'], d, (W, H), (-cx0, -cy0))
+        others.save(os.path.join(folder, '4-do-not-paint.png'))
 
     # The composite: the WIDE view (GBA frame at 80, 40) with the background and the sprites.
     view = Image.new('RGBA', (400, 240), (0, 0, 0, 255))
-    path, (bx0, by0) = sp['background']
-    bg = Image.open(os.path.expanduser(path)).convert('RGBA')
-    hofs = d.reg(0x10) & 0xFF
-    hofs = hofs - 256 if hofs > 128 else hofs
-    view.alpha_composite(bg, (80 + bx0 - hofs, 40 + by0))
+    if sp.get('background'):
+        path, (bx0, by0) = sp['background']
+        bg = Image.open(os.path.join(dumps_dir, os.path.expanduser(path))).convert('RGBA')
+        hofs = d.reg(0x10) & 0xFF
+        hofs = hofs - 256 if hofs > 128 else hofs
+        view.alpha_composite(bg, (80 + bx0 - hofs, 40 + by0))
     first = draw(list(sp['frames'].values())[0], sp['anchor'], d, (400, 240), (80, 40))
     # Blended like the game: BLDALPHA's EVA/16 of the sprite over EVB/16 of what is under it.
     bldalpha = d.reg(0x52)
     eva, evb = min(16, bldalpha & 31), min(16, (bldalpha >> 8) & 31)
+    if not sp.get('blended', True):
+        eva, evb = 16, 0
     under = view.copy()
     fp, vp, up = first.load(), view.load(), under.load()
     for y in range(240):
@@ -176,8 +203,22 @@ def build(key, sp, dumps_dir, out_dir):
     with open(os.path.join(folder, 'README-AI.md'), 'w') as f:
         f.write(README.format(
             name=sp['name'], about=sp['about'], files='\n'.join(files), W=W, H=H,
-            cx0=80 + cx0, cy0=40 + cy0, past=max(0, 80 + cx1 - 400), colours=len(colours),
-            task=sp['task'].format(top=min(tops), right=max(rights) - 1)))
+            cx0=80 + cx0, cy0=40 + cy0, colours=len(colours),
+            task=sp['task'].format(top=min(tops), right=max(rights) - 1, left=min(lefts)),
+            thing=sp.get('thing', 'the trail'), over=sp.get('over', 'the planet'),
+            style=sp.get('style', 'streaks and shading bands'),
+            seen=sp.get('seen', ', see-through as the game draws it'),
+            past=sp.get('past', "; the canvas goes {} px past the screen's right edge on purpose (the "
+                                "screen shifts a little during the scene)").format(max(0, 80 + cx1 - 400)),
+            semi=sp.get('semi', ': the game makes the trail see-through by itself'),
+            others_file=sp.get('others_file', '- `4-do-not-paint.png`: the ship (another sprite drawn over the '
+                               'trail), at its place in the\n  canvas. Context only: do not paint it, do not '
+                               'change the trail under it.'),
+            frames_rule='' if len(sp['frames']) == 1 else
+            '5. Frames A and B must match each other where they overlap now, and be extended the same way.\n',
+            of_each='' if len(sp['frames']) == 1 else ' of each',
+            n_out=5 if len(sp['frames']) == 1 else 6,
+            pair='' if len(sp['frames']) == 1 else ' named so that A and B of a variant pair up'))
     print(f'{key}: {folder} ({W}x{H}, {len(sp["frames"])} frames, {len(colours)} colours, '
           f'trail cut at y={min(tops)} and x={max(rights) - 1} of the canvas)')
 

@@ -5494,10 +5494,12 @@ static void FileSelectDisplaySaveFileTimer(u8 file)
  * @brief Draws a save file's area name with the Chinese glyph set
  *
  * The Chinese release keeps its area names as 8x16 glyphs instead of the single row of 8 pixel
- * tall text the other regions use: the five tiles at the name's base hold the upper halves and
- * the four tiles at +0x20 hold the lower halves. The names start at tile 0x140 and are five
- * tiles apart, which is what the ROM's own routine for this screen does (0x080803BE). The
- * index is a position in that glyph order, see sSaveFileAreasIdCN.
+ * tall text the other regions use: five tiles hold the upper halves and five more the lower
+ * halves. The names start at tile 0x140 and are five tiles apart. This follows the ROM's own
+ * routine (0x080803BE), which loops ten times - writing five tiles, jumping a row at i == 5 via
+ * r3 += 0x36, then writing five more. It also keeps a five-character name (index 6) in a
+ * different part of the font for its middle and last glyphs. The index is a position in that
+ * glyph order, see sSaveFileAreasIdCN.
  *
  * @param dst Tilemap entry of the first character's upper half
  * @param palette Palette bits to OR into every entry
@@ -5506,23 +5508,38 @@ static void FileSelectDisplaySaveFileTimer(u8 file)
 static void FileSelectDrawSaveFileAreaCN(u16* dst, s32 palette, s32 nameIndex)
 {
     s32 i;
-    u16 tile;
+    u16 base, tile;
+
+    for (i = 0; i < 5; i++)
+        dst[i] = 0;
+    for (i = 0; i < 5; i++)
+        dst[i + 32] = 0;
 
     if (nameIndex < 0)
-    {
-        for (i = 0; i < 5; i++)
-            dst[i] = 0;
-        for (i = 0; i < 4; i++)
-            dst[i + 32] = 0;
-    }
-    else
-    {
-        tile = 0x140 + nameIndex * 5;
+        return;
 
-        for (i = 0; i < 5; i++)
-            dst[i] = palette | (u16)(tile + i);
-        for (i = 0; i < 4; i++)
-            dst[i + 32] = palette | (u16)(tile + 0x20 + i);
+    base = (u16)(0x140 + nameIndex * 5);
+    tile = base;
+    for (i = 0; i < 10; i++)
+    {
+        // The ROM advances the tile by one each pass and, on i == 5, moves to the lower row.
+        // For most names that lower row is base + 0x20 (i == 5 adds 0x1b to base + 5). The
+        // five-character name at index 6 is instead stored in two runs: add 0x20 at i == 2 and
+        // i == 7, and step back five at i == 5.
+        if (nameIndex == 6)
+        {
+            if (i == 2 || i == 7)
+                tile = (u16)(tile + 0x20);
+            if (i == 5)
+                tile = (u16)(tile - 5);
+        }
+        else if (i == 5)
+        {
+            tile = (u16)(tile + 0x1B);
+        }
+
+        dst[i < 5 ? i : (i - 5) + 32] = palette | tile;
+        tile = (u16)(tile + 1);
     }
 }
 

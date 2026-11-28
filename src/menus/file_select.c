@@ -5544,43 +5544,50 @@ static void FileSelectDrawSaveFileAreaCN(u16* dst, s32 palette, s32 nameIndex)
 }
 
 /**
- * @brief Draws a save file's difficulty word with the Chinese glyph set
+ * @brief Draws a save file's difficulty word and current energy with the Chinese glyph set
  *
- * The Chinese release spells the difficulties out instead of using the abbreviations the other
- * regions have. They are 16x16 glyphs, 容易 at tile 0x1D8 and 困难 at 0x1DC, and the release
- * draws a single wide dash at 0x1D6 for the standard difficulty. The lower halves sit 0x20
- * tiles later, as everywhere else in this font. The row has room for seven tiles, so whatever
- * the word does not cover is cleared.
+ * The Chinese release spells every difficulty out as two 8x8 tiles with one blank tile
+ * between them (the ROM's routine at 0x08080204 writes eight tiles across the row):
+ * 容易 = 0x1D8 + 0x21D, 一般 = 0x1D6 + 0x21B, 困难 = 0x1DC + 0x1DE.
+ * The earlier "single dash" reading came from treating these as 8x16 pairs (+0x20), which
+ * is wrong here: 0x1D6 is just the horizontal stroke of 一, and 般 lives at 0x21B.
  *
- * @param dst Tilemap entry of the first character's upper half
- * @param palette Palette bits to OR into every entry
- * @param difficulty Difficulty index, negative to clear the two rows
+ * Under the word the release draws the file's current energy as two 8x8 digits in palette 6
+ * (yellow), using the same digit tiles as the timer's lower row (0x1EC + digit).
+ *
+ * @param dst Tilemap entry of the difficulty word's first tile
+ * @param palette Palette bits to OR into the difficulty tiles
+ * @param difficulty Difficulty index, negative to clear the rows
+ * @param energy Current energy, negative to leave the digit row empty
  */
-static void FileSelectDrawSaveFileDifficultyCN(u16* dst, s32 palette, s32 difficulty)
+static void FileSelectDrawSaveFileDifficultyCN(u16* dst, s32 palette, s32 difficulty, s32 energy)
 {
-    static const u16 sDifficultyTiles[3] = { 0x1D8, 0x1D6, 0x1DC };
+    static const u16 sDifficultyTiles[3][2] = {
+        { 0x1D8, 0x21D }, // 容易
+        { 0x1D6, 0x21B }, // 一般
+        { 0x1DC, 0x1DE }, // 困难
+    };
     s32 i;
-    s32 width;
-    u16 tile;
 
-    for (i = 0; i < 7; i++)
+    for (i = 0; i < 8; i++)
+    {
         dst[i] = 0;
-    for (i = 0; i < 7; i++)
         dst[i + 32] = 0;
+    }
 
-    if (difficulty < 0 || difficulty >= ARRAY_SIZE(sDifficultyTiles))
-        return;
+    if (difficulty >= 0 && difficulty < (s32)ARRAY_SIZE(sDifficultyTiles))
+    {
+        dst[0] = palette | sDifficultyTiles[difficulty][0];
+        dst[2] = palette | sDifficultyTiles[difficulty][1];
+    }
 
-    tile = sDifficultyTiles[difficulty];
-    if (difficulty == DIFF_NORMAL)
-        width = 2; // 0x1D6 is one 16 pixel wide dash, not a word
-    else
-        width = 4; // two 16x16 glyphs
-
-    for (i = 0; i < width; i++)
-        dst[i] = palette | (u16)(tile + i);
-    for (i = 0; i < width; i++)
-        dst[i + 32] = palette | (u16)(tile + 0x20 + i);
+    if (energy >= 0)
+    {
+        if (energy > 99)
+            energy = 99;
+        dst[32] = 0x6000 | (u16)(0x1EC + energy / 10);
+        dst[33] = 0x6000 | (u16)(0x1EC + energy % 10);
+    }
 }
 #endif // MZM_3DS || PORT_NATIVE
 /**
@@ -5627,9 +5634,12 @@ static void FileSelectDisplaySaveFileMiscInfo(struct SaveFileInfo* pFile, FileSe
 
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
     if (REGION_IS_CN())
+    {
+        bool usable = (pFile->exists || pFile->introPlayed) && pFile->corruptionFlag == 0;
         FileSelectDrawSaveFileDifficultyCN(dst, palette,
-            (pFile->timeAttack || !(pFile->exists || pFile->introPlayed) || pFile->corruptionFlag)
-                ? -1 : pFile->difficulty);
+            (pFile->timeAttack || !usable) ? -1 : (s32)pFile->difficulty,
+            (pFile->timeAttack || !usable) ? -1 : (s32)pFile->currentEnergy);
+    }
     else
 #endif
     if ((pFile->exists || pFile->introPlayed) && pFile->corruptionFlag == 0)

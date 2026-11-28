@@ -109,6 +109,9 @@ static const struct {
     { "4: FRANÇAIS",            "4: 法文" },
     { "5: ITALIANO",            "5: 意大利文" },
     { "6: ESPAÑOL",             "6: 西班牙文" },
+    /* The bottom screen's own Chinese, offered as the stop after the six GBA
+     * languages (see Port_Config_CycleLanguage). */
+    { "7: CHINESE",             "7: 中文" },
 
     /* Values: aspect ratio, display style, fps position, GBA effects. */
     { "ORIGINAL (3:2)", "原始(3:2)" },

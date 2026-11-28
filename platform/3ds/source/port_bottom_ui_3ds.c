@@ -2891,11 +2891,11 @@ static void RenderCollectiblesModal(int lang) {
         "OBJEKTE NACH GEBIET", "OBJETS PAR REGION", "OGGETTI PER AREA", "COLECCIONABLES POR ZONA"
     };
     if (hideSpoilers) {
-        snprintf(globTitle, sizeof(globTitle), "%s: %u", collTitles[lang],
+        snprintf(globTitle, sizeof(globTitle), "%s: %u", Port_BottomUi_Zh(collTitles[lang]),
                  globalStats.totalObtained);
     } else {
         unsigned pct = globalStats.totalItems > 0 ? (globalStats.totalObtained * 100 / globalStats.totalItems) : 0;
-        snprintf(globTitle, sizeof(globTitle), "%s: %u/%u (%u%%)", collTitles[lang],
+        snprintf(globTitle, sizeof(globTitle), "%s: %u/%u (%u%%)", Port_BottomUi_Zh(collTitles[lang]),
                  globalStats.totalObtained, globalStats.totalItems, pct);
     }
     DrawText(18.0f, 32.0f, 1.0f, globTitle, C2D_Color32(255, 215, 0, 255));
@@ -3596,7 +3596,7 @@ static void RenderDisplayModal(int lang) {
     static const char* const spoL[7]   = { "HIDE SPOILERS","HIDE SPOILERS","HIDE SPOILERS","SPOILER AUS","MASQ. SPOILERS","NASC. SPOILER","OCULTAR SPOILERS" };
 
     DispCell(0, langL[lang],
-             Port_BottomUi_ZhActive() ? "7: 中文"
+             Port_BottomUi_ZhActive() ? "7: CHINESE"
                                       : Port_Config_GetLanguageDisplayName((int)gLanguage),
              valCol);
     bool wideOn = (Port_Config_Get3DSAspectRatio() == 3);
@@ -4798,11 +4798,11 @@ static void RenderStatusView(void) {
         "OBJEKTE", "OBJETS", "OGGETTI", "OBJETOS"
     };
     if (hcStatus) {
-        snprintf(globBtn, sizeof(globBtn), "%s: %u", itemsBtnLabels[lang],
+        snprintf(globBtn, sizeof(globBtn), "%s: %u", Port_BottomUi_Zh(itemsBtnLabels[lang]),
                  globalStats.totalObtained);
     } else {
         unsigned pct = globalStats.totalItems > 0 ? (globalStats.totalObtained * 100 / globalStats.totalItems) : 0;
-        snprintf(globBtn, sizeof(globBtn), "%s: %u/%u (%u%%)", itemsBtnLabels[lang],
+        snprintf(globBtn, sizeof(globBtn), "%s: %u/%u (%u%%)", Port_BottomUi_Zh(itemsBtnLabels[lang]),
                  globalStats.totalObtained, globalStats.totalItems, pct);
     }
     C2D_DrawRectSolid(182.0f, 172.0f, 0.5f, 126.0f, 14.0f, C2D_Color32(20, 50, 90, 255));

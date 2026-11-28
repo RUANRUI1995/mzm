@@ -1092,6 +1092,14 @@ static void ComputeDepthState(uint16_t dispcnt) {
     if (gMainGameMode == 3) {
         sDepthState.flatMenu = true;
         sDepthState.flatMenuBackdropPrio = 3;
+    } else if (gMainGameMode == 0) {
+        /* GM_SOFT_RESET: the EU language select is BG3 alone at priority 3,
+         * which the priority tiers send to the far plane (the list sank into
+         * the screen and its shifted edges showed). Nothing here is a
+         * backdrop, so a split above every priority keeps all of it on the
+         * content plane, like the file select's text. */
+        sDepthState.flatMenu = true;
+        sDepthState.flatMenuBackdropPrio = 4;
     } else if (gMainGameMode == 8) {
         sDepthState.flatMenu = true;
         sDepthState.flatMenuBackdropPrio = 2;

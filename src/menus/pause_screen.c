@@ -11,6 +11,7 @@
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_gfx.h"
 #endif
 #include "minimap.h"
 #include "oam_id.h"
@@ -2520,6 +2521,9 @@ void PauseScreenInit(void)
     CallLZ77UncompVram(sTankIconsGfx, VRAM_BASE + 0x13000);
     CallLZ77UncompVram(sMapScreenAreaNamesGfxPointers[gLanguage], VRAM_BASE + 0x10800);
     CallLZ77UncompVram(sMapScreenUnknownItemsNamesGfxPointers[gLanguage], VRAM_BASE + 0x11400);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    Port_LangGfx_Apply(PORT_LANG_GFX_UNKNOWN_ITEMS, (void*)(VRAM_BASE + 0x11400));
+#endif
     CallLZ77UncompVram(sMapScreenChozoStatueAreaNamesGfxPointers[gLanguage], VRAM_BASE + 0x11800);
 
     if (PAUSE_SCREEN_DATA.typeFlags & PAUSE_SCREEN_TYPE_CHOZO_STATUE_HINT)
@@ -2552,7 +2556,13 @@ void PauseScreenInit(void)
         CallLZ77UncompVram(sPauseScreenHudGfx, VRAM_BASE + 0x1000);
         CallLZ77UncompVram(sMinimapLettersGfx, VRAM_BASE + 0x7400);
         CallLZ77UncompVram(sMapScreenEquipmentNamesGfxPointers[gLanguage], VRAM_BASE + 0x6000);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        Port_LangGfx_Apply(PORT_LANG_GFX_EQUIPMENT_NAMES, (void*)(VRAM_BASE + 0x6000));
+#endif
         CallLZ77UncompVram(sMapScreenMenuNamesGfxPointers[gLanguage], VRAM_BASE + 0xC00);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+        Port_LangGfx_Apply(PORT_LANG_GFX_MENU_NAMES, (void*)(VRAM_BASE + 0xC00));
+#endif
         DmaTransfer(3, VRAM_BASE + 0x6000, VRAM_OBJ, 0x800, 32);
     }
 

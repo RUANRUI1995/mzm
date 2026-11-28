@@ -10,6 +10,7 @@
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_texts.h"
 #endif
 
 #include "data/text_data.h"
@@ -849,7 +850,11 @@ void TextDrawLocation(u8 locationText, u8 gfxSlot)
 
     BitFill(3, 0xFFFF, EWRAM_BASE, 0x800, 16);
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    pText = Port_Lang_Location(locationText, sLocationTextPointers[gLanguage][locationText]);
+#else
     pText = sLocationTextPointers[gLanguage][locationText];
+#endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
     pText = (const u16*)port_resolve_addr((uintptr_t)pText);
 #endif
@@ -916,8 +921,14 @@ u8 unk_6f0a8(u8 textId, u8 gfxSlot, u8 param_3)
 
             for (; i != 0; i--)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                switch (TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_Message(gCurrentMessage.messageId, sMessageTextPointers[gLanguage][gCurrentMessage.messageId]),
+                    VRAM_BASE + 0x14000 + gCurrentMessage.gfxSlot * 0x800 + gCurrentMessage.line * 0x800))
+#else
                 switch (TextProcessCurrentMessage(&gCurrentMessage, sMessageTextPointers[gLanguage][gCurrentMessage.messageId],
                     VRAM_BASE + 0x14000 + gCurrentMessage.gfxSlot * 0x800 + gCurrentMessage.line * 0x800))
+#endif
                 {
                     case TEXT_STATE_ENDED:
                         gCurrentMessage.stage++;
@@ -1008,9 +1019,15 @@ u8 TextProcessMessageBanner(void)
 
             while (i != 0)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                switch (TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_Message(gCurrentMessage.messageId, sMessageTextPointers[gLanguage][gCurrentMessage.messageId]),
+                    VRAM_BASE + 0x14000 + gCurrentMessage.gfxSlot * 0x800 + gCurrentMessage.line * 0x800))
+#else
                 switch (TextProcessCurrentMessage(&gCurrentMessage,
                     sMessageTextPointers[gLanguage][gCurrentMessage.messageId],
                     VRAM_BASE + 0x14000 + gCurrentMessage.gfxSlot * 0x800 + gCurrentMessage.line * 0x800))
+#endif
                 {
                     case TEXT_STATE_ENDED:
                         gCurrentMessage.stage++;
@@ -1128,7 +1145,12 @@ u8 TextProcessStory(void)
             
             while (i != 0)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                maxLine = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_Story(gCurrentMessage.messageId, sStoryTextPointers[gLanguage][gCurrentMessage.messageId]), dst);
+#else
                 maxLine = TextProcessCurrentMessage(&gCurrentMessage, sStoryTextPointers[gLanguage][gCurrentMessage.messageId], dst);
+#endif
                 
                 switch (maxLine)
                 {
@@ -1214,7 +1236,12 @@ u8 TextProcessFileScreenPopUp(void)
             {
                 currentMessage = &gCurrentMessage;
                 fileScreenTextPointers = sFileScreenTextPointers;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                result = TextProcessCurrentMessage(currentMessage,
+                    Port_Lang_FileScreen(currentMessage->messageId, fileScreenTextPointers[gLanguage][currentMessage->messageId]), dst);
+#else
                 result = TextProcessCurrentMessage(currentMessage, fileScreenTextPointers[gLanguage][currentMessage->messageId], dst);
+#endif
 
                 switch (result)
                 {
@@ -1299,8 +1326,14 @@ void TextProcessDescription(void)
 
         case 2:
             // Process message
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            result = TextProcessCurrentMessage(&gCurrentMessage,
+                Port_Lang_Description(PAUSE_SCREEN_DATA.currentEquipment,
+                    sDescriptionTextPointers[gLanguage][PAUSE_SCREEN_DATA.currentEquipment]), VRAM_BASE + 0x7800);
+#else
             result = TextProcessCurrentMessage(&gCurrentMessage,
                 sDescriptionTextPointers[gLanguage][PAUSE_SCREEN_DATA.currentEquipment], VRAM_BASE + 0x7800);
+#endif
 
             if (result == TEXT_STATE_ENDED)
             {
@@ -1565,7 +1598,11 @@ void TextDrawYesNoEasySleep(void)
     PAUSE_SCREEN_DATA.easySleepTextState = 0;
 
     // Get text pointer
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    pText = Port_Lang_Message(MESSAGE_EASY_SLEEP_PROMPT, sMessageTextPointers[gLanguage][MESSAGE_EASY_SLEEP_PROMPT]);
+#else
     pText = sMessageTextPointers[gLanguage][MESSAGE_EASY_SLEEP_PROMPT];
+#endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
     pText = (const u16*)port_resolve_addr((uintptr_t)pText);
 #endif
@@ -1625,8 +1662,14 @@ void TextDrawEasySleep(void)
             // Process message
             for (i = 3; i != -1; i--)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                if (!TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_Message(MESSAGE_ACTIVATE_EASY_SLEEP, sMessageTextPointers[gLanguage][MESSAGE_ACTIVATE_EASY_SLEEP]),
+                    (u32*)&PAUSE_SCREEN_EWRAM.easySleepTextFormatted_1[gCurrentMessage.line * 1024]))
+#else
                 if (!TextProcessCurrentMessage(&gCurrentMessage, sMessageTextPointers[gLanguage][MESSAGE_ACTIVATE_EASY_SLEEP],
                     (u32*)&PAUSE_SCREEN_EWRAM.easySleepTextFormatted_1[gCurrentMessage.line * 1024]))
+#endif
                     continue;
 
                 gCurrentMessage.indent = 0;
@@ -1648,8 +1691,14 @@ void TextDrawEasySleep(void)
             // Process message
             for (i = 3; i != -1; i--)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                if (!TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_Message(MESSAGE_PRESS_SELECT_L_AND_R, sMessageTextPointers[gLanguage][MESSAGE_PRESS_SELECT_L_AND_R]),
+                    (u32*)&PAUSE_SCREEN_EWRAM.unk_5000[gCurrentMessage.line * 1024]))
+#else
                 if (!TextProcessCurrentMessage(&gCurrentMessage, sMessageTextPointers[gLanguage][MESSAGE_PRESS_SELECT_L_AND_R],
                     (u32*)&PAUSE_SCREEN_EWRAM.unk_5000[gCurrentMessage.line * 1024]))
+#endif
                     continue;
 
                 gCurrentMessage.indent = 0;

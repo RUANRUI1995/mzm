@@ -74,6 +74,10 @@ SRCS_ROOT := \
 	$(ROOT)/port/port_debug_log.c \
 	$(ROOT)/port/port_debug_files.c \
 	$(ROOT)/port/port_constructor_init.c \
+	$(ROOT)/port/port_lang.c \
+	$(ROOT)/port/port_lang_gfx.c \
+	$(ROOT)/port/port_lang_ending.c \
+	$(ROOT)/port/port_lang_select.c \
 	$(ROOT)/port/port_mzm_audio_glue.c \
 	$(ROOT)/port/port_psg_synth.c \
 	$(ROOT)/port/ppu/src/virtuappu.c \

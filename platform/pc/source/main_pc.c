@@ -7,6 +7,7 @@
 #include "audio_pc.h"
 #include "port_rom.h"
 #include "port_gba_mem.h"
+#include "port_lang.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -280,6 +281,7 @@ static void Usage(const char* argv0) {
            "                        F2 cycles them while playing\n"
            "  --bottom              run the bottom-screen UI even without a window\n"
            "  --bottom-shot N PATH  write frame N's bottom screen as a PPM image (repeatable)\n"
+           "  --text-language NAME  draw the text in a port language: game (default) or pt_br\n"
            "  --tap N X Y           touch the bottom screen at (X, Y) on frame N (repeatable)\n"
            "  --save-dir DIR        directory for mzm.sav (replay and trace runs default\n"
            "                        to a new empty one, so they start from a blank save)\n"
@@ -400,6 +402,11 @@ int main(int argc, char** argv) {
             for (l = 0; l < SCREENS_LAYOUT_COUNT; ++l)
                 if (strcmp(name, kNames[l]) == 0) gPcOptions.layout = l;
             if (gPcOptions.layout < 0) { Usage(argv[0]); return 2; }
+        } else if (strcmp(a, "--text-language") == 0 && hasValue) {
+            const char* name = argv[++i];
+            if (strcmp(name, "pt_br") == 0) Port_Lang_Set(PORT_TEXT_LANGUAGE_PT_BR);
+            else if (strcmp(name, "game") == 0) Port_Lang_Set(PORT_TEXT_LANGUAGE_GAME);
+            else { Usage(argv[0]); return 2; }
         } else if (strcmp(a, "--bottom") == 0) {
             gPcOptions.bottomAlways = true;
         } else if (strcmp(a, "--bottom-shot") == 0 && i + 2 < argc) {

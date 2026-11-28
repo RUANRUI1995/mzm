@@ -52,18 +52,31 @@ u16 Sqrt(u32 value) {
 
 /* ctrl bit layout (GBATek "3.4 CpuSet/CpuFastSet"):
  *   0-20  word count
- *   24    datasize: 0 = 16-bit, 1 = 32-bit (ignored by CpuFastSet, always 32)
- *   25    fixed source: 0 = copy, 1 = fill (repeat src[0]) */
+ *   24    fixed source: 0 = copy, 1 = fill (repeat src[0])
+ *   26    datasize: 0 = 16-bit, 1 = 32-bit (ignored by CpuFastSet, always 32)
+ * (include/gba/dma.h's C_32_2_16(CPU_SET_SRC_FIXED | CPU_SET_32BIT, n)) */
 #define CPUSET_COUNT_MASK 0x001FFFFFu
-#define CPUSET_32BIT (1u << 24)
-#define CPUSET_FIXED_SRC (1u << 25)
+#define CPUSET_FIXED_SRC (1u << 24)
+#define CPUSET_32BIT (1u << 26)
 
 #include "port_gba_mem.h"
 
 void CpuSet(void* src, void* dst, u32 ctrl) {
     u32 count = ctrl & CPUSET_COUNT_MASK;
-    int fill = (ctrl & (CPUSET_FIXED_SRC | (1u << 24))) != 0;
+    int fill = (ctrl & CPUSET_FIXED_SRC) != 0;
     u32 i;
+
+#if PORT_HOST_BIG_ENDIAN
+    {
+        u32 unit = (ctrl & CPUSET_32BIT) ? 4u : 2u;
+        if (fill)
+            Port_GbaFill(dst, Port_GbaReadUnit(src, unit), count * unit, unit);
+        else
+            Port_GbaCopy(dst, src, count * unit, unit);
+        (void)i;
+        return;
+    }
+#endif
 
     void* d = port_resolve_write_addr((uintptr_t)dst);
     const void* s = port_resolve_copy_src(src, count * 4);
@@ -86,8 +99,17 @@ void CpuSet(void* src, void* dst, u32 ctrl) {
 
 void CpuFastSet(void* src, void* dst, u32 ctrl) {
     u32 count = (((u32)ctrl & CPUSET_COUNT_MASK) + 7u) & ~7u;
-    int fill = (ctrl & (CPUSET_FIXED_SRC | (1u << 24))) != 0;
+    int fill = (ctrl & CPUSET_FIXED_SRC) != 0;
     u32 i;
+
+#if PORT_HOST_BIG_ENDIAN
+    if (fill)
+        Port_GbaFill(dst, Port_GbaReadUnit(src, 4), count * 4, 4);
+    else
+        Port_GbaCopy(dst, src, count * 4, 4);
+    (void)i;
+    return;
+#endif
 
     void* d = port_resolve_write_addr((uintptr_t)dst);
     const void* s = port_resolve_copy_src(src, count * 4);
@@ -141,6 +163,20 @@ static void Lz77Uncomp(const u8* src, u8* dst) {
             }
         }
     }
+
+#if PORT_HOST_BIG_ENDIAN
+    /* VRAM and EWRAM hold GBA units by value (port_gba_mem.h): the output is
+     * stored as halfwords, which is what graphics, tilemaps and clipdata are,
+     * so the PPU sees the stream's bytes and C code reads tilemaps and
+     * clipdata as the GBA would. */
+    if (Port_GbaMemHoldsUnits(d)) {
+        for (i = 0; i + 1 < decompressedSize; i += 2) {
+            u8 t = d[i];
+            d[i] = d[i + 1];
+            d[i + 1] = t;
+        }
+    }
+#endif
 }
 
 void LZ77UncompVram(const void* src, void* dst) {
@@ -171,7 +207,7 @@ u32 MidiKey2Freq(u32* waveData, u8 midiKey, u8 fineAdjust) {
         return 0;
 
     const u32* wd = (const u32*)GBA_RESOLVE((const void*)waveData);
-    u32 baseFreq = wd[1]; // base frequency stored as (Hz * 1024)
+    u32 baseFreq = port_read32le(&wd[1]); // base frequency stored as (Hz * 1024), little-endian in the ROM
     if (baseFreq == 0)
         return 0;
 
@@ -218,8 +254,8 @@ extern void gfxExit(void);
  * num -- the two calls to SYSCALL(2)/(3) that exist across the whole
  * codebase both use it as a wait-for-next-vblank point, not to
  * differentiate GBA's Halt from Stop. */
-#if defined(PLATFORM_LINUX)
-extern void Platform_Linux_VBlank(void);
+#if defined(PLATFORM_PC)
+extern void Platform_PC_VBlank(void);
 #endif
 
 #ifdef MZM_3DS
@@ -398,7 +434,7 @@ static void Port_Bios_PaceFrame(void) {
 }
 #endif
 
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
 /* When the previous Port_Bios_Halt handed control back to the game: the time
  * from there to the next Halt is game logic (perf recorder, PERF_PHASE_LOGIC). */
 static u64 sHaltExitTick;
@@ -407,8 +443,8 @@ enum { PERF_PHASE_LOGIC_ID = 0 }; /* PERF_PHASE_LOGIC, platform_gpu_3ds.h */
 #endif
 
 void Port_Bios_Halt(void) {
-#if defined(PLATFORM_LINUX)
-    Platform_Linux_VBlank();
+#if defined(PLATFORM_PC)
+    Platform_PC_VBlank();
 #elif defined(MZM_3DS)
     if (sHaltExitTick != 0)
         PlatformGpu3DS_PerfPhaseAdd(PERF_PHASE_LOGIC_ID, Platform3DS_SystemTick() - sHaltExitTick);
@@ -438,20 +474,20 @@ void Port_Bios_Halt(void) {
      * testing now and can be swapped back once gfxSwapBuffers()-driven
      * presentation exists to investigate the gspWaitForEvent hang for real. */
 #endif
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
     Port_AudioStateLock_Release();
 #endif
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
     const u64 vblankStart = Platform3DS_SystemTick();
 #endif
     CallbackCallVblank();
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
     PlatformGpu3DS_PerfPhaseAdd(PERF_PHASE_LOGIC_ID, Platform3DS_SystemTick() - vblankStart);
 #endif
 
 extern bool Port_PPU_3DS_LastFrameUsedGpu(void);
 
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
 #ifdef PORT_VERBOSE_FRAME_LOG
     Port_DebugLog("Port_Bios_Halt: after CallbackCallVblank");
 #endif
@@ -494,6 +530,12 @@ extern bool Port_PPU_3DS_LastFrameUsedGpu(void);
     }
     Port_AudioStateLock_Acquire();
     sHaltExitTick = Platform3DS_SystemTick();
+#endif
+#if defined(PLATFORM_PC)
+    /* Same point as the 3DS render: after the VBlank handler has copied OAM
+     * and the scroll registers for this frame. */
+    extern void Platform_PC_AfterVBlank(void);
+    Platform_PC_AfterVBlank();
 #endif
 }
 

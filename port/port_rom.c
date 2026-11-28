@@ -10,6 +10,7 @@
 #include <stdint.h>
 
 u8* gRomData = NULL;
+u8* gRomDataRaw = NULL; /* the ROM as loaded; gRomData unless the host is big-endian */
 u32 gRomSize = 0;
 
 /* gRomSize for code that includes <3ds.h>, whose u32 is a different type. */
@@ -125,11 +126,18 @@ int Port_LoadRom(const char* path) {
     }
     rewind(file);
 
-#if defined(__3DS__) || (defined(MZM_3DS) && !defined(PLATFORM_LINUX))
+#if defined(__3DS__) || (defined(MZM_3DS) && !defined(PLATFORM_PC))
 extern void* linearAlloc(size_t size);
 extern void linearFree(void* mem);
 #define PORT_ROM_ALLOC(sz) linearAlloc(sz)
 #define PORT_ROM_FREE(p) do { if (p) linearFree(p); } while(0)
+#elif defined(PLATFORM_PC)
+/* The PC build places the buffer outside the GBA address ranges itself
+ * (platform/pc/source/main_pc.c): on Windows the C heap can sit inside them. */
+extern void* Platform_PC_AllocRom(size_t size);
+extern void Platform_PC_FreeRom(void* mem);
+#define PORT_ROM_ALLOC(sz) Platform_PC_AllocRom(sz)
+#define PORT_ROM_FREE(p) do { if (p) Platform_PC_FreeRom(p); } while(0)
 #else
 #define PORT_ROM_ALLOC(sz) malloc(sz)
 #define PORT_ROM_FREE(p) do { if (p) free(p); } while(0)
@@ -155,10 +163,28 @@ extern void linearFree(void* mem);
         return 0;
     }
 
+    if (gRomDataRaw != gRomData) PORT_ROM_FREE(gRomDataRaw);
     PORT_ROM_FREE(gRomData);
     gRomData = buffer;
+    gRomDataRaw = buffer;
     gRomSize = (u32)size;
     gRomRegion = region;
+
+#ifdef PORT_ROM_SWAP
+    /* A big-endian host reads typed ROM data from a byte-swapped copy and keeps
+     * the original for byte and GBA-order reads (port_rom_swap.c). */
+    if (Port_HostIsBigEndian()) {
+        u8* native = (u8*)PORT_ROM_ALLOC((size_t)size);
+        if (!native) {
+            PORT_ROM_FREE(buffer);
+            gRomData = gRomDataRaw = NULL;
+            return 0;
+        }
+        memcpy(native, buffer, (size_t)size);
+        Port_RomSwap_Apply(native, (u32)size, region);
+        gRomData = native;
+    }
+#endif
 
 #ifdef MZM_3DS
     {

@@ -101,6 +101,52 @@ static void TestNotes(void) {
     CHECK(strstr(out, "- Part") != NULL);
 }
 
+/* Tags per platform (one version counter): a Wii U only release, a 3DS only one, a general one
+ * with both assets. Built twice: as the 3DS (the defaults) and as the Wii U
+ * (-DUPDATER_PLATFORM="wiiu" -DUPDATER_ASSET_SUFFIX=".wuhb"). */
+static const char kPlatJson[] =
+    "[{\"tag_name\":\"wiiu-v0.9.2\",\"prerelease\":false,\"assets\":["
+    "{\"browser_download_url\":\"http://h/mzm-wiiu.wuhb\"}],"
+    "\"body\":\"<!-- mzm-notes -->\n- Wii U only\n<!-- /mzm-notes -->\"},"
+    "{\"tag_name\":\"3ds-v0.9.1\",\"prerelease\":false,\"assets\":["
+    "{\"browser_download_url\":\"http://h/mzm-3ds.cia\"}],"
+    "\"body\":\"<!-- mzm-notes -->\n- 3DS only\n<!-- /mzm-notes -->\"},"
+    "{\"tag_name\":\"v0.9.0\",\"prerelease\":false,\"assets\":["
+    "{\"browser_download_url\":\"http://h/mzm-3ds-090.cia\"},"
+    "{\"browser_download_url\":\"http://h/mzm-wiiu-090.wuhb\"}],"
+    "\"body\":\"<!-- mzm-notes -->\n- Both\n<!-- /mzm-notes -->\"}]";
+
+static void TestPlatforms(void) {
+    UpdaterRelease rel;
+    char out[1024];
+    const bool wiiu = strcmp(UPDATER_PLATFORM, "wiiu") == 0;
+    const char* own = wiiu ? "wiiu-v0.9.2" : "3ds-v0.9.1";
+    const char* other = wiiu ? "3ds-v0.9.1" : "wiiu-v0.9.2";
+
+    CHECK(Updater_TagVersion("v0.9.0") != NULL);
+    CHECK(Updater_TagVersion(own) != NULL && strcmp(Updater_TagVersion(own), own + strlen(own) - 5) == 0);
+    CHECK(Updater_TagVersion(other) == NULL);
+    CHECK(Updater_TagVersion("garbage") == NULL);
+    CHECK(Updater_IsNewerBuild("v0.9.0", false, own, false));
+    CHECK(!Updater_IsNewerBuild("v0.8.2", false, other, false)); /* never another platform's */
+    CHECK(!Updater_IsNewerBuild(other, false, "v0.9.3", false));
+    CHECK(Updater_IsNewerBuild(own, false, "v0.9.3", false));   /* its own tag as the current version */
+
+    /* The newest release of its own: the other platform's newer one is skipped. */
+    CHECK(Updater_PickRelease(kPlatJson, false, &rel));
+    CHECK(strcmp(rel.tag, own) == 0);
+    CHECK(strcmp(rel.cia_url, wiiu ? "http://h/mzm-wiiu.wuhb" : "http://h/mzm-3ds.cia") == 0);
+    /* A general release gives each platform its own asset. */
+    CHECK(Updater_PickRelease(strstr(kPlatJson, "{\"tag_name\":\"v0.9.0\""), false, &rel));
+    CHECK(strcmp(rel.cia_url, wiiu ? "http://h/mzm-wiiu-090.wuhb" : "http://h/mzm-3ds-090.cia") == 0);
+
+    /* What's new: its own and the general notes, never the other platform's. */
+    CHECK(Updater_CollectNotes(kPlatJson, false, "v0.8.2", false, out, sizeof(out)) == 2);
+    CHECK(strstr(out, "- Both\n") != NULL);
+    CHECK(strstr(out, wiiu ? "- Wii U only" : "- 3DS only") != NULL);
+    CHECK(strstr(out, wiiu ? "3DS only" : "Wii U only") == NULL);
+}
+
 int main(void) {
     UpdaterRelease rel;
 
@@ -114,6 +160,8 @@ int main(void) {
     CHECK(!Updater_IsNewer("garbage", "v0.6.5"));
     CHECK(!Updater_IsNewer("v0.6.4", ""));
 
+    /* The .cia releases: the 3DS build's (the Wii U one takes .wuhb, TestPlatforms). */
+    if (strcmp(UPDATER_ASSET_SUFFIX, ".cia") == 0) {
     CHECK(Updater_PickRelease(kJson, false, &rel));
     CHECK(strcmp(rel.tag, "v0.6.5") == 0);
     CHECK(strcmp(rel.cia_url, "http://h/stable.cia") == 0);
@@ -123,6 +171,7 @@ int main(void) {
     CHECK(strcmp(rel.tag, "v0.7.0") == 0);
     CHECK(strcmp(rel.cia_url, "http://h/beta.cia") == 0);
     CHECK(rel.prerelease);
+    }
 
     CHECK(!Updater_PickRelease("[]", true, &rel));
     CHECK(!Updater_PickRelease("{\"message\":\"rate limited\"}", true, &rel));
@@ -131,7 +180,8 @@ int main(void) {
 
     TestNotes();
     TestChannels();
+    TestPlatforms();
 
-    if (sFailures == 0) printf("updater_parse_test: OK\n");
+    if (sFailures == 0) printf("updater_parse_test (%s): OK\n", UPDATER_PLATFORM);
     return sFailures ? 1 : 0;
 }

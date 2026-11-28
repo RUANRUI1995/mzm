@@ -31,7 +31,19 @@ typedef enum PortRomRegion {
 /* ROM data buffer (also declared in port_gba_mem.h to avoid a circular
  * include; both declarations must stay in sync). */
 extern u8* gRomData;
+/* The ROM exactly as loaded. The same buffer as gRomData, except on a
+ * big-endian host, where gRomData has its typed data byte-swapped
+ * (port_rom_swap.c) and this keeps the original bytes for byte and GBA-order
+ * reads (gba_read16/32, DMA and decompression sources). */
+extern u8* gRomDataRaw;
 extern u32 gRomSize;
+
+/* port_rom_swap.c */
+int Port_HostIsBigEndian(void);
+int Port_RomSwap_Apply(u8* rom, u32 size, int region);
+/* Whether ROM offset lies in a typed object that the swap changed
+ * (big-endian hosts; 0 elsewhere). */
+int Port_RomIsTyped(u32 offset);
 u32 Port_RomSize(void);
 
 /* Region of the currently loaded ROM. PORT_ROM_REGION_UNKNOWN until a
@@ -71,6 +83,25 @@ static inline void* Port_ResolveRomData(u32 gbaAddr) {
         return &gRomData[gbaAddr - 0x08000000u];
     }
     return NULL;
+}
+
+/* A pointer into gRomData at the same place in gRomDataRaw, the ROM's own
+ * bytes (other pointers come back as they are). For game code that indexes a
+ * byte table past its bounds, into the object next to it: the GBA reads that
+ * object's bytes as they are in the ROM, which a big-endian host keeps
+ * swapped in gRomData when the object is typed. */
+static inline const u8* Port_RomRawBytes(const void* p) {
+    const u8* b = (const u8*)p;
+    if (gRomData != NULL && gRomDataRaw != NULL && b >= gRomData && b < gRomData + gRomSize)
+        return gRomDataRaw + (b - gRomData);
+    return b;
+}
+
+/* The halfword at p (a pointer into gRomData, maybe past the end of its
+ * table) as the GBA reads it: little-endian, from the ROM's own bytes. */
+static inline u16 Port_RomRawU16(const void* p) {
+    const u8* b = Port_RomRawBytes(p);
+    return (u16)(b[0] | b[1] << 8);
 }
 
 /* ROM access logging - logs unique ROM addresses accessed at runtime.

@@ -15,6 +15,8 @@
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_texts.h"
+#include "port_lang_gfx.h"
 #endif
 
 #include "data/shortcut_pointers.h"
@@ -1164,7 +1166,13 @@ static void FileScreenProcessText(void)
 
                 while (i != 0)
                 {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                    var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                        Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                            sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                     var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                     switch (var_0)
                     {
@@ -1217,7 +1225,13 @@ static void FileScreenProcessText(void)
 
             while (TRUE)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                        sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                 var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                 if (var_0 == TEXT_STATE_ENDED)
                 {
@@ -1265,7 +1279,13 @@ static void FileScreenProcessText(void)
 
             while (i != 0)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                        sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                 var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                 switch (var_0)
                 {
@@ -1315,7 +1335,13 @@ static void FileScreenProcessText(void)
 
             while (TRUE)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                var_0 = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_FileScreen(sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0],
+                        sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]]), dst);
+#else
                 var_0 = TextProcessCurrentMessage(&gCurrentMessage, sFileScreenTextPointers[gLanguage][sFileScreenMessagesInfo[FILE_SELECT_DATA.messageInfoIdQueue[0]][0]], dst);
+#endif
 
                 if (var_0 == TEXT_STATE_ENDED)
                 {
@@ -5101,6 +5127,8 @@ static void FileSelectInit(void)
         CallLZ77UncompVram(sFileSelectBgIconsGfx, VRAM_BASE + 0x3800);
         CallLZ77UncompVram(sFileSelectLargeTextGfxPointers[gLanguage - LANGUAGE_ENGLISH], VRAM_BASE + 0x4800);
         CallLZ77UncompVram(sFileSelectDifficultyTextGfxPointers[gLanguage - LANGUAGE_ENGLISH], VRAM_BASE + 0x3400);
+        Port_LangGfx_Apply(PORT_LANG_GFX_FILE_SELECT_LARGE, (void*)(VRAM_BASE + 0x4800));
+        Port_LangGfx_Apply(PORT_LANG_GFX_FILE_SELECT_DIFFICULTY, (void*)(VRAM_BASE + 0x3400));
     }
     else
     {
@@ -5134,6 +5162,7 @@ static void FileSelectInit(void)
         if (!REGION_IS_EU())
             BitFill(3, 0, VRAM_BASE + 0x400, 0x800, 16);
         CallLZ77UncompVram(sFileSelectOptionsTextGfxPointers[gLanguage - LANGUAGE_ENGLISH], VRAM_BASE + 0xC00);
+        Port_LangGfx_Apply(PORT_LANG_GFX_FILE_SELECT_OPTIONS, (void*)(VRAM_BASE + 0xC00));
     }
 #endif // REGION_LANGUAGE_RUNTIME || !REGION_JP
 #else

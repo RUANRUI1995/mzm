@@ -128,6 +128,13 @@ static void DumpRaw(const unsigned char* left, const unsigned char* right, unsig
 static u8* Port_MzmAudio_SoundCodeC(u32* dest, u32* src, u8 count) {
     u8* ret = sRealSoundCodeC(dest, src, count);
 
+#ifdef PORT_AUDIO_LOCKSTEP
+    /* The C engine's shadow run of UpdateAudio (port/audio/port_audio_lockstep.c):
+     * its sound is compared and thrown away, not played. */
+    extern volatile int gPortAudioShadowRun;
+    if (gPortAudioShadowRun) return ret;
+#endif
+
     if (sInitialized) {
         const unsigned int engineRate = gMusicInfo.sampleRate;
         if (engineRate && engineRate != sEngineRate) {

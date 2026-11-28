@@ -1,5 +1,6 @@
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "region.h"
+#include "port_lang_texts.h"
 #endif
 #include "cutscenes/story_text_cutscene.h"
 #include "cutscenes/cutscene_utils.h"
@@ -150,8 +151,14 @@ static u8 StoryTextCutsceneProcessText(void)
         case 2:
             for (line = 8; line != 0; line--)
             {
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+                result = TextProcessCurrentMessage(&gCurrentMessage,
+                    Port_Lang_Story(gCurrentMessage.messageId, sStoryTextPointers[gLanguage][gCurrentMessage.messageId]),
+                    dst + gCurrentMessage.line * 0x200);
+#else
                 result = TextProcessCurrentMessage(&gCurrentMessage, sStoryTextPointers[gLanguage][gCurrentMessage.messageId],
                     dst + gCurrentMessage.line * 0x200);
+#endif
                 
                 switch (result)
                 {

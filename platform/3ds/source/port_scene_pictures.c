@@ -4,24 +4,37 @@
 #include <stdlib.h>
 #include <string.h>
 
-/* The one picture loaded (a scene shows one at a time). */
-static const PortScenePictureDef* sDef;
-static uint8_t* sCodes;   /* palette entries, texture order */
-static C3D_Tex sTex;
-static bool sTexReady;
-static uint16_t sLut[256]; /* code -> RGBA5551, as painted last */
-static bool sLutValid;
-static bool sGameArt;
-static bool sWithAi; /* the loaded picture has its generated parts */
+/* The pictures loaded: a scene shows one, a cutscene stage up to one per layer it extends
+ * (port_gpu_renderer.c, CutscenePictures). */
+enum { SLOTS = 4 };
+typedef struct Slot {
+    const PortScenePictureDef* def;
+    C3D_Tex tex;
+    uint16_t lut[256]; /* code -> RGBA5551, as painted last */
+    bool lutValid;
+    bool gameArt;
+    bool withAi; /* loaded with its generated parts */
+    bool used;   /* asked for since the last PortScenePic_ReleaseUnused */
+    /* The texels of each code (code 0, transparent, left out): texels[first[c]
+     * .. first[c + 1]), so a palette change repaints only the colours it moved
+     * (the title animates part of its palette every frame). */
+    uint32_t* texels;
+    uint32_t first[257];
+} Slot;
+static Slot sSlots[SLOTS];
 
 extern bool Port_Config_GetWideAi(void);
-/* The texels of each code (code 0, transparent, left out): sTexels[sFirst[c]
- * .. sFirst[c + 1]), so a palette change repaints only the colours it moved
- * (the title animates part of its palette every frame). */
-static uint32_t* sTexels;
-static uint32_t sFirst[257];
 
-bool PortScenePic_HasGameArt(void) { return sDef != NULL && sGameArt; }
+static Slot* SlotOf(const PortScenePictureDef* def) {
+    for (int i = 0; i < SLOTS; ++i)
+        if (def && sSlots[i].def == def) return &sSlots[i];
+    return NULL;
+}
+
+bool PortScenePic_HasGameArt(const PortScenePictureDef* def) {
+    const Slot* s = SlotOf(def);
+    return s != NULL && s->gameArt;
+}
 
 const PortScenePictureDef* PortScenePic_Find(int gameMode, int bg) {
     int key = -1;
@@ -35,6 +48,24 @@ const PortScenePictureDef* PortScenePic_Find(int gameMode, int bg) {
     }
     return NULL;
 }
+
+int PortScenePic_FindAll(int gameMode, const PortScenePictureDef** out, int max) {
+    if (!Port_Config_GetWideAi()) return 0;
+    const int key = PortScenePic_SceneKey(gameMode);
+    int n = 0;
+    for (int i = 0; i < gPortScenePictureCount && n < max; ++i) {
+        const PortScenePictureDef* def = &gPortScenePictures[i];
+        if (def->gameMode == gameMode && def->sceneKey == key) out[n++] = def;
+    }
+    return n;
+}
+
+bool PortScenePic_StageHasPictures(int gameMode) {
+    const PortScenePictureDef* found[1];
+    return PortScenePic_FindAll(gameMode, found, 1) > 0 || PortScenePic_RepeatBgs(gameMode) != 0;
+}
+
+int PortScenePic_BgMask(const PortScenePictureDef* def) { return def->bgMask ? def->bgMask : 1 << def->bg; }
 
 /* Standard LZ4 block, as port_gba_bezel.c unpacks the bezel. */
 bool PortScenePic_Lz4Decompress(const uint8_t* src, size_t srcLen, uint8_t* dst, size_t dstLen) {
@@ -66,66 +97,77 @@ bool PortScenePic_Lz4Decompress(const uint8_t* src, size_t srcLen, uint8_t* dst,
     return d == dstLen;
 }
 
-void PortScenePic_Release(void) {
-    if (sTexReady) C3D_TexDelete(&sTex);
-    free(sCodes);
-    sCodes = NULL;
-    free(sTexels);
-    sTexels = NULL;
-    sTexReady = false;
-    sLutValid = false;
-    sGameArt = false;
-    sDef = NULL;
+static void Free(Slot* s) {
+    if (s->def) C3D_TexDelete(&s->tex);
+    free(s->texels);
+    memset(s, 0, sizeof(*s));
 }
 
-static bool Load(const PortScenePictureDef* def, bool withAi) {
-    PortScenePic_Release();
+void PortScenePic_Release(void) {
+    for (int i = 0; i < SLOTS; ++i) Free(&sSlots[i]);
+}
+
+void PortScenePic_ReleaseUnused(void) {
+    for (int i = 0; i < SLOTS; ++i) {
+        if (sSlots[i].def && !sSlots[i].used) Free(&sSlots[i]);
+        sSlots[i].used = false;
+    }
+}
+
+static Slot* Load(const PortScenePictureDef* def, bool withAi) {
+    /* Its old copy (loaded without or with the AI's parts), else a free slot, else the first
+     * one not asked for this frame. */
+    Slot* s = SlotOf(def);
+    for (int i = 0; i < SLOTS && !s; ++i)
+        if (!sSlots[i].def) s = &sSlots[i];
+    for (int i = 0; i < SLOTS && !s; ++i)
+        if (!sSlots[i].used) s = &sSlots[i];
+    if (!s) return NULL;
+    Free(s);
     const size_t n = (size_t)def->texWidth * (size_t)def->texHeight;
-    sCodes = (uint8_t*)malloc(n);
-    if (!sCodes) return false;
-    const bool unpacked = def->packed ? PortScenePic_Lz4Decompress(def->packed, def->packedSize, sCodes, n)
-                                      : (memset(sCodes, 0, n), true);
-    if (!unpacked ||
-        !C3D_TexInit(&sTex, (u16)def->texWidth, (u16)def->texHeight, GPU_RGBA5551)) {
-        free(sCodes);
-        sCodes = NULL;
-        return false;
+    uint8_t* codes = (uint8_t*)malloc(n);
+    if (!codes) return NULL;
+    const bool unpacked = def->packed ? PortScenePic_Lz4Decompress(def->packed, def->packedSize, codes, n)
+                                      : (memset(codes, 0, n), true);
+    if (!unpacked || !C3D_TexInit(&s->tex, (u16)def->texWidth, (u16)def->texHeight, GPU_RGBA5551)) {
+        free(codes);
+        return NULL;
     }
     /* Plain WIDE: none of the generated parts, only the game's own art below. */
-    if (!withAi) memset(sCodes, 0, n);
-    sWithAi = withAi;
-    sGameArt = PortScenePic_FillGameArt(def, sCodes) && !PortScenePic_UsesObjPalette(def);
+    if (!withAi) memset(codes, 0, n);
+    s->withAi = withAi;
+    s->gameArt = PortScenePic_FillGameArt(def, codes) && !PortScenePic_UsesObjPalette(def);
     uint32_t count[256] = { 0 };
-    for (size_t i = 0; i < n; ++i) ++count[sCodes[i]];
-    sFirst[0] = sFirst[1] = 0;
-    for (int c = 1; c < 256; ++c) sFirst[c + 1] = sFirst[c] + count[c];
-    sTexels = (uint32_t*)malloc((sFirst[256] ? sFirst[256] : 1) * sizeof(uint32_t));
-    if (!sTexels) {
-        C3D_TexDelete(&sTex);
-        free(sCodes);
-        sCodes = NULL;
-        return false;
+    for (size_t i = 0; i < n; ++i) ++count[codes[i]];
+    s->first[0] = s->first[1] = 0;
+    for (int c = 1; c < 256; ++c) s->first[c + 1] = s->first[c] + count[c];
+    s->texels = (uint32_t*)malloc((s->first[256] ? s->first[256] : 1) * sizeof(uint32_t));
+    if (!s->texels) {
+        C3D_TexDelete(&s->tex);
+        free(codes);
+        memset(s, 0, sizeof(*s));
+        return NULL;
     }
     uint32_t fill[256];
-    memcpy(fill, sFirst, sizeof(fill));
+    memcpy(fill, s->first, sizeof(fill));
     for (size_t i = 0; i < n; ++i)
-        if (sCodes[i]) sTexels[fill[sCodes[i]]++] = (uint32_t)i;
+        if (codes[i]) s->texels[fill[codes[i]]++] = (uint32_t)i;
     /* Nothing of the codes is needed past this: transparent texels stay 0. */
-    memset(sTex.data, 0, n * sizeof(uint16_t));
-    free(sCodes);
-    sCodes = NULL;
+    memset(s->tex.data, 0, n * sizeof(uint16_t));
+    free(codes);
     /* 1:1 or the scaled style's 1.5x: NEAREST keeps the pixels hard, like the tiles. */
-    C3D_TexSetFilter(&sTex, GPU_NEAREST, GPU_NEAREST);
-    C3D_TexSetWrap(&sTex, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
-    sTexReady = true;
-    sDef = def;
-    return true;
+    C3D_TexSetFilter(&s->tex, GPU_NEAREST, GPU_NEAREST);
+    C3D_TexSetWrap(&s->tex, GPU_CLAMP_TO_EDGE, GPU_CLAMP_TO_EDGE);
+    s->def = def;
+    return s;
 }
 
 C3D_Tex* PortScenePic_Texture(const PortScenePictureDef* def, const uint16_t* bgPalette) {
     if (!def) return NULL;
     const bool withAi = Port_Config_GetWideAi();
-    if ((sDef != def || sWithAi != withAi) && !Load(def, withAi)) return NULL;
+    Slot* s = SlotOf(def);
+    if ((!s || s->withAi != withAi) && !(s = Load(def, withAi))) return NULL;
+    s->used = true;
 
     /* Same texel as the atlas (RGBA5551). Code 0 is transparent; N % 16 == 0 the backdrop. */
     uint16_t lut[256];
@@ -134,17 +176,21 @@ C3D_Tex* PortScenePic_Texture(const PortScenePictureDef* def, const uint16_t* bg
         const uint16_t c = bgPalette[(i & 15) ? i : 0];
         lut[i] = (uint16_t)(((c & 31u) << 11) | (((c >> 5) & 31u) << 6) | (((c >> 10) & 31u) << 1) | 1u);
     }
-    uint16_t* texels = (uint16_t*)sTex.data;
-    bool changed = false;
+    uint16_t* texels = (uint16_t*)s->tex.data;
+    /* The texels repainted, lowest and highest (each code's list is in texture order), so
+     * only that range is flushed: a palette cycle (the red alert's lights) moves a few colours
+     * of a 512 KB texture every few frames. */
+    uint32_t lo = UINT32_MAX, hi = 0;
     for (int c = 1; c < 256; ++c) {
-        if (sLutValid && lut[c] == sLut[c]) continue;
+        if (s->lutValid && lut[c] == s->lut[c]) continue;
+        if (s->first[c + 1] == s->first[c]) continue;
         const uint16_t v = lut[c];
-        for (uint32_t k = sFirst[c]; k < sFirst[c + 1]; ++k) texels[sTexels[k]] = v;
-        changed = changed || sFirst[c + 1] > sFirst[c];
+        for (uint32_t k = s->first[c]; k < s->first[c + 1]; ++k) texels[s->texels[k]] = v;
+        if (s->texels[s->first[c]] < lo) lo = s->texels[s->first[c]];
+        if (s->texels[s->first[c + 1] - 1] > hi) hi = s->texels[s->first[c + 1] - 1];
     }
-    memcpy(sLut, lut, sizeof(lut));
-    sLutValid = true;
-    if (changed)
-        GSPGPU_FlushDataCache(sTex.data, (size_t)def->texWidth * (size_t)def->texHeight * sizeof(uint16_t));
-    return &sTex;
+    memcpy(s->lut, lut, sizeof(lut));
+    s->lutValid = true;
+    if (lo <= hi) GSPGPU_FlushDataCache(texels + lo, (size_t)(hi - lo + 1) * sizeof(uint16_t));
+    return &s->tex;
 }

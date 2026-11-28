@@ -301,7 +301,7 @@ extern void gba_write16(uint32_t addr, uint16_t v);
  * user-configurable action buttons instead (see ProcessButtonAction below).
  * They used to carry secondary diagnostics functions behind an L+R+<button>
  * chord; those all moved to the bottom screen's DEBUG -> HERRAMIENTAS menu
- * (port_bottom_ui_3ds.c) so nothing here competes with the player's own
+ * (port/ui/port_bottom_ui.c) so nothing here competes with the player's own
  * button mapping anymore. */
 extern void Port_DebugLog(const char* msg);
 
@@ -437,7 +437,7 @@ void Platform3DS_PollKeysIntoGba(void) {
 
     /* 3. (was: L+R+<button> debug modifier.) Removed -- every debug tool
      *    it used to trigger now lives behind the bottom screen's
-     *    DEBUG -> HERRAMIENTAS menu (port_bottom_ui_3ds.c). The combos
+     *    DEBUG -> HERRAMIENTAS menu (port/ui/port_bottom_ui.c). The combos
      *    stole L/R/X/Y/START/SELECT from whatever the player had mapped
      *    them to for the frame they fired, and were easy to trip by
      *    accident; the on-screen menu has neither problem and needs no

@@ -105,7 +105,7 @@ static void EnemyDropIdle(void)
 
         return;
     }
-#if defined(MZM_3DS) && !defined(PLATFORM_LINUX)
+#if defined(MZM_3DS) && !defined(PLATFORM_PC)
     {
         // CHARGE PULLS DROPS (platform/3ds/source/port_charge_pull.c): a step towards Samus while
         // the charge beam charges; the collision below picks the drop up as always.

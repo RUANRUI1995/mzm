@@ -8,13 +8,26 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+/* The platform this build is (its own release tags are "<UPDATER_PLATFORM>-vX.Y.Z", next to the
+ * general "vX.Y.Z") and the release asset it installs. */
+#ifndef UPDATER_PLATFORM
+#define UPDATER_PLATFORM "3ds"
+#endif
+#ifndef UPDATER_ASSET_SUFFIX
+#define UPDATER_ASSET_SUFFIX ".cia"
+#endif
+
 typedef struct {
-    char tag[32];       /* "v0.6.5" */
-    char cia_url[384];  /* browser_download_url of the .cia asset */
+    char tag[32];       /* "v0.6.5", "3ds-v0.6.6" */
+    char cia_url[384];  /* browser_download_url of the UPDATER_ASSET_SUFFIX asset (.cia) */
     bool prerelease;
 } UpdaterRelease;
 
-/* Compares "vX.Y.Z[-dev...]" strings. Returns true when `remote` is a newer
+/* The "X.Y.Z..." part of a release tag this build takes: "vX.Y.Z" (every platform) or
+ * "<UPDATER_PLATFORM>-vX.Y.Z" (this one); NULL for another platform's tag or a non-version. */
+const char* Updater_TagVersion(const char* tag);
+
+/* Compares "vX.Y.Z[-dev...]" strings (or this platform's tags, Updater_TagVersion). Returns true when `remote` is a newer
  * build than `current`. A "-dev" build sits on the way to its own X.Y.Z, so
  * the plain X.Y.Z release counts as newer than it. Unparseable input -> false. */
 bool Updater_IsNewer(const char* current, const char* remote);
@@ -28,7 +41,8 @@ bool Updater_IsNewerBuild(const char* current, bool currentIsBeta,
                           const char* remote, bool remotePrerelease);
 
 /* Scans a GitHub `GET /repos/{owner}/{repo}/releases` JSON body (newest
- * first) and picks the first release that has a .cia asset and, unless
+ * first) and picks the first release of this platform (Updater_TagVersion) that has its asset
+ * (UPDATER_ASSET_SUFFIX) and, unless
  * `allowBeta`, is not a prerelease. Tolerates a truncated body. */
 bool Updater_PickRelease(const char* json, bool allowBeta, UpdaterRelease* out);
 

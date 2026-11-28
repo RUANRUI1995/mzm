@@ -14,8 +14,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef MZM_3DS
+#ifdef __3DS__
 #include <3ds.h>
+#endif
+#ifdef __WIIU__
+#include <coreinit/core.h>
+#include <coreinit/event.h>
+#include <coreinit/thread.h>
 #endif
 
 #include "virtuappu.h"
@@ -402,8 +407,37 @@ void virtuappu_mode1_get_bound_gba_memory(VirtuaPPUMode1GbaMemory* memory) {
  * threads while still seeing the correct HDMA-mutated register state
  * (BG SCROLL, BLDY, etc.) for that scanline. NULL on the main / setup
  * thread keeps the existing single-threaded behavior intact. */
+#ifdef __WIIU__
+/* An RPX has no thread-local storage (elf2rpl rejects its relocations). The
+ * Wii U renders with the main thread and two workers (mode1_render_lines_wiiu),
+ * so the per-thread state below is one copy per render thread, picked by the
+ * stack pointer: each worker runs on a stack of its own here, and everything
+ * else is the main thread. Reading r1 is a plain register move; reading the
+ * core number (mfspr UPIR) on every access cost about 40% of the PPU on Cemu. */
+#define MODE1_WIIU_STACK_SIZE (64 * 1024)
+static uint8_t sMode1WiiUStacks[2][MODE1_WIIU_STACK_SIZE] __attribute__((aligned(16)));
+
+typedef struct Mode1ThreadScratch {
+    const uint8_t* io_thread_override;
+    uint8_t obj_semitrans[MODE1_GBA_WIDTH];
+    uint8_t obj_window[MODE1_GBA_WIDTH];
+} Mode1ThreadScratch;
+static Mode1ThreadScratch mode1_thread_scratch[3]; /* worker 0, worker 1, the main thread */
+
+static inline Mode1ThreadScratch* mode1_scratch(void) {
+    uintptr_t sp;
+    __asm__("mr %0, 1" : "=r"(sp));
+    if (sp - (uintptr_t)sMode1WiiUStacks[0] < MODE1_WIIU_STACK_SIZE) return &mode1_thread_scratch[0];
+    if (sp - (uintptr_t)sMode1WiiUStacks[1] < MODE1_WIIU_STACK_SIZE) return &mode1_thread_scratch[1];
+    return &mode1_thread_scratch[2];
+}
+#define virtuappu_mode1_io_thread_override (mode1_scratch()->io_thread_override)
+#define virtuappu_mode1_obj_semitrans (mode1_scratch()->obj_semitrans)
+#define virtuappu_mode1_obj_window (mode1_scratch()->obj_window)
+#else
 #define VPPU_TLS __thread
 VPPU_TLS const uint8_t* virtuappu_mode1_io_thread_override = NULL;
+#endif
 
 /* Per-scanline scratch (one slot per screen column) marking which OBJ pixels
  * came from a semi-transparent OBJ (attr0 mode 1). Written by render_obj_line
@@ -411,14 +445,18 @@ VPPU_TLS const uint8_t* virtuappu_mode1_io_thread_override = NULL;
  * GBA-accurate (a mode-1 OBJ is an unconditional blend 1st target). __thread so
  * each OpenMP render thread, which processes a whole scanline at a time, has
  * its own copy; render_obj_line clears it at the top of every line. */
+#ifndef __WIIU__
 VPPU_TLS uint8_t virtuappu_mode1_obj_semitrans[MODE1_GBA_WIDTH];
+#endif
 
 /* Per-scanline OBJ-window mask (attr0 mode 2). A mode-2 OBJ is INVISIBLE on
  * GBA — it doesn't draw colour; its opaque pixels just carve the OBJ window,
  * inside which WINOUT's high byte (WINOBJ) selects which layers show. Written
  * by render_obj_line, read by composite_line. __thread + cleared per line, as
  * with obj_semitrans. */
+#ifndef __WIIU__
 VPPU_TLS uint8_t virtuappu_mode1_obj_window[MODE1_GBA_WIDTH];
+#endif
 
 /* Per-pixel vertical OBJ clip (PC port "swamp sink"): the port marks which OAM
  * entries to clip (one byte per OAM index) and a waterline scanline; a marked
@@ -586,14 +624,36 @@ static void virtuappu_mode1_publish_obj_line_lists(void) {
  * The row load is little-endian: GBA character data stores the
  * leftmost pixel in the low nibble. memcpy becomes one aligned word load on
  * ARM11/x86. */
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#define MODE1_HOST_BIG_ENDIAN 1
+#else
+#define MODE1_HOST_BIG_ENDIAN 0
+#endif
+
+/* VRAM is an array of host-order halfwords, like palette RAM and OAM (the
+ * game's C code stores tilemap entries into it as u16): on a big-endian host
+ * the GBA's byte at address a is the host's byte a ^ 1. */
+#define MODE1_VRAM_BYTE(addr) ((addr) ^ (MODE1_HOST_BIG_ENDIAN ? 1u : 0u))
+
 static uint32_t mode1_read_tile_row_4bpp(const uint8_t* bytes) {
+#if MODE1_HOST_BIG_ENDIAN
+    /* bytes is a 4-aligned VRAM row: two host-order halfwords. */
+    return (uint32_t)bytes[1] | ((uint32_t)bytes[0] << 8) | ((uint32_t)bytes[3] << 16) | ((uint32_t)bytes[2] << 24);
+#else
     uint32_t value;
     memcpy(&value, bytes, sizeof(value));
     return value;
+#endif
 }
 
+/* The pair's low half is the left pixel. */
 static void mode1_store_bg_color_pair(uint32_t* destination, uint64_t colors) {
+#if MODE1_HOST_BIG_ENDIAN
+    destination[0] = (uint32_t)colors;
+    destination[1] = (uint32_t)(colors >> 32u);
+#else
     memcpy(destination, &colors, sizeof(colors));
+#endif
 }
 
 static uint64_t mode1_bg_color_pair(unsigned palette_bank, uint8_t packed_pair) {
@@ -648,8 +708,8 @@ static void mode1_render_text_bg_native_4bpp(int bg_index, uint32_t char_base, u
         } else {
             const uint32_t map_addr = screen_base + (uint32_t)screen_block_index * 0x800u +
                                       (uint32_t)(local_row * 32 + local_col) * 2u;
-            entry.raw = (uint16_t)mode1_memory.vram[map_addr] |
-                        ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);
+            entry.raw = (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] |
+                        ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);
         }
         const int tile_pixel_y = mode1_tile_vflip(entry) ? 7 - pixel_y : pixel_y;
         const uint32_t row_base = char_base + (uint32_t)mode1_tile_index(entry) * 32u +
@@ -716,9 +776,14 @@ static void mode1_render_text_bg_native_4bpp(int bg_index, uint32_t char_base, u
  * below performs the ABGR lookup only for layers that actually win.
  *
  * The packed-pair lookup turns each source byte (two 4bpp pixels) into one
- * 32-bit token pair on little-endian hosts. */
+ * 32-bit token pair (low half the left pixel). */
 static void mode1_store_bg_token_pair(uint16_t* destination, uint32_t tokens) {
+#if MODE1_HOST_BIG_ENDIAN
+    destination[0] = (uint16_t)tokens;
+    destination[1] = (uint16_t)(tokens >> 16u);
+#else
     memcpy(destination, &tokens, sizeof(tokens));
+#endif
 }
 
 static uint32_t mode1_bg_token_pair(unsigned palette_bank, uint8_t packed_pair) {
@@ -779,8 +844,8 @@ static void mode1_render_text_bg_native_tokens(int bg_index, int line, uint16_t 
                                                                  (size_t)shadow_index]
                             : 0u;
         } else {
-            entry.raw = (uint16_t)mode1_memory.vram[map_addr] |
-                        ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);
+            entry.raw = (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] |
+                        ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);
         }
         const int tile_pixel_y = mode1_tile_vflip(entry) ? 7 - pixel_y : pixel_y;
         const uint32_t row_base = char_base + (uint32_t)mode1_tile_index(entry) * 32u +
@@ -894,8 +959,8 @@ static void mode1_render_text_bg_compact_tokens(int bg_index, int line, uint16_t
             const int local_col = tile_col & 31;
             const uint32_t map_addr = screen_base + (uint32_t)screen_block_index * 0x800u +
                                       (uint32_t)(local_row * 32 + local_col) * 2u;
-            entry.raw = (uint16_t)mode1_memory.vram[map_addr] |
-                        ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);
+            entry.raw = (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] |
+                        ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);
         }
 
         const int tile_pixel_x = mode1_tile_hflip(entry) ? 7 - pixel_x : pixel_x;
@@ -903,7 +968,7 @@ static void mode1_render_text_bg_compact_tokens(int bg_index, int line, uint16_t
         const uint32_t byte_addr = char_base + (uint32_t)mode1_tile_index(entry) * 32u +
                                    (uint32_t)tile_pixel_y * 4u + (uint32_t)(tile_pixel_x >> 1);
         if (byte_addr >= MODE1_VRAM_SIZE) continue;
-        const uint8_t packed = mode1_memory.vram[byte_addr];
+        const uint8_t packed = mode1_memory.vram[MODE1_VRAM_BYTE(byte_addr)];
         const uint8_t color_index = (tile_pixel_x & 1) != 0 ? packed >> 4u : packed & 0x0Fu;
         if (color_index == 0u) continue;
         const unsigned palette_index = (unsigned)mode1_tile_palette(entry) * 16u + color_index;
@@ -1023,7 +1088,7 @@ void virtuappu_mode1_render_text_bg_line(int bg_index, int line, uint32_t* line_
                 uint32_t map_addr =                                                                                    \
                     screen_base + (uint32_t)screen_block_index * 0x800u + (uint32_t)(local_row * 32 + local_col) * 2u; \
                 bg_tile_entry.raw =                                                                                    \
-                    (uint16_t)mode1_memory.vram[map_addr] | ((uint16_t)mode1_memory.vram[map_addr + 1u] << 8u);        \
+                    (uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr)] | ((uint16_t)mode1_memory.vram[MODE1_VRAM_BYTE(map_addr + 1u)] << 8u);        \
             }                                                                                                          \
             bg_hflip = mode1_tile_hflip(bg_tile_entry);                                                                \
             bg_tpy = mode1_tile_vflip(bg_tile_entry) ? (7 - pixel_y) : pixel_y;                                        \
@@ -1038,10 +1103,10 @@ void virtuappu_mode1_render_text_bg_line(int bg_index, int line, uint32_t* line_
         uint8_t color_index;                                                                                           \
         if (bpp8) {                                                                                                    \
             uint32_t addr = bg_row_base + (uint32_t)tile_pixel_x;                                                      \
-            color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;                                     \
+            color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;                                     \
         } else {                                                                                                       \
             uint32_t addr = bg_row_base + (uint32_t)(tile_pixel_x / 2);                                                \
-            uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;                                  \
+            uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;                                  \
             color_index = (tile_pixel_x & 1) ? (packed >> 4u) : (packed & 0x0Fu);                                      \
         }                                                                                                              \
         if (color_index != 0u) {                                                                                       \
@@ -1345,11 +1410,11 @@ void virtuappu_mode1_render_obj_line(int line, bool obj_1d, uint32_t* line_buffe
 
             if (bpp8) {
                 uint32_t addr = obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 8u + (uint32_t)pixel_x;
-                color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
             } else {
                 uint32_t addr =
                     obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 4u + (uint32_t)(pixel_x / 2);
-                uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
                 color_index = (pixel_x & 1) ? (packed >> 4u) : (packed & 0x0Fu);
             }
 
@@ -2404,11 +2469,11 @@ void virtuappu_mode1_render_affine_obj_overlay(uint32_t* dst, int dst_w, int dst
                 if (bpp8) {
                     uint32_t addr =
                         obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 8u + (uint32_t)pixel_x;
-                    color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                    color_index = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
                 } else {
                     uint32_t addr =
                         obj_tile_base + (uint32_t)tile_index * 32u + (uint32_t)pixel_y * 4u + (uint32_t)(pixel_x / 2);
-                    uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[addr] : 0u;
+                    uint8_t packed = (addr < MODE1_VRAM_SIZE) ? mode1_memory.vram[MODE1_VRAM_BYTE(addr)] : 0u;
                     color_index = (pixel_x & 1) ? (packed >> 4u) : (packed & 0x0Fu);
                 }
                 if (color_index == 0u)
@@ -2512,9 +2577,9 @@ static void mode1_render_affine_bg2_line(int frame_width, int32_t ref_x, int32_t
         const int pixel_x = src_x % 8;
         const int pixel_y = src_y % 8;
         const uint32_t map_addr = screen_base + (uint32_t)(tile_row * map_tiles + tile_col);
-        const uint8_t tile_index = (map_addr < MODE1_VRAM_SIZE) ? memory.vram[map_addr] : 0u;
+        const uint8_t tile_index = (map_addr < MODE1_VRAM_SIZE) ? memory.vram[MODE1_VRAM_BYTE(map_addr)] : 0u;
         const uint32_t tile_addr = char_base + (uint32_t)tile_index * 64u + (uint32_t)pixel_y * 8u + (uint32_t)pixel_x;
-        const uint8_t color_index = (tile_addr < MODE1_VRAM_SIZE) ? memory.vram[tile_addr] : 0u;
+        const uint8_t color_index = (tile_addr < MODE1_VRAM_SIZE) ? memory.vram[MODE1_VRAM_BYTE(tile_addr)] : 0u;
 
         if (color_index == 0u) {
             continue;
@@ -2684,7 +2749,7 @@ static void mode1_render_lines(const Mode1RenderLinesContext* context, int first
     }
 }
 
-#ifdef MZM_3DS
+#ifdef __3DS__ /* libctru worker threads */
 typedef struct Mode1Worker {
     LightEvent start;
     LightEvent done;
@@ -2834,6 +2899,109 @@ void virtuappu_mode1_shutdown_workers(void) {
     memset(sMode1OldPathLastLines, 0, sizeof(sMode1OldPathLastLines));
     memset(sMode1OldPathTotalLines, 0, sizeof(sMode1OldPathTotalLines));
 }
+#elif defined(__WIIU__) /* coreinit worker threads, one per spare core */
+/* The main thread runs on core 1; a worker pinned to each of cores 0 and 2
+ * takes lines in chunks from a shared counter, as on the 3DS. Each render
+ * thread keeps its own line buffers (Mode1ThreadScratch, picked by its stack:
+ * the workers run on sMode1WiiUStacks). */
+typedef struct Mode1WiiUWorker {
+    OSThread thread;
+    OSEvent start;
+    OSEvent done;
+    const Mode1RenderLinesContext* volatile context;
+    volatile int running;
+    bool started;
+} Mode1WiiUWorker;
+
+static Mode1WiiUWorker sMode1WiiUWorkers[2];
+static bool sMode1WiiUWorkersInitialized;
+static volatile int sMode1WiiUNextLine;
+
+static void mode1_render_dynamic_wiiu(const Mode1RenderLinesContext* context) {
+    enum { MODE1_WIIU_LINE_CHUNK = 8 };
+    for (;;) {
+        const int first = __atomic_fetch_add(&sMode1WiiUNextLine, MODE1_WIIU_LINE_CHUNK, __ATOMIC_RELAXED);
+        if (first >= MODE1_GBA_HEIGHT) return;
+        const int last = first + MODE1_WIIU_LINE_CHUNK < MODE1_GBA_HEIGHT ? first + MODE1_WIIU_LINE_CHUNK
+                                                                         : MODE1_GBA_HEIGHT;
+        mode1_render_lines(context, first, last, NULL);
+    }
+}
+
+static int mode1_wiiu_worker_main(int argc, void* argv) {
+    Mode1WiiUWorker* worker = (Mode1WiiUWorker*)argv;
+    (void)argc;
+    for (;;) {
+        OSWaitEvent(&worker->start);
+        if (!__atomic_load_n(&worker->running, __ATOMIC_ACQUIRE)) break;
+        mode1_render_dynamic_wiiu(worker->context);
+        __atomic_thread_fence(__ATOMIC_RELEASE);
+        OSSignalEvent(&worker->done);
+    }
+    return 0;
+}
+
+static void mode1_wiiu_ensure_workers(void) {
+    static const OSThreadAttributes kCores[2] = { OS_THREAD_ATTRIB_AFFINITY_CPU0, OS_THREAD_ATTRIB_AFFINITY_CPU2 };
+    int i;
+    if (sMode1WiiUWorkersInitialized) return;
+    sMode1WiiUWorkersInitialized = true;
+    /* The cores below assume the main thread on core 1; otherwise render on
+     * one thread. */
+    if (OSGetCoreId() != 1) {
+        printf("[PPU] One render thread (main thread on core %u)\n", (unsigned)OSGetCoreId());
+        return;
+    }
+    printf("[PPU] Rendering on cores 0, 1 and 2\n");
+    for (i = 0; i < 2; ++i) {
+        Mode1WiiUWorker* worker = &sMode1WiiUWorkers[i];
+        OSInitEvent(&worker->start, FALSE, OS_EVENT_MODE_AUTO);
+        OSInitEvent(&worker->done, FALSE, OS_EVENT_MODE_AUTO);
+        worker->running = 1;
+        if (!OSCreateThread(&worker->thread, mode1_wiiu_worker_main, 0, worker,
+                            sMode1WiiUStacks[i] + MODE1_WIIU_STACK_SIZE, MODE1_WIIU_STACK_SIZE,
+                            OSGetThreadPriority(OSGetCurrentThread()), kCores[i])) {
+            worker->running = 0;
+            continue;
+        }
+        OSSetThreadName(&worker->thread, i == 0 ? "PPU worker core 0" : "PPU worker core 2");
+        OSResumeThread(&worker->thread);
+        worker->started = true;
+    }
+}
+
+static void mode1_render_lines_wiiu(const Mode1RenderLinesContext* context) {
+    int i;
+    mode1_wiiu_ensure_workers();
+    __atomic_store_n(&sMode1WiiUNextLine, 0, __ATOMIC_RELAXED);
+    for (i = 0; i < 2; ++i) {
+        if (!sMode1WiiUWorkers[i].started) continue;
+        sMode1WiiUWorkers[i].context = context;
+        __atomic_thread_fence(__ATOMIC_RELEASE);
+        OSSignalEvent(&sMode1WiiUWorkers[i].start);
+    }
+    mode1_render_dynamic_wiiu(context);
+    for (i = 0; i < 2; ++i)
+        if (sMode1WiiUWorkers[i].started) OSWaitEvent(&sMode1WiiUWorkers[i].done);
+    __atomic_thread_fence(__ATOMIC_ACQUIRE);
+}
+
+void virtuappu_mode1_get_3ds_stats(VirtuaPPUMode13DSStats* stats) {
+    if (stats) memset(stats, 0, sizeof(*stats));
+}
+
+void virtuappu_mode1_shutdown_workers(void) {
+    int i;
+    for (i = 0; i < 2; ++i) {
+        Mode1WiiUWorker* worker = &sMode1WiiUWorkers[i];
+        if (!worker->started) continue;
+        __atomic_store_n(&worker->running, 0, __ATOMIC_RELEASE);
+        OSSignalEvent(&worker->start);
+        OSJoinThread(&worker->thread, NULL);
+        worker->started = false;
+    }
+    sMode1WiiUWorkersInitialized = false;
+}
 #else
 void virtuappu_mode1_get_3ds_stats(VirtuaPPUMode13DSStats* stats) {
     if (stats) memset(stats, 0, sizeof(*stats));
@@ -2935,8 +3103,10 @@ void virtuappu_mode1_render_frame(const PPUMemory* ppu) {
     const Mode1RenderLinesContext render_context = {
         affine, per_line_io, dispcnt, frame_width, per_line_dispcnt, io_snapshots, aff_ref_x, aff_ref_y,
     };
-#ifdef MZM_3DS
+#ifdef __3DS__
     mode1_render_lines_3ds(&render_context);
+#elif defined(__WIIU__)
+    mode1_render_lines_wiiu(&render_context);
 #else
 #pragma omp parallel for schedule(static)
     for (line = 0; line < MODE1_GBA_HEIGHT; ++line) {

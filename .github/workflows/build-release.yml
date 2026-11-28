@@ -1,45 +1,52 @@
-name: Build 3DS Release
+name: Build Release
 
+# Release tags (one version counter for all of them, docs/release-notes/README.md):
+#   vX.Y.Z       every platform: the 3DS CIA and the Wii U WUHB on one release page
+#   3ds-vX.Y.Z   the 3DS only
+#   wiiu-vX.Y.Z  the Wii U only
+# Each console's updater takes the general releases and its own, never the other's
+# (platform/3ds/source/port_updater_parse.c, Updater_TagVersion).
 on:
   push:
     tags:
       - 'v*'
+      - '3ds-v*'
+      - 'wiiu-v*'
   workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  build-3ds:
+  vars:
     runs-on: ubuntu-latest
-    container:
-      # Pinned, not :latest: a new compiler can lay the decompilation out
-      # differently, and every save state from the previous release would
-      # then be refused ("SLOT DE OTRA BUILD"). Bump deliberately.
-      image: devkitpro/devkitarm:20260610
-
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+      version: ${{ steps.vars.outputs.version }}
+      prerelease: ${{ steps.vars.outputs.prerelease }}
+      channel: ${{ steps.vars.outputs.channel }}
+      build_3ds: ${{ steps.vars.outputs.build_3ds }}
+      build_wiiu: ${{ steps.vars.outputs.build_wiiu }}
+      platforms: ${{ steps.vars.outputs.platforms }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Install 3DS portlibs
-        run: dkp-pacman -S --noconfirm 3ds-curl 3ds-mbedtls 3ds-zlib
-
-      # NOTE: container default shell is dash/sh -- no [[ ]], use POSIX case
-      - name: Determine release tag and channel
+      - name: Determine tag, platforms and channel
         id: vars
         run: |
-          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           case "$GITHUB_REF" in
-            refs/tags/*)
-              TAG="${GITHUB_REF#refs/tags/}"
-              ;;
-            *)
-              TAG=$(git describe --tags --always)
-              ;;
+            refs/tags/*) TAG="${GITHUB_REF#refs/tags/}" ;;
+            *)           TAG=$(git describe --tags --always) ;;
           esac
+          case "$TAG" in
+            3ds-v*)  B3DS=true;  BWIIU=false; PLATFORMS="3DS" ;;
+            wiiu-v*) B3DS=false; BWIIU=true;  PLATFORMS="Wii U" ;;
+            *)       B3DS=true;  BWIIU=true;  PLATFORMS="3DS + Wii U" ;;
+          esac
+          VERSION="${TAG#3ds-}"; VERSION="${VERSION#wiiu-}"
 
           # Stable vs beta is decided by whether main can reach this commit,
           # NOT by "was this a tag push". A release/* branch collects work and
@@ -60,20 +67,41 @@ jobs:
           # a beta is recoverable, the other direction is not.
           git fetch --no-tags --quiet origin +refs/heads/main:refs/remotes/origin/main || true
           if git merge-base --is-ancestor HEAD refs/remotes/origin/main 2>/dev/null; then
-            PRERELEASE=false
-            CHANNEL=Release
+            PRERELEASE=false; CHANNEL=Release
           else
-            PRERELEASE=true
-            CHANNEL=Beta
+            PRERELEASE=true; CHANNEL=Beta
           fi
           {
             echo "tag=$TAG"
+            echo "version=$VERSION"
             echo "prerelease=$PRERELEASE"
             echo "channel=$CHANNEL"
+            echo "build_3ds=$B3DS"
+            echo "build_wiiu=$BWIIU"
+            echo "platforms=$PLATFORMS"
           } >> "$GITHUB_OUTPUT"
 
+  build-3ds:
+    needs: vars
+    if: needs.vars.outputs.build_3ds == 'true'
+    runs-on: ubuntu-latest
+    container:
+      # Pinned, not :latest: a new compiler can lay the decompilation out
+      # differently, and every save state from the previous release would
+      # then be refused ("SLOT DE OTRA BUILD"). Bump deliberately.
+      image: devkitpro/devkitarm:20260610
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install 3DS portlibs
+        run: dkp-pacman -S --noconfirm 3ds-curl 3ds-mbedtls 3ds-zlib
+
       # CHANNEL is baked into the binary (shown as BETA on the console and used by
-      # the updater to offer the promoted stable build of the same X.Y.Z).
+      # the updater to offer the promoted stable build of the same X.Y.Z). The
+      # version comes from the tag (platform/3ds/Makefile drops "3ds-").
       - name: Build 3DS Port (Release)
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
@@ -82,23 +110,82 @@ jobs:
           chmod +x tools/bin/bannertool tools/bin/makerom
           export PATH=$GITHUB_WORKSPACE/tools/bin:/opt/devkitpro/tools/bin:$PATH
           make -C platform/3ds clean
-          make -C platform/3ds -j$(nproc) RENDERER=gpu CHANNEL=${{ steps.vars.outputs.prerelease == 'true' && 'beta' || 'release' }} BANNERTOOL=$GITHUB_WORKSPACE/tools/bin/bannertool MAKEROM=$GITHUB_WORKSPACE/tools/bin/makerom
+          make -C platform/3ds -j$(nproc) RENDERER=gpu CHANNEL=${{ needs.vars.outputs.prerelease == 'true' && 'beta' || 'release' }} BANNERTOOL=$GITHUB_WORKSPACE/tools/bin/bannertool MAKEROM=$GITHUB_WORKSPACE/tools/bin/makerom
+          cp platform/3ds/mzm-3ds.cia "mzm-3ds-${{ needs.vars.outputs.version }}.cia"
 
-      # Release notes: QR code (scannable with Universal-Updater / phone to get
-      # the CIA download URL) plus an auto-generated changelog covering every
-      # commit since the previous tag. Beta pages (see the channel logic
-      # above) get a banner saying so.
-      - name: Generate changelog and QR code
+      - name: Upload the CIA
+        uses: actions/upload-artifact@v4
+        with:
+          name: mzm-3ds
+          path: mzm-3ds-${{ needs.vars.outputs.version }}.cia
+
+  build-wiiu:
+    needs: vars
+    if: needs.vars.outputs.build_wiiu == 'true'
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkitppc:20261102
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # wiiu-curl and wiiu-mbedtls: the updater (platform/pc/source/port_updater_wiiu.c).
+      - name: Install Wii U libraries
+        run: dkp-pacman -S --noconfirm --needed wut wut-tools wiiu-sdl2 wiiu-pkg-config wiiu-curl wiiu-mbedtls
+
+      # The version comes from the tag (platform/pc/Makefile drops "wiiu-").
+      - name: Build Wii U Port (Release)
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
-          TAG="${{ steps.vars.outputs.tag }}"
-          REPO="${{ github.repository }}"
-          BASE="https://github.com/${REPO}/releases/download/${TAG}"
-          PRERELEASE="${{ steps.vars.outputs.prerelease }}"
+          export DEVKITPRO=/opt/devkitpro
+          export DEVKITPPC=/opt/devkitpro/devkitPPC
+          make -C platform/pc OS_TARGET=wiiu -j$(nproc) CHANNEL=${{ needs.vars.outputs.prerelease == 'true' && 'beta' || 'release' }}
+          cp platform/pc/mzm-wiiu.wuhb "mzm-wiiu-${{ needs.vars.outputs.version }}.wuhb"
 
+      - name: Upload the WUHB
+        uses: actions/upload-artifact@v4
+        with:
+          name: mzm-wiiu
+          path: mzm-wiiu-${{ needs.vars.outputs.version }}.wuhb
+
+  release:
+    needs: [vars, build-3ds, build-wiiu]
+    # Runs when the builds this tag asked for succeeded (a skipped one is fine).
+    if: >-
+      always() && needs.vars.result == 'success' &&
+      !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch the builds
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      # Release notes: QR code for the CIA (scannable with Universal-Updater / phone),
+      # the hand-written notes and a changelog of every commit since the previous tag.
+      - name: Generate the release page
+        env:
+          TAG: ${{ needs.vars.outputs.tag }}
+          # The files are named after the version, without the tag's platform
+          # prefix (mzm-wiiu-v0.8.3.wuhb, not mzm-wiiu-wiiu-v0.8.3.wuhb). The
+          # updaters pick the asset by its extension only.
+          VERSION: ${{ needs.vars.outputs.version }}
+          PRERELEASE: ${{ needs.vars.outputs.prerelease }}
+          B3DS: ${{ needs.vars.outputs.build_3ds }}
+          BWIIU: ${{ needs.vars.outputs.build_wiiu }}
+          REPO: ${{ github.repository }}
+        run: |
+          BASE="https://github.com/${REPO}/releases/download/${TAG}"
           PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
           RANGE="${PREV:+${PREV}..}HEAD"
-
           {
             if [ "$PRERELEASE" = "true" ]; then
               echo "> **Beta build.** This comes off a \`release/*\` branch that has not"
@@ -106,10 +193,9 @@ jobs:
               echo
             fi
             # Player-facing notes, written by hand per release in
-            # docs/release-notes/<tag>.md. The console's updater reads the
-            # block between the two markers (platform/3ds/source/
-            # port_updater_parse.c, Updater_CollectNotes) and shows it before
-            # the player installs; keep the markers exactly as they are.
+            # docs/release-notes/<tag>.md. The consoles' updaters read the
+            # block between the two markers (port_updater_parse.c,
+            # Updater_CollectNotes); keep the markers exactly as they are.
             NOTES_FILE="docs/release-notes/${TAG}.md"
             if [ -f "$NOTES_FILE" ]; then
               echo "<!-- mzm-notes -->"
@@ -122,50 +208,51 @@ jobs:
             else
               echo "::warning file=${NOTES_FILE}::no release notes for ${TAG}; the in-game What's New will say so"
             fi
-            echo "![QR code for the ${TAG} CIA](${BASE}/QR-${TAG}.png)"
-            echo
             echo "## Downloads"
             echo
-            echo "- [mzm-3ds-${TAG}.cia](${BASE}/mzm-3ds-${TAG}.cia)"
-            echo
-            echo "Install the CIA. No \`.3dsx\` is published: a 3dsx cannot"
-            echo "declare its own memory budget, so it inherits whatever the"
-            echo "Homebrew Launcher host has left -- not enough for the 8MB"
-            echo "ROM buffer plus the GPU buffers this port reserves. The CIA"
-            echo "asks for 64MB of its own (see cia/mzm3ds.rsf)."
-            echo
+            if [ "$B3DS" = "true" ]; then
+              echo "### 3DS"
+              echo
+              echo "![QR code for the ${VERSION} CIA](${BASE}/QR-${VERSION}.png)"
+              echo
+              echo "- [mzm-3ds-${VERSION}.cia](${BASE}/mzm-3ds-${VERSION}.cia)"
+              echo
+              echo "Install the CIA. No \`.3dsx\` is published: a 3dsx cannot"
+              echo "declare its own memory budget, so it inherits whatever the"
+              echo "Homebrew Launcher host has left -- not enough for the 8MB"
+              echo "ROM buffer plus the GPU buffers this port reserves. The CIA"
+              echo "asks for 64MB of its own (see cia/mzm3ds.rsf)."
+              echo
+            fi
+            if [ "$BWIIU" = "true" ]; then
+              echo "### Wii U"
+              echo
+              echo "- [mzm-wiiu-${VERSION}.wuhb](${BASE}/mzm-wiiu-${VERSION}.wuhb)"
+              echo
+              echo "Copy it to \`sd:/wiiu/apps/mzm/mzm-wiiu.wuhb\` (Aroma), next to the ROM"
+              echo "(\`mzm_eu.gba\`, \`mzm_us.gba\`, \`mzm_jp.gba\` or \`mzm.gba\`). Later versions update themselves from the game."
+              echo
+            fi
             echo "## Changelog"
             echo
             git log ${RANGE} --no-merges --pretty='- %s (%h)'
           } > release_notes.md
-
-          apt-get update -qq && apt-get install -y -qq qrencode > /dev/null
-          qrencode -s 10 -o "QR-${TAG}.png" "${BASE}/mzm-3ds-${TAG}.cia"
-
-          # Versioned filenames for distribution assets (canonical build
-          # names stay fixed inside the tree). CIA only -- see the note in
-          # the release body above for why the 3dsx is not shipped. `make
-          # 3dsx` still exists for local Homebrew Launcher testing.
-          cp platform/3ds/mzm-3ds.cia "mzm-3ds-${TAG}.cia"
-
-      - name: Upload Build Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: mzm-3ds-build
-          path: platform/3ds/mzm-3ds.cia
+          if [ "$B3DS" = "true" ]; then
+            sudo apt-get update -qq && sudo apt-get install -y -qq qrencode > /dev/null
+            qrencode -s 10 -o "dist/QR-${VERSION}.png" "${BASE}/mzm-3ds-${VERSION}.cia"
+          fi
+          ls -l dist
 
       - name: Create / Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.vars.outputs.tag }}
-          name: ${{ steps.vars.outputs.channel }} ${{ steps.vars.outputs.tag }}
+          tag_name: ${{ needs.vars.outputs.tag }}
+          name: ${{ needs.vars.outputs.channel }} ${{ needs.vars.outputs.version }} (${{ needs.vars.outputs.platforms }})
           draft: false
-          prerelease: ${{ steps.vars.outputs.prerelease == 'true' }}
+          prerelease: ${{ needs.vars.outputs.prerelease == 'true' }}
           generate_release_notes: true
           body_path: release_notes.md
-          files: |
-            mzm-3ds-${{ steps.vars.outputs.tag }}.cia
-            QR-${{ steps.vars.outputs.tag }}.png
+          files: dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -181,8 +268,10 @@ jobs:
           WEBHOOK_BETA: ${{ secrets.DISCORD_WEBHOOK_BETA }}
           PROJECT: "Metroid: Zero Mission"
           ROLE_ID: "1570479931916550185"
-          TAG: ${{ steps.vars.outputs.tag }}
-          CHANNEL: ${{ steps.vars.outputs.channel }}
+          TAG: ${{ needs.vars.outputs.tag }}
+          VERSION: ${{ needs.vars.outputs.version }}
+          PLATFORMS: ${{ needs.vars.outputs.platforms }}
+          CHANNEL: ${{ needs.vars.outputs.channel }}
           REPO: ${{ github.repository }}
         run: |
           if [ "$CHANNEL" = "Release" ]; then HOOK="$WEBHOOK_RELEASE"; else HOOK="$WEBHOOK_BETA"; fi
@@ -195,11 +284,11 @@ jobs:
             [ "$(wc -c < "$NOTES")" -gt 3500 ] && DESC="$DESC"$'\n\n'"... (full notes on the release page)"
           fi
           if [ "$CHANNEL" = "Release" ]; then
-            CONTENT="<@&$ROLE_ID> **$PROJECT $TAG** is out!"; ROLES="[\"$ROLE_ID\"]"
-            TITLE="$PROJECT $TAG"; COLOR=5763719
+            CONTENT="<@&$ROLE_ID> **$PROJECT $VERSION** ($PLATFORMS) is out!"; ROLES="[\"$ROLE_ID\"]"
+            TITLE="$PROJECT $VERSION ($PLATFORMS)"; COLOR=5763719
           else
-            CONTENT="**$PROJECT $TAG** beta is ready for testing."; ROLES="[]"
-            TITLE="$PROJECT $TAG (beta)"; COLOR=16705372
+            CONTENT="**$PROJECT $VERSION** ($PLATFORMS) beta is ready for testing."; ROLES="[]"
+            TITLE="$PROJECT $VERSION ($PLATFORMS, beta)"; COLOR=16705372
           fi
           jq -n --arg content "$CONTENT" --arg title "$TITLE" --arg url "$URL" --arg desc "$DESC" \
                 --argjson color "$COLOR" --argjson roles "$ROLES" \

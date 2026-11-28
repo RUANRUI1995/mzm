@@ -10,6 +10,7 @@
 #endif
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "port_gba_mem.h"
+#include "port_lang_gfx.h"
 #endif
 
 #include "data/shortcut_pointers.h"
@@ -1441,6 +1442,7 @@ void TitleScreenInit(void)
     {
         CallLZ77UncompVram(sTitleScreenMenuGfxPointers[(gLanguage - LANGUAGE_ENGLISH) * 2], VRAM_BASE + 0xE800);
         CallLZ77UncompVram(sTitleScreenMenuGfxPointers[(gLanguage - LANGUAGE_ENGLISH) * 2 + 1], VRAM_BASE + 0xEC00);
+        Port_LangGfx_Apply(PORT_LANG_GFX_TITLE_MENU, (void*)(VRAM_BASE + 0xE800));
         TitleScreenSetMenuPalette(TITLE_SCREEN_DATA.oamTimings[2].menuOption);
     }
 #else

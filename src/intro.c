@@ -17,6 +17,10 @@
 #include "structs/display.h"
 #include "structs/game_state.h"
 #include "structs/intro.h"
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+#include "port_lang.h"
+#include "port_gba_mem.h"
+#endif
 
 /**
  * @brief 800f4 | 90 | V-blank code for the intro
@@ -360,7 +364,11 @@ static u8 IntroEmergencyOrder(void)
     switch (INTRO_DATA.timer++)
     {
         case 0:
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            if ((gLanguage != LANGUAGE_ENGLISH || Port_Lang_Active()))
+#else
             if (gLanguage != LANGUAGE_ENGLISH)
+#endif
                 TextStartStory(STORY_TEXT_EMERGENCY);
             break;
 
@@ -369,7 +377,11 @@ static u8 IntroEmergencyOrder(void)
             break;
     }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    if (INTRO_DATA.unk_42 == 0 && (gLanguage != LANGUAGE_ENGLISH || Port_Lang_Active()))
+#else
     if (INTRO_DATA.unk_42 == 0 && gLanguage != LANGUAGE_ENGLISH)
+#endif
         INTRO_DATA.unk_42 = TextProcessStory();
 
     textResult = IntroProcessText(sIntroEmergencyOrderActions[INTRO_DATA.currentCharacter], SCREEN_SIZE_X / 4 - 4);
@@ -580,7 +592,11 @@ static u8 IntroExterminate(void)
     {
         case 0:
             INTRO_DATA.dispcnt = DCNT_OBJ;
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            if ((gLanguage != LANGUAGE_ENGLISH || Port_Lang_Active()))
+#else
             if (gLanguage != LANGUAGE_ENGLISH)
+#endif
                 TextStartStory(STORY_TEXT_EXTERMINATE);
             break;
 
@@ -589,7 +605,11 @@ static u8 IntroExterminate(void)
             break;
     }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    if (INTRO_DATA.unk_42 == 0 && (gLanguage != LANGUAGE_ENGLISH || Port_Lang_Active()))
+#else
     if (INTRO_DATA.unk_42 == 0 && gLanguage != LANGUAGE_ENGLISH)
+#endif
         INTRO_DATA.unk_42 = TextProcessStory();
 
     textResult = IntroProcessText(sIntroExterminateAllActions[INTRO_DATA.currentCharacter], 8);
@@ -774,7 +794,11 @@ static u8 IntroDefeat(void)
     {
         case 0:
             LZ77UncompVram(sIntroTextAndShipFlyingInGfx, VRAM_OBJ);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            if ((gLanguage != LANGUAGE_ENGLISH || Port_Lang_Active()))
+#else
             if (gLanguage != LANGUAGE_ENGLISH)
+#endif
                 TextStartStory(STORY_TEXT_DEFEAT);
             break;
 
@@ -787,7 +811,11 @@ static u8 IntroDefeat(void)
             break;
     }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    if (INTRO_DATA.unk_42 == 0 && (gLanguage != LANGUAGE_ENGLISH || Port_Lang_Active()))
+#else
     if (INTRO_DATA.unk_42 == 0 && gLanguage != LANGUAGE_ENGLISH)
+#endif
         INTRO_DATA.unk_42 = TextProcessStory();
 
     textResult = IntroProcessText(sIntroDefeatTheActions[INTRO_DATA.currentCharacter], SCREEN_SIZE_X / 8 + 2);
@@ -969,6 +997,11 @@ static u8 IntroFuzz(void)
             break;
     }
 
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    /* The sources above are u8 tables, used as colours. */
+    if (!(MOD_AND(INTRO_DATA.unk_A, 8) & 1))
+        Port_SwapHalfwordBytes(INTRO_DATA.fuzzPalette, ARRAY_SIZE(INTRO_DATA.fuzzPalette));
+#endif
     INTRO_DATA.unk_A++;
     IntroFuzzProcessOam();
     return FALSE;

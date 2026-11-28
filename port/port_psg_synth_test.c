@@ -14,7 +14,7 @@
  * Loading the envelope only on a retrigger therefore never picked up the
  * level and every voice stayed at volume 0.
  *
- * Build and run with:  cd platform/linux && make test-psg
+ * Build and run with:  cd platform/pc && make test-psg
  */
 #include <stdio.h>
 #include <stdlib.h>

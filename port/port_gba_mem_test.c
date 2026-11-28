@@ -7,7 +7,7 @@
  * mistaken for a raw GBA address, it gets translated a second time into
  * garbage.
  *
- * Both real build targets (platform/linux and platform/3ds) always define
+ * Both real build targets (platform/pc and platform/3ds) always define
  * MZM_3DS, so this test does too -- it stands in for
  * Platform3DS_IsActiveStackAddress() with a test double instead of linking
  * the real one (ARM/3DS-only). */
@@ -18,6 +18,7 @@
 #include "port_gba_mem.h"
 
 u8* gRomData;
+u8* gRomDataRaw;
 u32 gRomSize;
 
 /* Test double for the real platform_3ds.c/platform_3ds_minimal.c
@@ -43,6 +44,7 @@ int main(void) {
     u32 stackValue = 0x12345678;
 
     gRomData = fakeRom;
+    gRomDataRaw = fakeRom;
     gRomSize = sizeof(fakeRom);
     sFakeStackAddr = 0;
 

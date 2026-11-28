@@ -1,5 +1,7 @@
 #if defined(MZM_3DS) || defined(PORT_NATIVE)
 #include "region.h"
+#include "port_lang_ending.h"
+#include "port_lang_gfx.h"
 #endif
 #include "chozodia_escape.h"
 #include "dma.h"
@@ -127,6 +129,10 @@ static void ChozodiaEscapeUpdateExplosionHaze(void)
     semiMinorAxis = CHOZODIA_ESCAPE_DATA.explosionSemiMinorAxis;
     semiMinorAxis_ = semiMinorAxis;
     src = sHaze_PowerBomb_WindowValuesPointers[semiMinorAxis];
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+    // The table's entries are GBA addresses, as in haze.c.
+    src = GBA_RESOLVE(src);
+#endif
 
     // Determine the Y bounds of the explosion
     if (semiMinorAxis < 4)
@@ -1162,6 +1168,9 @@ static u8 ChozodiaEscapeMissionAccomplished(void)
         case 0:
             // Load graphics
             LZ77UncompVram(sChozodiaEscapeMissionAccomplishedLettersGfx, VRAM_OBJ);
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+            Port_LangGfx_Apply(PORT_LANG_GFX_MISSION_LETTERS, (void*)VRAM_OBJ);
+#endif
 
             // Load the "correct" palette for samus in blue ship, makes her visible
 #ifdef REGION_EU
@@ -1201,6 +1210,12 @@ static u8 ChozodiaEscapeMissionAccomplished(void)
             {
                 CHOZODIA_ESCAPE_DATA.oamPointers[CHOZODIA_ESCAPE_OAM_MISSION_ACCOMPLISHED] =
                     sChozodiaEscapeOam_MissionAccomplishedEnglish_Frame0;
+            }
+            /* A port language spells it itself (port_lang_ending.c). */
+            if (Port_LangMissionAccomplished_Frame() != NULL)
+            {
+                CHOZODIA_ESCAPE_DATA.oamPointers[CHOZODIA_ESCAPE_OAM_MISSION_ACCOMPLISHED] =
+                    Port_LangMissionAccomplished_Frame();
             }
 #else
 #ifdef REGION_EU

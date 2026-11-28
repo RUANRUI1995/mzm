@@ -464,6 +464,10 @@ def run_build(mode, send_ftp=False, ftp_host="", ftp_port=5000, clean=True, dry_
     extra_path = os.pathsep.join([p for p in tool_paths if os.path.isdir(p)])
     if extra_path:
         env["PATH"] = extra_path + os.pathsep + env.get("PATH", "")
+    if os.name == "nt" and os.path.isabs(make_bin):
+        # devkitPro's make is an MSYS2 program: its recipes must find the sh, mkdir... of that same MSYS2 first.
+        # Git Bash's come first in its PATH, and they do not share MSYS2's mounts (e.g. /home).
+        env["PATH"] = os.path.dirname(make_bin) + os.pathsep + env["PATH"]
 
     missing = missing_portlibs()
     if missing:

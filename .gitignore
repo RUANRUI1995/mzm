@@ -12,6 +12,8 @@
 *.map
 *.bin
 *.sav
+# Saves the PC replays start from (platform/pc/README.md)
+!platform/pc/replays/saves/*.sav
 
 *.exe
 *.dll
@@ -33,8 +35,15 @@ platform/3ds/*.cia
 platform/3ds/*.smdh
 platform/3ds/*.elf
 platform/3ds/*.3dsx
-platform/linux/build/
-platform/linux/mzm-linux
+platform/pc/build/
+platform/pc/mzm-linux
+platform/pc/mzm-windows.exe
+platform/pc/mzm-linux-ppc
+platform/pc/mzm-wiiu.elf
+platform/pc/mzm-wiiu.rpx
+platform/pc/mzm-wiiu.wuhb
+platform/pc/SDL2.dll
+platform/pc/*.sav.bak
 scratch/
 __pycache__/
 *.pyc

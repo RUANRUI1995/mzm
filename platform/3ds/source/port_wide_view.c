@@ -4,6 +4,8 @@
 
 extern int Port_Config_Get3DSAspectRatio(void);
 extern int Port_Config_Get3DSDisplayStyle(void);
+extern bool Port_Config_GetWideAi(void);
+extern bool PortScenePic_StageHasPictures(int gameMode); /* port_scene_pictures.h, kept out of here */
 
 /* Kept as a hand-written extern, like the renderer does: this file stays out
  * of the game headers. GM_INGAME == 4, GM_DEMO == 11
@@ -52,16 +54,16 @@ bool PortWide_SceneActive(void) {
         case GM_TOURIAN_ESCAPE:
             return true;
         case GM_CUTSCENE:
-            /* Left ORIGINAL until they get their own treatment (seen on the 2DS,
-             * 2026-10-16; the owner will go over every cutscene later). Ridley
-             * in space stacks several BGs that each hold a picture of a
-             * different size, so their extents make a patchwork and the view
-             * jumps from layer to layer. The Tourian entrance pans a wide BG
-             * the game fills in as it goes, so its extent grows while it plays
-             * and the picture jumps every time. The owner also left out the one
-             * before the ruins test. */
-            return gCurrentCutscene != CUTSCENE_RIDLEY_IN_SPACE && gCurrentCutscene != CUTSCENE_ENTER_TOURIAN &&
-                   gCurrentCutscene != CUTSCENE_BEFORE_RUINS_TEST;
+            /* These three widen only with their generated pictures (WIDE + AI; CutscenePictures
+             * in port_gpu_renderer.c). With their own data alone they were a patchwork (seen on
+             * the 2DS, 2026-10-16): Ridley in space stacks BGs whose pictures differ in size, so
+             * the view jumped from layer to layer, and the Tourian entrance pans layers that
+             * hold less than the wide view, so its extent grew while it played. Plain WIDE keeps
+             * them ORIGINAL, and so does a stage of theirs with no picture yet. */
+            if (gCurrentCutscene == CUTSCENE_RIDLEY_IN_SPACE || gCurrentCutscene == CUTSCENE_ENTER_TOURIAN ||
+                gCurrentCutscene == CUTSCENE_BEFORE_RUINS_TEST)
+                return Port_Config_GetWideAi() && PortScenePic_StageHasPictures(GM_CUTSCENE);
+            return true;
         default:
             return false;
     }

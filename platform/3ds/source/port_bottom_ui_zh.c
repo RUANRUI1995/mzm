@@ -20,16 +20,21 @@ static const struct {
     const char* en;
     const char* zh;
 } kZh[] = {
-    /* ---- Areas (the map header and the collectibles table) ---- */
-    { "BRINSTAR",  "布林斯塔" },
-    { "KRAID",     "克雷德" },
-    { "NORFAIR",   "诺法尔" },
-    { "RIDLEY",    "利德雷" },
-    { "TOURIAN",   "图里安" },
-    { "CRATERIA",  "环形山" },
-    { "CHOZODIA",  "乔佐迪亚" },
-    { "DEBUG",     "调试" },
-    { "UNKNOWN",   "未知" },
+    /* ---- Areas (the map header and the collectibles table) ----
+     *
+     * The names are the ones the iQue build itself prints: they are read out
+     * of its text block (the Location_Brinstar..Location_Starship entries) and
+     * rendered with its own font, not translated again here. That is why
+     * CRATERIA is a transliteration rather than 环形山. */
+    { "BRINSTAR",   "布林斯塔" },
+    { "KRAID",      "克雷德" },
+    { "NORFAIR",    "诺尔飞亚" },
+    { "RIDLEY",     "利德雷" },
+    { "TOURIAN",    "泰利昂" },
+    { "CRATERIA",   "格雷特亚" },
+    { "CHOZODIA",   "乔佐迪亚" },
+    { "DEBUG",      "调试" },
+    { "UNKNOWN",    "未知" },
 
     /* ---- Map tab ---- */
     { "SAMUS",     "跟随" },
@@ -46,28 +51,33 @@ static const struct {
     { "SAMUS ARAN - STATUS & EQUIPMENT", "萨姆斯 - 状态与装备" },
     { "BEAMS & BOMBS", "光束与炸弹" },
     { "SUITS & MISC",  "服装与装备" },
-    { "UNKNOWN ITEM",  "未知道具" },
+    { "UNKNOWN ITEM",  "未知物品" },
     { "PARALYZER",     "麻痹枪" },
 
-    /* Beams and bombs */
+    /* Beams and bombs. Named as the iQue build announces them (its
+     * Message_LongBeam..Message_Bomb strings): 蓄光束, not 蓄力光束. */
     { "LONG BEAM",     "长光束" },
     { "ICE BEAM",      "冰冻光束" },
     { "WAVE BEAM",     "波动光束" },
     { "PLASMA BEAM",   "等离子光束" },
-    { "CHARGE BEAM",   "蓄力光束" },
+    { "CHARGE BEAM",   "蓄光束" },
     { "BOMBS",         "炸弹" },
 
-    /* Suits and the movement items. Three characters at most: the equipment
-     * card lists them two across, and a fourth would close the gap to the
-     * state column. */
+    /* Suits and the movement items, again the build's own wording:
+     * Message_VariaSuit 防护服, Message_SpeedBooster 加速器,
+     * Message_ScrewAttack 团身旋击, Message_PowerGrip 强力抓. The two names the
+     * build only shows after the Ruins Test (Gravity, Space Jump) follow the
+     * manual. Four characters is the widest that fits: the card lists them two
+     * across, so a name starts at 170 or 242 and the state column sits fifty
+     * pixels further right. */
     { "HIGH JUMP",     "高跳" },
-    { "SPEED BOOSTER", "加速" },
-    { "SPACE JUMP",    "太空跳" },
-    { "SCREW ATTACK",  "旋转" },
-    { "VARIA SUIT",    "瓦利亚" },
+    { "SPEED BOOSTER", "加速器" },
+    { "SPACE JUMP",    "连跳" },
+    { "SCREW ATTACK",  "团身旋击" },
+    { "VARIA SUIT",    "防护服" },
     { "GRAVITY SUIT",  "重力服" },
     { "MORPH BALL",    "变形球" },
-    { "POWER GRIP",    "抓握" },
+    { "POWER GRIP",    "强力抓" },
 
     /* Per-item state. Two characters at most: the state sits in a 26 pixel
      * column next to the name. */
@@ -177,7 +187,7 @@ static const struct {
     { "MOVEMENT ONLY", "仅移动" },
     { "ALL",           "全部" },
     { "AUTO BOMB JUMP:",   "自动炸弹跳:" },
-    { "AUTO SPACE JUMP:",  "自动太空跳:" },
+    { "AUTO SPACE JUMP:",  "自动连跳:" },
     { "CHARGE PULLS DROPS:", "蓄力吸取掉落:" },
     { "NOT IN HARDCORE",   "硬核模式不可用" },
     { "RESET DEFAULTS",    "恢复默认" },

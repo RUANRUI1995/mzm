@@ -41,16 +41,14 @@ jobs:
             refs/tags/*) TAG="${GITHUB_REF#refs/tags/}" ;;
             *)           TAG=$(git describe --tags --always) ;;
           esac
-          case "$TAG" in
-            # The Chinese build (vX.Y.Zc) is 3DS only. The translation lives in the
-            # 3DS bottom screen and in the game's own text; nothing of it has been
-            # carried to the Wii U build, so asking that job to run would only make
-            # a release that cannot ship.
-            *-c)     B3DS=true;  BWIIU=false; PLATFORMS="3DS" ;;
-            3ds-v*)  B3DS=true;  BWIIU=false; PLATFORMS="3DS" ;;
-            wiiu-v*) B3DS=false; BWIIU=true;  PLATFORMS="Wii U" ;;
-            *)       B3DS=true;  BWIIU=true;  PLATFORMS="3DS + Wii U" ;;
-          esac
+          # This branch ships the 3DS build only: the translation lives in the 3DS
+          # bottom screen and in the game's own text, and the Wii U job is switched
+          # off below. Fixed rather than derived from the tag, because the tag is
+          # vX.Y.Zc -- neither 3ds-v* nor wiiu-v* -- and deriving it from the name
+          # put a Wii U download link on a page that had no Wii U file.
+          B3DS=true
+          BWIIU=false
+          PLATFORMS="3DS"
           VERSION="${TAG#3ds-}"; VERSION="${VERSION#wiiu-}"
 
           # Stable vs beta is decided by whether main can reach this commit,

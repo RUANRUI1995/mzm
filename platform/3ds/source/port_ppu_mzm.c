@@ -18,6 +18,7 @@
 #include "structs/sprite.h"    /* gSpriteData, for the dump's sprite list */
 #include "constants/clipdata.h"
 #include "constants/block.h"
+#include "region.h"             /* REGION_IS_CN, for the bottom screen language */
 #include "constants/game_state.h"
 #include "structs/game_state.h"
 #include "constants/cutscene.h"       /* CUTSCENE_DATA */
@@ -151,6 +152,12 @@ static bool sWideAiAsked;
 static int sDisplayStyle = 0; /* 0 = PIXEL PERFECT, 1 = SCALED (2 = BLUR retired -- no effect on the GPU path) */
 static const char* const sConfigPath = "mzm3ds.ini";
 
+/* The bottom screen's own language: 0 follows the ROM (a Chinese one gets
+ * Chinese), 1 forces Chinese, 2 forces English. It is separate from gLanguage
+ * on purpose -- gLanguage indexes the game's own text tables, which have no
+ * Chinese, so writing 7 there would break the game's text. */
+static int sBottomLang = 0;
+
 static bool sAutoHideHud = true;
 static bool sHideSpoilers = true;
 static bool sHudOutside = false;
@@ -267,6 +274,7 @@ void Port_Config_Save(void) {
     fprintf(file, "bottom_area=%d\n", Port_BottomUI_GetViewArea());
     fprintf(file, "bottom_follow=%u\n", Port_BottomUI_GetFollowSamus() ? 1u : 0u);
     fprintf(file, "language=%d\n", (int)gLanguage);
+    fprintf(file, "bottom_lang=%d\n", sBottomLang);
     extern bool Port_RA_IsEnabled(void);
     extern bool Port_RA_IsHardcore(void);
     extern bool Port_RA_GetNotificationSound(void);
@@ -377,6 +385,8 @@ void Port_Config_Load(void) {
             else sFpsPosition = (val != 0) ? 1 : 0;
         } else if (strcmp(key, "auto_hide_hud") == 0) {
             sAutoHideHud = (val != 0);
+        } else if (strcmp(key, "bottom_lang") == 0) {
+            if (val >= 0 && val <= 2) sBottomLang = val;
         } else if (strcmp(key, "hide_spoilers") == 0) {
             sHideSpoilers = (val != 0);
         } else if (strcmp(key, "hud_outside") == 0) {
@@ -449,6 +459,18 @@ void Port_Config_SetShowFps(bool show) { sFpsPosition = show ? (sFpsPosition ? s
 
 bool Port_Config_GetAutoHideHud(void) { return sAutoHideHud; }
 void Port_Config_SetAutoHideHud(bool autoHide) { sAutoHideHud = autoHide; Port_Config_Save(); }
+
+/* Whether the bottom screen's text comes out in Chinese (see port_bottom_ui_zh.c). */
+bool Port_Config_GetBottomZh(void) {
+    if (sBottomLang == 1) return true;
+    if (sBottomLang == 2) return false;
+    return REGION_IS_CN();
+}
+
+void Port_Config_SetBottomLang(int mode) {
+    if (mode >= 0 && mode <= 2) sBottomLang = mode;
+    Port_Config_Save();
+}
 
 bool Port_Config_GetHideSpoilers(void) { return sHideSpoilers; }
 void Port_Config_SetHideSpoilers(bool hide) { sHideSpoilers = hide; Port_Config_Save(); }

@@ -102,6 +102,8 @@ SRCS_3DS := \
 	$(CURDIR)/source/port_oam_census.c \
 	$(CURDIR)/source/platform_gpu_3ds.c \
 	$(CURDIR)/source/port_bottom_ui_3ds.c \
+	$(CURDIR)/source/port_bottom_ui_zh.c \
+	$(CURDIR)/source/port_bottom_ui_font_zh.c \
 	$(CURDIR)/source/port_ppu_mzm.c \
 	$(CURDIR)/source/port_gpu_renderer.c \
 	$(CURDIR)/source/port_save_state.c \

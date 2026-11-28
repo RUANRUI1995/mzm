@@ -13,6 +13,7 @@
 #include "port_state_thumb.h"
 #include "port_updater_3ds.h"
 #include "port_dsp_firm_prompt_3ds.h"
+#include "port_bottom_ui_zh.h"
 
 /* GBA & MZM minimap and state globals */
 extern uint16_t gDecompressedMinimapVisitedTiles[32 * 32];
@@ -648,6 +649,7 @@ extern bool Port_Config_GetAutoHideHud(void);
 extern void Port_Config_SetAutoHideHud(bool on);
 extern bool Port_Config_GetHideSpoilers(void);
 extern void Port_Config_SetHideSpoilers(bool on);
+extern bool Port_Config_GetBottomZh(void);
 extern int Port_Config_GetButtonMapping(int buttonIndex);
 extern void Port_Config_SetButtonMapping(int buttonIndex, int action);
 extern void Port_Config_CycleButtonMapping(int buttonIndex);
@@ -888,6 +890,11 @@ static uint8_t sCachedOtherArea = 0xFF;
 
 /* Language helpers (0=JP, 1=HIRA, 2=EN, 3=DE, 4=FR, 5=IT, 6=ES) */
 static inline int GetLang(void) {
+    /* Chinese is a translation of the English strings, looked up by that text
+     * at draw time (port_bottom_ui_zh.c), so the tables have to be read in
+     * English while it is on -- otherwise a save set to German would come out
+     * half German, half Chinese. */
+    if (Port_BottomUi_ZhActive()) return 2;
     if (gLanguage >= 0 && gLanguage <= 6) return (int)gLanguage;
     return 2; /* Default English */
 }
@@ -1021,45 +1028,106 @@ static const uint8_t* GetGlyph(char c) {
     return NULL;
 }
 
-static const uint8_t* GetUtf8Glyph(const char** textPtr) {
+/* Code point of the next character, or 0xFFFFFFFF for a byte that is not
+ * valid UTF-8 (and for anything outside the BMP, which nothing here draws). */
+static uint32_t NextCodePoint(const char** textPtr) {
     const uint8_t* s = (const uint8_t*)*textPtr;
-    if (!*s) return NULL;
+    if (!*s) return 0xFFFFFFFFu;
     if (s[0] < 0x80) {
         (*textPtr)++;
-        return GetGlyph((char)s[0]);
+        return s[0];
     }
     /* 2-byte UTF-8 */
     if ((s[0] & 0xE0) == 0xC0 && s[1]) {
-        uint16_t code = (uint16_t)(((s[0] & 0x1F) << 6) | (s[1] & 0x3F));
+        const uint32_t code = ((uint32_t)(s[0] & 0x1F) << 6) | (uint32_t)(s[1] & 0x3F);
         *textPtr += 2;
-        if (code >= 0x00A0 && code <= 0x00FF) {
-            return GetGlyph((char)code);
-        }
-        return NULL;
+        return code;
     }
-    /* 3-byte UTF-8 (e.g. CJK / Katakana / Hiragana) */
+    /* 3-byte UTF-8 (CJK) -- the 12x12 font's, not the 5x7 one's */
     if ((s[0] & 0xF0) == 0xE0 && s[1] && s[2]) {
+        const uint32_t code = ((uint32_t)(s[0] & 0x0F) << 12) | ((uint32_t)(s[1] & 0x3F) << 6) |
+                              (uint32_t)(s[2] & 0x3F);
         *textPtr += 3;
-        return NULL;
+        return code;
     }
     /* 4-byte UTF-8 */
     if ((s[0] & 0xF8) == 0xF0 && s[1] && s[2] && s[3]) {
         *textPtr += 4;
-        return NULL;
+        return 0xFFFFFFFFu;
     }
     (*textPtr)++;
-    return NULL;
+    return 0xFFFFFFFFu;
+}
+
+/* The 5x7 glyph for a code point, if the Latin font has one. */
+static const uint8_t* LatinGlyph(uint32_t code) {
+    if (code > 0xFF) return NULL;
+    if (code >= 0x80 && (code < 0x00A0)) return NULL;
+    return GetGlyph((char)code);
+}
+
+/* A 12x12 glyph, two bytes a row with bit 15 the leftmost pixel, drawn from
+ * the same top edge as the 5x7 font's first row. Runs of lit pixels become one
+ * rectangle per row, the way the Latin path draws. */
+static void DrawZhGlyph(float x, float y, float scale, uint32_t color, const uint8_t* glyph,
+                        float clipY0, float clipY1) {
+    for (int row = 0; row < kZhGlyphH; ++row) {
+        const float py = y + (float)row * scale;
+        if (py < clipY0 || py + scale > clipY1) continue;
+        const unsigned bits = ((unsigned)glyph[row * 2] << 8) | (unsigned)glyph[row * 2 + 1];
+        for (int col = 0; col < kZhGlyphW;) {
+            if ((bits & (0x8000u >> col)) == 0) {
+                ++col;
+                continue;
+            }
+            int end = col + 1;
+            while (end < kZhGlyphW && (bits & (0x8000u >> end)) != 0) ++end;
+            C2D_DrawRectSolid(x + (float)col * scale, py, 0.85f,
+                              (float)(end - col) * scale, scale, color);
+            col = end;
+        }
+    }
+}
+
+/* Pixels a string takes at scale 1: 6 for a Latin cell, 12 for a Chinese one.
+ * Measured after translation, since the Chinese can be a different length. */
+static float TextWidthPx(const char* text) {
+    if (!text) return 0.0f;
+    text = Port_BottomUi_Zh(text);
+    float w = 0.0f;
+    while (*text) {
+        const uint32_t code = NextCodePoint(&text);
+        w += (code >= 0x2E80) ? (float)kZhAdvance : 6.0f;
+    }
+    return w;
+}
+
+/* Whether a string has a Chinese character in it, which decides how tall the
+ * line is (12 pixels against the 5x7 font's 7). */
+static bool HasZhGlyph(const char* text) {
+    text = Port_BottomUi_Zh(text);
+    while (*text) {
+        if (NextCodePoint(&text) >= 0x2E80) return true;
+    }
+    return false;
 }
 
 static void DrawTextClipped(float x, float y, float scale, const char* text, uint32_t color, float clipY0, float clipY1) {
+    text = Port_BottomUi_Zh(text);
     x = (float)(int)(x + (x >= 0.0f ? 0.5f : -0.5f));
     y = (float)(int)(y + (y >= 0.0f ? 0.5f : -0.5f));
-    if (y + 7.0f * scale <= clipY0 || y >= clipY1) return;
-    float charW = 6.0f * scale;
+    if (y + (float)kZhGlyphH * scale <= clipY0 || y >= clipY1) return;   /* tallest cell */
     while (*text) {
-        const uint8_t* glyph = GetUtf8Glyph(&text);
+        const uint32_t code = NextCodePoint(&text);
+        if (code >= 0x2E80) {
+            const uint8_t* zh = Port_BottomUiZhGlyph(code);
+            if (zh) DrawZhGlyph(x, y, scale, color, zh, clipY0, clipY1);
+            x += (float)kZhAdvance * scale;
+            continue;
+        }
+        const uint8_t* glyph = LatinGlyph(code);
         if (!glyph) {
-            x += charW;
+            x += 6.0f * scale;
             continue;
         }
         for (int row = 0; row < 7; ++row) {
@@ -1078,19 +1146,30 @@ static void DrawTextClipped(float x, float y, float scale, const char* text, uin
                 col = end;
             }
         }
-        x += charW;
+        x += 6.0f * scale;
     }
 }
 
 static void DrawTextMaxWClipped(float x, float y, float scale, const char* text, uint32_t color, float clipY0, float clipY1, float maxW) {
+    text = Port_BottomUi_Zh(text);
     x = (float)(int)(x + (x >= 0.0f ? 0.5f : -0.5f));
     y = (float)(int)(y + (y >= 0.0f ? 0.5f : -0.5f));
-    if (y + 7.0f * scale <= clipY0 || y >= clipY1) return;
-    float charW = 6.0f * scale;
-    float startX = x;
+    if (y + (float)kZhGlyphH * scale <= clipY0 || y >= clipY1) return;
+    const float startX = x;
     while (*text) {
+        const char* probe = text;
+        const uint32_t code = NextCodePoint(&probe);
+        const bool chinese = (code >= 0x2E80);
+        const float charW = (chinese ? (float)kZhAdvance : 6.0f) * scale;
         if (x + charW > startX + maxW) break;
-        const uint8_t* glyph = GetUtf8Glyph(&text);
+        text = probe;
+        if (chinese) {
+            const uint8_t* zh = Port_BottomUiZhGlyph(code);
+            if (zh) DrawZhGlyph(x, y, scale, color, zh, clipY0, clipY1);
+            x += charW;
+            continue;
+        }
+        const uint8_t* glyph = LatinGlyph(code);
         if (!glyph) {
             x += charW;
             continue;
@@ -1116,70 +1195,69 @@ static void DrawTextMaxWClipped(float x, float y, float scale, const char* text,
 }
 
 
+/* Wraps by pixel width, a word at a time. A Chinese character is a word of its
+ * own -- Chinese has no spaces to break on -- so a line can end anywhere in a
+ * run of them, which is how the language is set. */
 static void DrawWrappedTextClipped(float x, float y, float scale, const char* text, float maxWidth, float lineHeight, uint32_t color, float clipY0, float clipY1) {
     if (!text || !*text) return;
-    float charW = 6.0f * scale;
-    int maxCharsPerLine = (int)(maxWidth / charW);
-    if (maxCharsPerLine < 10) maxCharsPerLine = 10;
+    text = Port_BottomUi_Zh(text);
 
-    char lineBuf[128];
-    int lineBufLen = 0;
+    char lineBuf[256];
+    int lineLen = 0;
+    float lineW = 0.0f;
     float curY = y;
-    const char* ptr = text;
 
-    while (*ptr) {
-        const char* wordStart = ptr;
-        while (*ptr && *ptr != ' ') ++ptr;
-        int wordLen = (int)(ptr - wordStart);
+    while (*text) {
+        while (*text == ' ') ++text;
+        if (!*text) break;
 
-        if (lineBufLen == 0) {
-            if (wordLen < (int)sizeof(lineBuf) - 1) {
-                memcpy(lineBuf, wordStart, wordLen);
-                lineBufLen = wordLen;
-                lineBuf[lineBufLen] = '\0';
-            }
-        } else if (lineBufLen + 1 + wordLen <= maxCharsPerLine && lineBufLen + 1 + wordLen < (int)sizeof(lineBuf) - 1) {
-            lineBuf[lineBufLen++] = ' ';
-            memcpy(lineBuf + lineBufLen, wordStart, wordLen);
-            lineBufLen += wordLen;
-            lineBuf[lineBufLen] = '\0';
+        const char* wordStart = text;
+        float wordW;
+        if ((uint8_t)*text >= 0x80) {
+            /* One character, one word: Chinese has no spaces to break on, and a
+             * Latin accent is still a single cell. */
+            const uint32_t code = NextCodePoint(&text);
+            wordW = (code >= 0x2E80 ? (float)kZhAdvance : 6.0f) * scale;
         } else {
-            /* flush current line */
+            while (*text && *text != ' ' && (uint8_t)*text < 0x80) ++text;
+            wordW = (float)(text - wordStart) * 6.0f * scale;
+        }
+        const int wordLen = (int)(text - wordStart);
+        const float gapW = (lineLen > 0) ? 6.0f * scale : 0.0f;
+
+        if (lineLen > 0 && (lineW + gapW + wordW > maxWidth ||
+                            lineLen + 1 + wordLen >= (int)sizeof(lineBuf))) {
             DrawTextClipped(x, curY, scale, lineBuf, color, clipY0, clipY1);
             curY += lineHeight;
-            memcpy(lineBuf, wordStart, wordLen);
-            lineBufLen = wordLen;
-            lineBuf[lineBufLen] = '\0';
+            lineLen = 0;
+            lineW = 0.0f;
         }
-        while (*ptr == ' ') ++ptr;
+        if (lineLen == 0) {
+            if (wordLen >= (int)sizeof(lineBuf)) continue;   /* cannot happen */
+            memcpy(lineBuf, wordStart, (size_t)wordLen);
+            lineLen = wordLen;
+            lineW = wordW;
+        } else {
+            lineBuf[lineLen++] = ' ';
+            memcpy(lineBuf + lineLen, wordStart, (size_t)wordLen);
+            lineLen += wordLen;
+            lineW += gapW + wordW;
+        }
+        lineBuf[lineLen] = '\0';
     }
-    if (lineBufLen > 0) {
-        DrawTextClipped(x, curY, scale, lineBuf, color, clipY0, clipY1);
-    }
+    if (lineLen > 0) DrawTextClipped(x, curY, scale, lineBuf, color, clipY0, clipY1);
 }
 
 static void DrawText(float x, float y, float scale, const char* text, uint32_t color) {
     DrawTextClipped(x, y, scale, text, color, -1000.0f, 1000.0f);
 }
 
-static int Utf8CharCount(const char* text) {
-    if (!text) return 0;
-    int count = 0;
-    while (*text) {
-        GetUtf8Glyph(&text);
-        ++count;
-    }
-    return count;
-}
-
 static void DrawTextCentered(float cx, float y, float scale, const char* text, uint32_t color) {
-    float length = (float)Utf8CharCount(text) * 6.0f * scale;
-    DrawText(cx - (length / 2.0f), y, scale, text, color);
+    DrawText(cx - TextWidthPx(text) * scale / 2.0f, y, scale, text, color);
 }
 
 static void DrawTextCenteredClipped(float cx, float y, float scale, const char* text, uint32_t color, float clipY0, float clipY1) {
-    float length = (float)Utf8CharCount(text) * 6.0f * scale;
-    DrawTextClipped(cx - (length / 2.0f), y, scale, text, color, clipY0, clipY1);
+    DrawTextClipped(cx - TextWidthPx(text) * scale / 2.0f, y, scale, text, color, clipY0, clipY1);
 }
 
 /* --- Shared button chrome ------------------------------------------------
@@ -1226,13 +1304,14 @@ static void DrawButton(float x, float y, float w, float h, const char* label,
     bool pressed = DrawButtonBox(x, y, w, h, bodyCol, borderCol);
     if (!label || !*label) return;
     float scale = 1.0f;
-    float tw = (float)Utf8CharCount(label) * 6.0f;
+    float tw = TextWidthPx(label);
     float avail = w - 4.0f;
     if (tw > avail && tw > 0.0f) {
         scale = avail / tw;
         if (scale < 0.5f) scale = 0.5f;
     }
-    float ty = y + (h - 7.0f * scale) * 0.5f + (pressed ? 1.0f : 0.0f);
+    const float lineH = HasZhGlyph(label) ? (float)kZhGlyphH : 7.0f;
+    float ty = y + (h - lineH * scale) * 0.5f + (pressed ? 1.0f : 0.0f);
     DrawTextCentered(x + w * 0.5f, ty, scale, label, textCol);
 }
 
@@ -1333,6 +1412,10 @@ void Port_BottomUI_Init(void) {
     sLastTouchY = -1;
     sIsDragging = false;
     sCachedOtherArea = 0xFF;
+
+    /* The bottom screen's own text, not the game's: a Chinese ROM gets Chinese
+     * here by itself (see Port_Config_GetBottomZh). */
+    Port_BottomUi_ZhSetActive(Port_Config_GetBottomZh());
 }
 
 void Port_BottomUI_SetTab(PortBottomTab tab) {
@@ -3424,6 +3507,19 @@ static void DispCell(int index, const char* label, const char* value, uint32_t v
     float y = (float)(DISP_GRID_Y0 + (index >> 1) * DISP_GRID_PITCH);
     DrawButtonBox(x, y, (float)DISP_COL_W, (float)DISP_CELL_H,
                   C2D_Color32(24, 32, 50, 255), C2D_Color32(50, 80, 130, 255));
+    if (Port_BottomUi_ZhActive()) {
+        /* A Chinese cell is 12 pixels tall, so label and value share the line:
+         * stacking them would overlap. Short words, so the two fit across. */
+        const float ty = y + 6.0f;
+        DrawTextMaxWClipped(x + 6.0f, ty, 1.0f, label, C2D_Color32(255, 255, 255, 255),
+                            0.0f, 240.0f, (float)DISP_COL_W - 12.0f);
+        if (value) {
+            const float valueW = TextWidthPx(value);
+            DrawTextClipped(x + (float)DISP_COL_W - 6.0f - valueW, ty, 1.0f, value, valueCol,
+                            0.0f, 240.0f);
+        }
+        return;
+    }
     DrawTextMaxWClipped(x + 6.0f, y + 4.0f, 1.0f, label, C2D_Color32(255, 255, 255, 255),
                         0.0f, 240.0f, (float)DISP_COL_W - 12.0f);
     if (value) DrawTextMaxWClipped(x + 6.0f, y + 14.0f, 1.0f, value, valueCol,
@@ -3482,7 +3578,7 @@ static void RenderDisplayModal(int lang) {
     static const char* const hudL[7]   = { "AUTO-HIDE HUD","AUTO-HIDE HUD","AUTO-HIDE HUD","HUD AUTO-AUS","MASQUER HUD","NASCONDI HUD","AUTOOCULTAR HUD" };
     static const char* const spoL[7]   = { "HIDE SPOILERS","HIDE SPOILERS","HIDE SPOILERS","SPOILER AUS","MASQ. SPOILERS","NASC. SPOILER","OCULTAR SPOILERS" };
 
-    DispCell(0, langL[lang], Port_Config_GetLanguageDisplayName(lang), valCol);
+    DispCell(0, langL[lang], Port_Config_GetLanguageDisplayName((int)gLanguage), valCol);
     bool wideOn = (Port_Config_Get3DSAspectRatio() == 3);
     DispCell(1, aspL[lang], GetAspectRatioDisplayName(lang), wideOn ? onCol : valCol);
     DispCell(2, styL[lang], GetDisplayStyleDisplayName(lang), valCol);
@@ -4389,7 +4485,7 @@ static void RenderMapView(void) {
     if (Port_BottomUI_DebugTabVisible()) {
         char pctBuf[16];
         snprintf(pctBuf, sizeof(pctBuf), "%d%%", PortPpuMzm_DebugAreaMapPercent((int)sViewArea));
-        float bw = (float)(Utf8CharCount(pctBuf) * 6 + 8);
+        float bw = TextWidthPx(pctBuf) + 8.0f;
         C2D_DrawRectSolid(canvasX + 3.0f, canvasY + 3.0f, 0.9f, bw, 12.0f, C2D_Color32(10, 16, 26, 220));
         C2D_DrawRectSolid(canvasX + 3.0f, canvasY + 3.0f, 0.91f, bw, 1.0f, C2D_Color32(60, 90, 140, 255));
         DrawText(canvasX + 7.0f, canvasY + 5.0f, 1.0f, pctBuf, C2D_Color32(120, 220, 255, 255));
@@ -4512,12 +4608,12 @@ static void RenderStatusView(void) {
     }
 
     /* 2. Beams & Weapons Column (X: 8, W: 148, Y: 76 to 164) */
-    C2D_DrawRectSolid(8.0f, 76.0f, 0.45f, 148.0f, 88.0f, C2D_Color32(18, 22, 34, 255));
+    C2D_DrawRectSolid(8.0f, 76.0f, 0.45f, 148.0f, 94.0f, C2D_Color32(18, 22, 34, 255));
     const char* beamColTitles[7] = {
         "BEAMS & BOMBS", "BEAMS & BOMBS", "BEAMS & BOMBS",
         "BEAMS & BOMBEN", "RAYONS & BOMBES", "RAGGI E BOMBE", "RAYOS Y BOMBAS"
     };
-    DrawText(14.0f, 80.0f, 1.0f, beamColTitles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(14.0f, 78.0f, 1.0f, beamColTitles[lang], C2D_Color32(255, 215, 0, 255));
 
     const char* unknownNames[7] = {
         "UNKNOWN ITEM", "UNKNOWN ITEM", "UNKNOWN ITEM", "UNBEKANNT", "OBJET INCONNU", "OGGETTO SCONOSCIUTO", "OBJETO DESCONOCIDO"
@@ -4541,8 +4637,9 @@ static void RenderStatusView(void) {
         { { "CHARGE BEAM", "CHARGE BEAM", "CHARGE BEAM", "CHARGE BEAM", "RAYON CHARGE", "RAGGIO CARICA", "RAYO RECARGA" }, 1 << 4, false },
         { { "BOMBS", "BOMBS", "BOMBS", "BOMBEN", "BOMBES", "BOMBE", "BOMBAS" }, 1 << 7, false }
     };
+    const bool zhRows = Port_BottomUi_ZhActive();
     for (int i = 0; i < 6; ++i) {
-        float py = 92.0f + (float)i * 11.0f;
+        float py = (zhRows ? 91.0f : 92.0f) + (float)i * (zhRows ? 13.0f : 11.0f);
         if (isSuitless) {
             if (i == 0) {
                 DrawText(14.0f, py, 1.0f, pistolNames[lang], C2D_Color32(80, 255, 120, 255));
@@ -4584,12 +4681,12 @@ static void RenderStatusView(void) {
     }
 
     /* 3. Suits & Movement Column (X: 164, W: 148, Y: 76 to 164) */
-    C2D_DrawRectSolid(164.0f, 76.0f, 0.45f, 148.0f, 88.0f, C2D_Color32(18, 22, 34, 255));
+    C2D_DrawRectSolid(164.0f, 76.0f, 0.45f, 148.0f, 94.0f, C2D_Color32(18, 22, 34, 255));
     const char* suitColTitles[7] = {
         "SUITS & MISC", "SUITS & MISC", "SUITS & MISC",
         "ANZUEGE & ITEMS", "COMBINAISONS", "TUTE E OGGETTI", "TRAJES Y EQUIPO"
     };
-    DrawText(170.0f, 80.0f, 1.0f, suitColTitles[lang], C2D_Color32(255, 215, 0, 255));
+    DrawText(170.0f, 78.0f, 1.0f, suitColTitles[lang], C2D_Color32(255, 215, 0, 255));
 
     struct {
         const char* name[7];
@@ -4606,17 +4703,25 @@ static void RenderStatusView(void) {
         { { "POWER GRIP", "POWER GRIP", "POWER GRIP", "POWER GRIP", "POIGNE DE FER", "PRESA FORZA", "AGARRE" }, 1 << 7, false }
     };
     for (int i = 0; i < 8; ++i) {
-        float py = 91.0f + (float)i * 9.0f;
+        /* Two columns of four in Chinese: a 12 pixel row times eight does not
+         * fit the 88 pixel card, and an 8 character English name does not fit
+         * half its width, so the English layout stays one column. */
+        float px = 170.0f, py = 91.0f + (float)i * 9.0f, sx = 286.0f;
+        if (zhRows) {
+            px = (i < 4) ? 170.0f : 242.0f;
+            py = 92.0f + (float)(i & 3) * 19.0f;
+            sx = px + 50.0f;
+        }
         uint8_t flag = suits[i].flag;
 
         if (isSuitless) {
             bool hasSuitlessItem = (flag == (1 << 6) || flag == (1 << 7)) && ((gEquipment.suitMisc & flag) != 0);
             if (hasSuitlessItem) {
-                DrawText(170.0f, py, 1.0f, suits[i].name[lang], C2D_Color32(80, 255, 120, 255));
-                DrawText(286.0f, py, 1.0f, "OK", C2D_Color32(80, 255, 120, 255));
+                DrawText(px, py, 1.0f, suits[i].name[lang], C2D_Color32(80, 255, 120, 255));
+                DrawText(sx, py, 1.0f, "OK", C2D_Color32(80, 255, 120, 255));
             } else {
-                DrawText(170.0f, py, 1.0f, suits[i].name[lang], C2D_Color32(75, 85, 105, 255));
-                DrawText(286.0f, py, 1.0f, "--", C2D_Color32(75, 85, 105, 255));
+                DrawText(px, py, 1.0f, suits[i].name[lang], C2D_Color32(75, 85, 105, 255));
+                DrawText(sx, py, 1.0f, "--", C2D_Color32(75, 85, 105, 255));
             }
             continue;
         }
@@ -4651,18 +4756,18 @@ static void RenderStatusView(void) {
             }
         }
 
-        DrawText(170.0f, py, 1.0f, label, col);
-        DrawText(286.0f, py, 1.0f, statusStr, col);
+        DrawText(px, py, 1.0f, label, col);
+        DrawText(sx, py, 1.0f, statusStr, col);
     }
 
     /* 4. Area Map Downloads Card & Collectibles Button (Y: 168 to 234) */
-    C2D_DrawRectSolid(8.0f, 168.0f, 0.45f, 304.0f, 66.0f, C2D_Color32(16, 20, 30, 255));
+    C2D_DrawRectSolid(8.0f, 172.0f, 0.45f, 304.0f, 62.0f, C2D_Color32(16, 20, 30, 255));
 
     const char* mapHeaderTitles[7] = {
         "DOWNLOADED MAPS:", "DOWNLOADED MAPS:", "DOWNLOADED MAPS:",
         "HERUNTERGELADENE KARTEN:", "CARTES TELECHARGEES:", "MAPPE SCARICATE:", "MAPAS DESCARGADOS:"
     };
-    DrawText(14.0f, 172.0f, 1.0f, mapHeaderTitles[lang], C2D_Color32(100, 220, 255, 255));
+    DrawText(14.0f, 174.0f, 1.0f, mapHeaderTitles[lang], C2D_Color32(100, 220, 255, 255));
 
     /* Button for opening Collectibles Detail Modal */
     struct AreaItemStats globalStats;
@@ -4680,8 +4785,8 @@ static void RenderStatusView(void) {
         snprintf(globBtn, sizeof(globBtn), "%s: %u/%u (%u%%)", itemsBtnLabels[lang],
                  globalStats.totalObtained, globalStats.totalItems, pct);
     }
-    C2D_DrawRectSolid(182.0f, 170.0f, 0.5f, 126.0f, 14.0f, C2D_Color32(20, 50, 90, 255));
-    C2D_DrawRectSolid(183.0f, 171.0f, 0.55f, 124.0f, 12.0f, C2D_Color32(12, 30, 60, 255));
+    C2D_DrawRectSolid(182.0f, 172.0f, 0.5f, 126.0f, 14.0f, C2D_Color32(20, 50, 90, 255));
+    C2D_DrawRectSolid(183.0f, 173.0f, 0.55f, 124.0f, 12.0f, C2D_Color32(12, 30, 60, 255));
     DrawTextCentered(245.0f, 173.0f, 1.0f, globBtn, C2D_Color32(255, 215, 0, 255));
 
     /* Box colour is driven by the per-area debug cycle state, not by % :
@@ -4756,8 +4861,11 @@ static void RenderOptionsView(void) {
         "LANGUAGE, ASPECT, STYLE, FPS", "LANGUAGE, ASPECT, STYLE, FPS", "LANGUAGE, ASPECT, STYLE, FPS",
         "SPRACHE, BILD, STIL, FPS", "LANGUE, FORMAT, STYLE, FPS", "LINGUA, FORMATO, STILE, FPS", "IDIOMA, ASPECTO, ESTILO, FPS"
     };
-    DrawTextCentered(160.0f, 53.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnTitles[lang], C2D_Color32(120, 210, 255, 255));
-    DrawTextCentered(160.0f, 64.0f + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnSubs[lang], C2D_Color32(150, 170, 200, 255));
+    /* Chinese lines are taller, so both sit two pixels higher to stay clear of
+     * each other and of the button's bottom edge. */
+    const bool zhUi = Port_BottomUi_ZhActive();
+    DrawTextCentered(160.0f, (zhUi ? 49.0f : 53.0f) + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnTitles[lang], C2D_Color32(120, 210, 255, 255));
+    DrawTextCentered(160.0f, (zhUi ? 63.0f : 64.0f) + (p1 ? 1.0f : 0.0f), 1.0f, displayBtnSubs[lang], C2D_Color32(150, 170, 200, 255));
 
     /* Controls remapping (Y: 82 to 114, H: 32) */
     bool p4 = DrawButtonBox(16.0f, 82.0f, 288.0f, 32.0f,
@@ -4770,8 +4878,8 @@ static void RenderOptionsView(void) {
         "REMAPPABLE BUTTONS & C-STICK", "REMAPPABLE BUTTONS & C-STICK", "REMAPPABLE BUTTONS & C-STICK",
         "TASTEN & C-STICK BELEGEN", "TOUCHES ET C-STICK", "RIMAPPA TASTI E C-STICK", "MAPEAR BOTONES Y C-STICK"
     };
-    DrawTextCentered(160.0f, 89.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlTitles[lang], C2D_Color32(255, 215, 90, 255));
-    DrawTextCentered(160.0f, 100.0f + (p4 ? 1.0f : 0.0f), 1.0f, ctrlSubs[lang], C2D_Color32(190, 170, 120, 255));
+    DrawTextCentered(160.0f, (zhUi ? 85.0f : 89.0f) + (p4 ? 1.0f : 0.0f), 1.0f, ctrlTitles[lang], C2D_Color32(255, 215, 90, 255));
+    DrawTextCentered(160.0f, (zhUi ? 99.0f : 100.0f) + (p4 ? 1.0f : 0.0f), 1.0f, ctrlSubs[lang], C2D_Color32(190, 170, 120, 255));
 
     /* Restart button (Y: 122 to 150, H: 28) */
     static const char* const restartBtnTitles[7] = {
@@ -5822,16 +5930,16 @@ static void DrawStateStats(float x, float y, const PortSaveStateInfo* info, floa
     char seg[20];
     snprintf(seg, sizeof(seg), "E%u/%u", (unsigned)info->energy, (unsigned)info->maxEnergy);
     DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(255, 215, 90, 255), clipY0, clipY1);
-    x += ((float)Utf8CharCount(seg) + 1.0f) * 6.0f;
+    x += TextWidthPx(seg) + 6.0f;
     if (info->maxMissiles > 0) {
         snprintf(seg, sizeof(seg), "M%u/%u", (unsigned)info->missiles, (unsigned)info->maxMissiles);
         DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(255, 130, 110, 255), clipY0, clipY1);
-        x += ((float)Utf8CharCount(seg) + 1.0f) * 6.0f;
+        x += TextWidthPx(seg) + 6.0f;
     }
     if (info->maxSuperMissiles > 0) {
         snprintf(seg, sizeof(seg), "S%u/%u", (unsigned)info->superMissiles, (unsigned)info->maxSuperMissiles);
         DrawTextClipped(x, y, 1.0f, seg, C2D_Color32(120, 220, 130, 255), clipY0, clipY1);
-        x += ((float)Utf8CharCount(seg) + 1.0f) * 6.0f;
+        x += TextWidthPx(seg) + 6.0f;
     }
     if (info->maxPowerBombs > 0) {
         snprintf(seg, sizeof(seg), "P%u/%u", (unsigned)info->powerBombs, (unsigned)info->maxPowerBombs);
@@ -5852,7 +5960,7 @@ static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned numb
     char when[40];
     FormatSavedAt(info->savedAt, when, sizeof(when));
     if (when[0])
-        DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(when) * 6.0f, y + 4.0f, 1.0f, when,
+        DrawTextClipped(STATE_TEXT_RIGHT - TextWidthPx(when), y + 4.0f, 1.0f, when,
                         C2D_Color32(120, 140, 170, 255), c0, c1);
 
     if (info->hasStats)
@@ -5863,13 +5971,13 @@ static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned numb
 
     if (!info->compatible) {
         const char* tag = es ? "OTRA BUILD" : "OTHER BUILD";
-        DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(tag) * 6.0f, y + 15.0f, 1.0f, tag,
+        DrawTextClipped(STATE_TEXT_RIGHT - TextWidthPx(tag), y + 15.0f, 1.0f, tag,
                         C2D_Color32(235, 110, 90, 255), c0, c1);
     } else if (info->hasPlayTime) {
         char play[16];
         snprintf(play, sizeof(play), "%u:%02u:%02u", (unsigned)info->playHours, (unsigned)info->playMinutes,
                  (unsigned)info->playSeconds);
-        DrawTextClipped(STATE_TEXT_RIGHT - (float)Utf8CharCount(play) * 6.0f, y + 15.0f, 1.0f, play,
+        DrawTextClipped(STATE_TEXT_RIGHT - TextWidthPx(play), y + 15.0f, 1.0f, play,
                         C2D_Color32(150, 170, 200, 255), c0, c1);
     }
 }
@@ -6157,9 +6265,9 @@ static void RenderNoticeToast(void) {
     const float icon = 22.0f;
     const float padX = 10.0f;
     const float gap = 10.0f;
-    const float titleW = (float)Utf8CharCount(title) * 6.0f - 1.0f;
+    const float titleW = TextWidthPx(title) - 1.0f;
     /* A standing notice reserves the longest line it takes, so the box does not resize as it counts. */
-    const float bodyW = (float)Utf8CharCount(standing ? "RECEIVING THE INSTALLER 100%" : body) * 6.0f - 1.0f;
+    const float bodyW = TextWidthPx(standing ? "RECEIVING THE INSTALLER 100%" : body) - 1.0f;
     const float textW = titleW > bodyW ? titleW : bodyW;
     const float boxW = (float)(int)(4.0f + padX + icon + gap + textW + padX);
     const float boxH = standing ? 56.0f : 44.0f;

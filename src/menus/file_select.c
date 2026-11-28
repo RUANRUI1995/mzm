@@ -5546,14 +5546,18 @@ static void FileSelectDrawSaveFileAreaCN(u16* dst, s32 palette, s32 nameIndex)
 /**
  * @brief Draws a save file's difficulty word and current energy with the Chinese glyph set
  *
- * The Chinese release spells every difficulty out as two 8x8 tiles with one blank tile
- * between them (the ROM's routine at 0x08080204 writes eight tiles across the row):
- * 容易 = 0x1D8 + 0x21D, 一般 = 0x1D6 + 0x21B, 困难 = 0x1DC + 0x1DE.
- * The earlier "single dash" reading came from treating these as 8x16 pairs (+0x20), which
- * is wrong here: 0x1D6 is just the horizontal stroke of 一, and 般 lives at 0x21B.
+ * Each difficulty is two 16x16 Han characters: 容易, 一般, 困难. The ROM's routine at
+ * 0x08080204 builds every character from four 8x8 tiles (two across, two down). It starts
+ * from base = 0x1D6 + { EASY: 2, NORMAL: 0, HARD: 6 } and writes eight tiles:
  *
- * Under the word the release draws the file's current energy as two 8x8 digits in palette 6
- * (yellow), using the same digit tiles as the timer's lower row (0x1EC + digit).
+ *   upper row: base+0, base+1, base+2, base+3
+ *   lower row: +0x20 from the upper row (the routine adds 0x1c at i == 4)
+ *
+ * NORMAL is special - the ROM jumps +0x43 at i == 2 and i == 6, moving the second
+ * character's tiles from 0x1D8 to 0x21B (the 般 glyph is stored out of order).
+ *
+ * The current energy is drawn as two 8x8 digits in palette 6 (yellow) at 0x1EC + digit,
+ * one row below the difficulty word's lower half.
  *
  * @param dst Tilemap entry of the difficulty word's first tile
  * @param palette Palette bits to OR into the difficulty tiles
@@ -5562,31 +5566,38 @@ static void FileSelectDrawSaveFileAreaCN(u16* dst, s32 palette, s32 nameIndex)
  */
 static void FileSelectDrawSaveFileDifficultyCN(u16* dst, s32 palette, s32 difficulty, s32 energy)
 {
-    static const u16 sDifficultyTiles[3][2] = {
-        { 0x1D8, 0x21D }, // 容易
-        { 0x1D6, 0x21B }, // 一般
-        { 0x1DC, 0x1DE }, // 困难
-    };
+    static const u16 sDifficultyBases[3] = { 0x1D8, 0x1D6, 0x1DC };
     s32 i;
+    u16 tile;
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 4; i++)
     {
         dst[i] = 0;
         dst[i + 32] = 0;
     }
+    for (i = 0; i < 2; i++)
+        dst[i + 64] = 0;
 
-    if (difficulty >= 0 && difficulty < (s32)ARRAY_SIZE(sDifficultyTiles))
+    if (difficulty >= 0 && difficulty < (s32)ARRAY_SIZE(sDifficultyBases))
     {
-        dst[0] = palette | sDifficultyTiles[difficulty][0];
-        dst[2] = palette | sDifficultyTiles[difficulty][1];
+        tile = sDifficultyBases[difficulty];
+        for (i = 0; i < 4; i++)
+        {
+            // NORMAL keeps 般 at 0x21B instead of the natural 0x1DA.
+            if (difficulty == DIFF_NORMAL && i == 2)
+                tile = (u16)(tile + 0x43);
+            dst[i] = palette | tile;
+            dst[i + 32] = palette | (u16)(tile + 0x20);
+            tile = (u16)(tile + 1);
+        }
     }
 
     if (energy >= 0)
     {
         if (energy > 99)
             energy = 99;
-        dst[32] = 0x6000 | (u16)(0x1EC + energy / 10);
-        dst[33] = 0x6000 | (u16)(0x1EC + energy % 10);
+        dst[64] = 0x6000 | (u16)(0x1EC + energy / 10);
+        dst[65] = 0x6000 | (u16)(0x1EC + energy % 10);
     }
 }
 #endif // MZM_3DS || PORT_NATIVE

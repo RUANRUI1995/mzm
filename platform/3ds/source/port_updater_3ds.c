@@ -15,7 +15,10 @@
 #define MZM_PORT_VERSION "v0.0.0"
 #endif
 
-#define UPDATER_DEFAULT_URL "https://api.github.com/repos/tinaut1986/mzm/releases?per_page=8"
+/* This fork's own releases: it publishes the Chinese build, and the version it
+ * carries (v0.8.4c) only exists here. Pointing at the parent repository would
+ * offer an English build that scores higher and replace this one with it. */
+#define UPDATER_DEFAULT_URL "https://api.github.com/repos/RUANRUI1995/mzm/releases?per_page=8"
 #define UPDATER_URL_MAX 200
 #define UPDATER_CIA_PATH PORT_UPDATE_DIR "/mzm-update.cia"
 #define UPDATER_JSON_MAX (192 * 1024)

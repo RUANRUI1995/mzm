@@ -23,7 +23,7 @@
 #define MZM_PORT_VERSION "v0.0.0"
 #endif
 
-#define UPDATER_DEFAULT_URL "https://api.github.com/repos/tinaut1986/mzm/releases?per_page=8"
+#define UPDATER_DEFAULT_URL "https://api.github.com/repos/RUANRUI1995/mzm/releases?per_page=8"
 #define UPDATER_URL_MAX 200
 #define UPDATER_WUHB_PATH WIIU_DATA_DIR "/mzm-wiiu.wuhb"
 #define UPDATER_PART_PATH WIIU_DATA_DIR "/mzm-wiiu.wuhb.part"

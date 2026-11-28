@@ -42,6 +42,11 @@ jobs:
             *)           TAG=$(git describe --tags --always) ;;
           esac
           case "$TAG" in
+            # The Chinese build (vX.Y.Zc) is 3DS only. The translation lives in the
+            # 3DS bottom screen and in the game's own text; nothing of it has been
+            # carried to the Wii U build, so asking that job to run would only make
+            # a release that cannot ship.
+            *-c)     B3DS=true;  BWIIU=false; PLATFORMS="3DS" ;;
             3ds-v*)  B3DS=true;  BWIIU=false; PLATFORMS="3DS" ;;
             wiiu-v*) B3DS=false; BWIIU=true;  PLATFORMS="Wii U" ;;
             *)       B3DS=true;  BWIIU=true;  PLATFORMS="3DS + Wii U" ;;

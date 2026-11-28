@@ -249,6 +249,16 @@ jobs:
           fi
           ls -l dist
 
+      # The action leaves an existing release's title and body alone, so a tag
+      # that was re-cut kept the page of the run before it -- including the
+      # platform line and a download link the run had not produced. Removing the
+      # page first makes the release a function of the tag alone. The tag stays.
+      - name: Drop the page this tag already has
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ needs.vars.outputs.tag }}
+        run: gh release delete "$TAG" --yes --cleanup-tag=false || true
+
       - name: Create / Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:

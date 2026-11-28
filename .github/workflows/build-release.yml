@@ -126,7 +126,10 @@ jobs:
 
   build-wiiu:
     needs: vars
-    if: needs.vars.outputs.build_wiiu == 'true'
+    # This branch is the Chinese build, and the translation is 3DS only, so the
+    # Wii U job never runs here. Left in place rather than deleted so the file
+    # stays a short diff against upstream and a future merge does not conflict.
+    if: false
     runs-on: ubuntu-latest
     container:
       image: devkitpro/devkitppc:20261102

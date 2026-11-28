@@ -53,7 +53,7 @@ static const struct {
     { "LONG BEAM",     "长光束" },
     { "ICE BEAM",      "冰冻光束" },
     { "WAVE BEAM",     "波动光束" },
-    { "PLASMA BEAM",   "等离子束" },
+    { "PLASMA BEAM",   "等离子光束" },
     { "CHARGE BEAM",   "蓄力光束" },
     { "BOMBS",         "炸弹" },
 
@@ -138,6 +138,8 @@ static const struct {
 
     /* ---- Save states tab ---- */
     { "SAVE STATES",       "存档" },
+    { "SAVE STATE",        "存档" },
+    { "ESTADO",            "存档" },
     { "NEW SAVE STATE",    "新建存档" },
     { "NO SAVE STATES YET", "暂无存档" },
     { "TAP A STATE FOR ITS DETAILS", "点按存档查看详情" },

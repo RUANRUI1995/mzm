@@ -176,6 +176,34 @@ u32 TextGetCharacterWidth(u16 charId)
 #endif
 
 /**
+ * @brief Right margin a line may reach, in pixels.
+ *
+ * The retail engine wraps as soon as the next glyph would pass 0xE0. The iQue release lays its
+ * lines out for 16 pixel Han glyphs and keeps closing punctuation on the line it belongs to, so
+ * a sentence that ends in "……" is authored to end a couple of pixels past 0xE0 rather than start
+ * the next line with the second ellipsis. Narrow glyphs (the ids below the Han range, where the
+ * spaces and punctuation live) therefore get one narrow cell of slack; Han characters keep the
+ * retail margin.
+ *
+ * @param charId Character about to be drawn
+ * @return Right margin in pixels
+ */
+#if defined(MZM_3DS) || defined(PORT_NATIVE)
+static u32 TextLineLimit(u16 charId)
+{
+    if (REGION_IS_CN() && charId >= 0x400 && charId < 0x800)
+        return 0xE8;
+    return 0xE0;
+}
+#else
+static u32 TextLineLimit(u16 charId)
+{
+    (void)charId;
+    return 0xE0;
+}
+#endif
+
+/**
  * @brief 6e484 | 4b8 | Draws a character in append mode
  * 
  * @param charId Character
@@ -1508,8 +1536,11 @@ u8 TextProcessCurrentMessage(struct Message* pMessage, const u16* pText, u32* ds
                     break;
             }
 
-            // Check for line overflow
-            if (pMessage->indent + width > 0xE0)
+            // Check for line overflow. Only printable glyphs can overflow: the control codes
+            // (new line, new page, colour, terminator) carry no width of their own, and once the
+            // slack below has let a line reach past the retail margin they would otherwise wrap
+            // again and swallow the end of the message.
+            if (*pText < 0x8000 && pMessage->indent + width > TextLineLimit(*pText))
             {
                 // Force new line
                 // the character that should have been drawn will be drawn on the next line since the text index isn't updated

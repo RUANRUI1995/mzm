@@ -5973,8 +5973,10 @@ static void RenderStateRow(float y, const PortSaveStateInfo* info, unsigned numb
     DrawRectClipped(8.0f, y, 0.51f, 296.0f, 1.0f, C2D_Color32(60, 80, 110, 255), c0, c1);
 
     char head[48];
+    /* The area name has to be translated before it is formatted in: once it sits inside the
+     * whole line the catalogue cannot match it any more. */
     snprintf(head, sizeof(head), "#%u  %s  %s %u",
-             number, Port_SaveState_AreaName(info->area),
+             number, Port_BottomUi_Zh(Port_SaveState_AreaName(info->area)),
              Port_BottomUi_Zh(es ? "SALA" : "ROOM"), (unsigned)info->room);
     DrawTextClipped(14.0f, y + 4.0f, 1.0f, head, C2D_Color32(170, 210, 245, 255), c0, c1);
 
@@ -6009,7 +6011,7 @@ static void RenderStateModal(bool es, bool avail) {
     C2D_DrawRectSolid(SMODAL_X, SMODAL_Y, 0.84f, SMODAL_W, SMODAL_H, C2D_Color32(40, 70, 120, 255));
 
     char title[32];
-    snprintf(title, sizeof(title), es ? "ESTADO #%u" : "SAVE STATE #%u", sStateModalNumber);
+    snprintf(title, sizeof(title), "%s #%u", Port_BottomUi_Zh(es ? "ESTADO" : "SAVE STATE"), sStateModalNumber);
     DrawText(20.0f, 32.0f, 1.0f, title, C2D_Color32(255, 215, 0, 255));
 
     /* Screenshot, 160x96 inside a frame. */

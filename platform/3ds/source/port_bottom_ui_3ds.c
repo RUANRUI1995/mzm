@@ -650,6 +650,7 @@ extern void Port_Config_SetAutoHideHud(bool on);
 extern bool Port_Config_GetHideSpoilers(void);
 extern void Port_Config_SetHideSpoilers(bool on);
 extern bool Port_Config_GetBottomZh(void);
+extern void Port_Config_SetBottomLang(int mode);
 extern int Port_Config_GetButtonMapping(int buttonIndex);
 extern void Port_Config_SetButtonMapping(int buttonIndex, int action);
 extern void Port_Config_CycleButtonMapping(int buttonIndex);
@@ -1412,10 +1413,6 @@ void Port_BottomUI_Init(void) {
     sLastTouchY = -1;
     sIsDragging = false;
     sCachedOtherArea = 0xFF;
-
-    /* The bottom screen's own text, not the game's: a Chinese ROM gets Chinese
-     * here by itself (see Port_Config_GetBottomZh). */
-    Port_BottomUi_ZhSetActive(Port_Config_GetBottomZh());
 }
 
 void Port_BottomUI_SetTab(PortBottomTab tab) {
@@ -2666,6 +2663,26 @@ static const char* Port_Config_GetLanguageDisplayName(int lang) {
 
 static void Port_Config_CycleLanguage(void) {
     extern void SramWrite_Language(void);
+
+    /* 中文 is the stop after the six GBA languages, and it cannot be a
+     * gLanguage value: gLanguage indexes the game's own text tables, which has
+     * no Chinese, so it lives in the port config (bottom_lang) and the game's
+     * language is only touched when the row leaves it. */
+    if (Port_BottomUi_ZhActive()) {
+        Port_Config_SetBottomLang(2);   /* explicit English */
+        Port_BottomUi_ZhSetActive(false);
+        gLanguage = 2;
+        SramWrite_Language();
+        Port_Config_Save();
+        Port_BottomUI_MarkDirty();
+        return;
+    }
+    if (gLanguage >= 6) {
+        Port_Config_SetBottomLang(1);   /* explicit Chinese */
+        Port_BottomUi_ZhSetActive(true);
+        Port_BottomUI_MarkDirty();
+        return;
+    }
     gLanguage = (gLanguage + 1) % LANGUAGE_COUNT;
     SramWrite_Language();
     Port_Config_Save();
@@ -3578,7 +3595,10 @@ static void RenderDisplayModal(int lang) {
     static const char* const hudL[7]   = { "AUTO-HIDE HUD","AUTO-HIDE HUD","AUTO-HIDE HUD","HUD AUTO-AUS","MASQUER HUD","NASCONDI HUD","AUTOOCULTAR HUD" };
     static const char* const spoL[7]   = { "HIDE SPOILERS","HIDE SPOILERS","HIDE SPOILERS","SPOILER AUS","MASQ. SPOILERS","NASC. SPOILER","OCULTAR SPOILERS" };
 
-    DispCell(0, langL[lang], Port_Config_GetLanguageDisplayName((int)gLanguage), valCol);
+    DispCell(0, langL[lang],
+             Port_BottomUi_ZhActive() ? "7: 中文"
+                                      : Port_Config_GetLanguageDisplayName((int)gLanguage),
+             valCol);
     bool wideOn = (Port_Config_Get3DSAspectRatio() == 3);
     DispCell(1, aspL[lang], GetAspectRatioDisplayName(lang), wideOn ? onCol : valCol);
     DispCell(2, styL[lang], GetDisplayStyleDisplayName(lang), valCol);
@@ -4704,7 +4724,7 @@ static void RenderStatusView(void) {
     };
     for (int i = 0; i < 8; ++i) {
         /* Two columns of four in Chinese: a 12 pixel row times eight does not
-         * fit the 88 pixel card, and an 8 character English name does not fit
+         * fit the 94 pixel card, and an 8 character English name does not fit
          * half its width, so the English layout stays one column. */
         float px = 170.0f, py = 91.0f + (float)i * 9.0f, sx = 286.0f;
         if (zhRows) {
@@ -6345,6 +6365,11 @@ static void RenderBusyOverlay(void) {
 void Port_BottomUI_Render(void) {
     /* sFrameCounter is advanced by Port_BottomUI_FrameTick every frame, not
      * here -- this function is throttled (see Port_BottomUI_WantsRedraw). */
+
+    /* The Chinese switch belongs to the config (and turns itself on for a
+     * Chinese ROM), so it is read here rather than at start-up: there is no
+     * single init call every path goes through. */
+    Port_BottomUi_ZhSetActive(Port_Config_GetBottomZh());
 
     /* Background clear for UI — blinks during low health to catch attention.
      * Blink pattern: 14 frames ON (warning color), 14 frames dimmed.
